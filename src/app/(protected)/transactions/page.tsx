@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
 
 import { TransactionsTable } from '@/app/(protected)/transactions/components/transactions-table';
 import {
@@ -7,29 +7,40 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { db } from '@/db';
-import { categories, transactions } from '@/db/schema';
 import { getCategories } from '@/lib/categories/get-categories';
+import {
+  getPaginatedTransactions,
+  getTransactionCount,
+} from '@/lib/transactions/get-paginated-transactions';
+import {
+  buildTransactionSearchParams,
+  parseTransactionListSearchParams,
+} from '@/lib/transactions/transaction-search-params';
 
-export default async function TransactionsPage() {
-  const [rows, categoryRows] = await Promise.all([
-    db
-      .select({
-        id: transactions.id,
-        date: transactions.date,
-        description: transactions.description,
-        categoryId: transactions.categoryId,
-        categoryName: categories.name,
-        categoryColor: categories.color,
-        value: transactions.value,
-        importId: transactions.importId,
-        merchant: transactions.merchant,
-      })
-      .from(transactions)
-      .leftJoin(categories, eq(transactions.categoryId, categories.id))
-      .orderBy(desc(transactions.date)),
+type TransactionsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function TransactionsPage({
+  searchParams,
+}: TransactionsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const listParams = parseTransactionListSearchParams(resolvedSearchParams);
+
+  const [totalInDb, categoryRows, result] = await Promise.all([
+    getTransactionCount(),
     getCategories(),
+    getPaginatedTransactions(listParams),
   ]);
+
+  if (result.page !== listParams.page) {
+    redirect(
+      `/transactions${buildTransactionSearchParams({
+        ...listParams,
+        page: result.page,
+      })}`,
+    );
+  }
 
   const categoryOptions = categoryRows.map(({ id, name }) => ({ id, name }));
 
@@ -41,7 +52,7 @@ export default async function TransactionsPage() {
           All transactions from every import
         </p>
       </div>
-      {rows.length === 0 ? (
+      {totalInDb === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyTitle>No transactions yet</EmptyTitle>
@@ -51,7 +62,11 @@ export default async function TransactionsPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <TransactionsTable data={rows} categories={categoryOptions} />
+        <TransactionsTable
+          listParams={listParams}
+          result={result}
+          categories={categoryOptions}
+        />
       )}
     </div>
   );

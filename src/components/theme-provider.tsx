@@ -3,6 +3,11 @@
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { ThemeProviderProps } from 'next-themes';
 
+const themeScriptProps =
+  typeof window === 'undefined'
+    ? undefined
+    : ({ type: 'application/json' } as const);
+
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider
@@ -11,6 +16,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       enableSystem
       storageKey="theme"
       disableTransitionOnChange
+      scriptProps={themeScriptProps}
       {...props}
     >
       {children}

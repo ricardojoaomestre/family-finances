@@ -44,7 +44,7 @@ export function DashboardContent({ recentImports }: DashboardContentProps) {
               </EmptyHeader>
             </Empty>
           ) : (
-            <ImportJobsTable data={recentImports} />
+            <ImportJobsTable data={recentImports} paginate={false} />
           )}
         </section>
       )}

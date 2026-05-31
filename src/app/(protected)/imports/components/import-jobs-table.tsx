@@ -53,8 +53,9 @@ const columns: ColumnDef<ImportJobRow>[] = [
 
 type ImportJobsTableProps = {
   data: ImportJobRow[];
+  paginate?: boolean;
 };
 
-export function ImportJobsTable({ data }: ImportJobsTableProps) {
-  return <ImportDataTable columns={columns} data={data} />;
+export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps) {
+  return <ImportDataTable columns={columns} data={data} paginate={paginate} />;
 }

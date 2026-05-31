@@ -1,15 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
+import type { ColumnDef, PaginationState } from '@tanstack/react-table';
 
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import { TransactionsTableFilters } from '@/app/(protected)/transactions/components/transactions-table-filters';
 import {
   DEFAULT_TRANSACTION_FILTERS,
-  filterTransactions,
   hasActiveTransactionFilters,
+  type TransactionFilters,
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { CategoryPill } from '@/components/categories/category-pill';
 import {
@@ -20,23 +29,16 @@ import { DataTableRowActions } from '@/components/data-table/row-actions';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { formatDisplayDate } from '@/lib/formatters';
 import { getMerchantLabelOrSlug } from '@/lib/merchants';
+import type { PaginatedTransactionsResult } from '@/lib/transactions/get-paginated-transactions';
+import type { TransactionRow } from '@/lib/transactions/transaction-row';
+import {
+  buildTransactionSearchParams,
+  type TransactionListSearchParams,
+} from '@/lib/transactions/transaction-search-params';
 
-export type TransactionRow = {
-  id: string;
-  date: Date;
-  description: string;
-  categoryId: string | null;
-  categoryName: string | null;
-  categoryColor: string | null;
-  value: string;
-  importId: string;
-  merchant: string;
-};
+export type { TransactionRow };
 
-type CategoryFilterOption = {
-  id: string;
-  name: string;
-};
+const DESCRIPTION_FILTER_DEBOUNCE_MS = 300;
 
 const columns: ColumnDef<TransactionRow>[] = [
   {
@@ -91,28 +93,136 @@ const columns: ColumnDef<TransactionRow>[] = [
   },
 ];
 
+type CategoryFilterOption = {
+  id: string;
+  name: string;
+};
+
 type TransactionsTableProps = {
-  data: TransactionRow[];
+  listParams: TransactionListSearchParams;
+  result: PaginatedTransactionsResult;
   categories: CategoryFilterOption[];
 };
 
-export function TransactionsTable({ data, categories }: TransactionsTableProps) {
-  const [filters, setFilters] = useState(DEFAULT_TRANSACTION_FILTERS);
-  const filteredData = useMemo(
-    () => filterTransactions(data, filters),
-    [data, filters],
+function resolvePagination(
+  updater: SetStateAction<PaginationState>,
+  current: PaginationState,
+): PaginationState {
+  return typeof updater === 'function' ? updater(current) : updater;
+}
+
+export function TransactionsTable({
+  listParams,
+  result,
+  categories,
+}: TransactionsTableProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
+  const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
   );
+
+  const filters: TransactionFilters = {
+    ...listParams.filters,
+    description: descriptionDraft ?? listParams.filters.description,
+  };
+
+  useEffect(() => {
+    return () => {
+      if (descriptionDebounceRef.current) {
+        clearTimeout(descriptionDebounceRef.current);
+      }
+    };
+  }, []);
+
+  const navigate = useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      filters?: TransactionFilters;
+    }) => {
+      const next: TransactionListSearchParams = {
+        page: updates.page ?? listParams.page,
+        pageSize: updates.pageSize ?? listParams.pageSize,
+        filters: updates.filters ?? listParams.filters,
+      };
+
+      startTransition(() => {
+        router.replace(`/transactions${buildTransactionSearchParams(next)}`);
+      });
+    },
+    [listParams, router],
+  );
+
+  const handleFiltersChange = (partial: Partial<TransactionFilters>) => {
+    const nextFilters = { ...filters, ...partial };
+
+    if ('description' in partial) {
+      setDescriptionDraft(partial.description ?? '');
+
+      if (descriptionDebounceRef.current) {
+        clearTimeout(descriptionDebounceRef.current);
+      }
+
+      descriptionDebounceRef.current = setTimeout(() => {
+        setDescriptionDraft(null);
+        navigate({ filters: nextFilters, page: 1 });
+      }, DESCRIPTION_FILTER_DEBOUNCE_MS);
+      return;
+    }
+
+    if (descriptionDebounceRef.current) {
+      clearTimeout(descriptionDebounceRef.current);
+    }
+
+    setDescriptionDraft(null);
+    navigate({ filters: nextFilters, page: 1 });
+  };
+
+  const handleClearFilters = () => {
+    if (descriptionDebounceRef.current) {
+      clearTimeout(descriptionDebounceRef.current);
+    }
+
+    setDescriptionDraft(null);
+    navigate({ filters: DEFAULT_TRANSACTION_FILTERS, page: 1 });
+  };
+
+  const pagination: PaginationState = {
+    pageIndex: result.page - 1,
+    pageSize: result.pageSize,
+  };
+
+  const handlePaginationChange: Dispatch<SetStateAction<PaginationState>> = (
+    updater,
+  ) => {
+    const next = resolvePagination(updater, pagination);
+    navigate({
+      page: next.pageIndex + 1,
+      pageSize: next.pageSize,
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <TransactionsTableFilters
         filters={filters}
         categories={categories}
-        onFiltersChange={setFilters}
-        onClear={() => setFilters(DEFAULT_TRANSACTION_FILTERS)}
+        onFiltersChange={handleFiltersChange}
+        onClear={handleClearFilters}
         showClear={hasActiveTransactionFilters(filters)}
       />
-      <ImportDataTable columns={columns} data={filteredData} />
+      <ImportDataTable
+        columns={columns}
+        data={result.rows}
+        isLoading={isPending}
+        manualPagination
+        rowCount={result.totalCount}
+        pageCount={result.pageCount}
+        pagination={pagination}
+        onPaginationChange={handlePaginationChange}
+      />
     </div>
   );
 }
