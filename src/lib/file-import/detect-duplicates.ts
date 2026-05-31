@@ -70,6 +70,28 @@ export function isImportableRow(classified: ClassifiedImportRow): boolean {
   return classified.validation.valid && !classified.duplicate.isDuplicate;
 }
 
+export type SkippedRowReason =
+  | 'invalid'
+  | 'duplicate_in_file'
+  | 'duplicate_existing';
+
+export function getSkippedRowReason(
+  classified: ClassifiedImportRow,
+): SkippedRowReason {
+  if (!classified.validation.valid) {
+    return 'invalid';
+  }
+
+  if (
+    classified.duplicate.isDuplicate &&
+    classified.duplicate.reason === 'inFile'
+  ) {
+    return 'duplicate_in_file';
+  }
+
+  return 'duplicate_existing';
+}
+
 export function getDuplicateTooltipMessage(reason: DuplicateReason): string {
   return reason === 'existing'
     ? 'Already imported'

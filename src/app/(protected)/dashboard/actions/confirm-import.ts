@@ -4,12 +4,13 @@ import { eq } from 'drizzle-orm';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { imports, type ImportStatus, transactions } from '@/db/schema';
+import { importSkippedRows, imports, type ImportStatus, transactions } from '@/db/schema';
 import { getActiveCategoriesForImport } from '@/lib/categories/get-active-categories-for-import';
 import { formatDbError } from '@/lib/db/format-db-error';
 import {
   classifyImportRows,
   formatTransactionValueForKey,
+  getSkippedRowReason,
   isImportableRow,
   type ImportedSpreadsheetRow,
 } from '@/lib/file-import';
@@ -58,8 +59,11 @@ export async function confirmImport(
   const existingKeys = await getExistingDuplicateKeys(merchant);
   const classifiedRows = classifyImportRows(input.rows, existingKeys, merchant);
   const importableRows = classifiedRows.filter(isImportableRow);
+  const skippedRows = classifiedRows
+    .map((classified, rowIndex) => ({ classified, rowIndex }))
+    .filter(({ classified }) => !isImportableRow(classified));
 
-  const skippedCount = input.rows.length - importableRows.length;
+  const skippedCount = skippedRows.length;
   const status: ImportStatus =
     skippedCount === 0 ? 'completed' : 'partial';
 
@@ -82,6 +86,7 @@ export async function confirmImport(
       id: importId,
       filename,
       rowCount: importableRows.length,
+      skippedCount,
       userId: session.user.id,
       status,
       merchant,
@@ -99,6 +104,34 @@ export async function confirmImport(
             value: formatTransactionValueForKey(row.value!),
             importId,
             merchant,
+          };
+        }),
+      );
+    }
+
+    if (skippedRows.length > 0) {
+      await db.insert(importSkippedRows).values(
+        skippedRows.map(({ classified, rowIndex }) => {
+          const { row, validation } = classified;
+          const reason = getSkippedRowReason(classified);
+
+          return {
+            importId,
+            rowIndex,
+            date: row.date ? new Date(row.date) : null,
+            description: row.description,
+            value:
+              row.value !== null && Number.isFinite(row.value)
+                ? formatTransactionValueForKey(row.value)
+                : null,
+            balance:
+              row.balance != null && Number.isFinite(row.balance)
+                ? formatTransactionValueForKey(row.balance)
+                : null,
+            reason,
+            errors: !validation.valid
+              ? JSON.stringify(validation.errors)
+              : null,
           };
         }),
       );

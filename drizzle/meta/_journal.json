@@ -43,6 +43,13 @@
       "when": 1780110000000,
       "tag": "0005_category_pattern_optional",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780120000000,
+      "tag": "0006_import_skipped_rows",
+      "breakpoints": true
     }
   ]
 }

@@ -1,16 +1,18 @@
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ImportTransactionsTable } from '@/app/(protected)/imports/[id]/components/import-transactions-table';
+import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/import-detail-tabs';
+import type { ImportSkippedRow } from '@/app/(protected)/imports/[id]/components/import-skipped-rows-table';
 import { Badge } from '@/components/ui/badge';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-} from '@/components/ui/empty';
 import { db } from '@/db';
-import { categories, imports, transactions, users } from '@/db/schema';
+import {
+  categories,
+  importSkippedRows,
+  imports,
+  transactions,
+  users,
+} from '@/db/schema';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
 import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
@@ -18,6 +20,19 @@ import { importStatusBadgeVariant } from '@/lib/status-badge';
 type ImportDetailPageProps = {
   params: Promise<{ id: string }>;
 };
+
+function parseSkippedRowErrors(errors: string | null): string[] | null {
+  if (!errors) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(errors);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function ImportDetailPage({ params }: ImportDetailPageProps) {
   const { id } = await params;
@@ -28,6 +43,7 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
       filename: imports.filename,
       importedAt: imports.importedAt,
       rowCount: imports.rowCount,
+      skippedCount: imports.skippedCount,
       status: imports.status,
       merchant: imports.merchant,
       importerName: users.name,
@@ -42,18 +58,39 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
     notFound();
   }
 
-  const importTransactions = await db
-    .select({
-      id: transactions.id,
-      date: transactions.date,
-      description: transactions.description,
-      categoryName: categories.name,
-      value: transactions.value,
-    })
-    .from(transactions)
-    .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(eq(transactions.importId, id))
-    .orderBy(desc(transactions.date));
+  const [importTransactions, skippedRowRecords] = await Promise.all([
+    db
+      .select({
+        id: transactions.id,
+        date: transactions.date,
+        description: transactions.description,
+        categoryName: categories.name,
+        value: transactions.value,
+      })
+      .from(transactions)
+      .leftJoin(categories, eq(transactions.categoryId, categories.id))
+      .where(eq(transactions.importId, id))
+      .orderBy(desc(transactions.date)),
+    db
+      .select({
+        id: importSkippedRows.id,
+        rowIndex: importSkippedRows.rowIndex,
+        date: importSkippedRows.date,
+        description: importSkippedRows.description,
+        value: importSkippedRows.value,
+        balance: importSkippedRows.balance,
+        reason: importSkippedRows.reason,
+        errors: importSkippedRows.errors,
+      })
+      .from(importSkippedRows)
+      .where(eq(importSkippedRows.importId, id))
+      .orderBy(asc(importSkippedRows.rowIndex)),
+  ]);
+
+  const skippedRows: ImportSkippedRow[] = skippedRowRecords.map((row) => ({
+    ...row,
+    errors: parseSkippedRowErrors(row.errors),
+  }));
 
   const importedBy =
     importRecord.importerName ?? importRecord.importerEmail ?? 'Unknown';
@@ -82,6 +119,14 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
           <dd className="font-medium">{importRecord.rowCount}</dd>
         </div>
         <div>
+          <dt className="text-muted-foreground">Rows skipped</dt>
+          <dd className="font-medium">
+            {importRecord.skippedCount != null
+              ? importRecord.skippedCount
+              : '—'}
+          </dd>
+        </div>
+        <div>
           <dt className="text-muted-foreground">Status</dt>
           <dd>
             <Badge variant={importStatusBadgeVariant(importRecord.status)}>
@@ -101,20 +146,12 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         </div>
       </dl>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-medium">Transactions</h2>
-        {importTransactions.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyDescription>
-                No transactions in this import.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ImportTransactionsTable data={importTransactions} />
-        )}
-      </div>
+      <ImportDetailTabs
+        skippedRows={skippedRows}
+        transactions={importTransactions}
+        skippedCount={importRecord.skippedCount}
+        importStatus={importRecord.status}
+      />
     </div>
   );
 }

@@ -107,6 +107,14 @@ export const categories = pgTable('category', {
     .defaultNow(),
 });
 
+export const importSkippedRowReasonEnum = [
+  'invalid',
+  'duplicate_in_file',
+  'duplicate_existing',
+] as const;
+export type ImportSkippedRowReason =
+  (typeof importSkippedRowReasonEnum)[number];
+
 export const imports = pgTable('import', {
   id: text('id')
     .primaryKey()
@@ -116,11 +124,28 @@ export const imports = pgTable('import', {
     .notNull()
     .defaultNow(),
   rowCount: integer('rowCount').notNull(),
+  skippedCount: integer('skippedCount'),
   userId: text('userId')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   status: text('status').$type<ImportStatus>().notNull(),
   merchant: text('merchant').notNull(),
+});
+
+export const importSkippedRows = pgTable('import_skipped_row', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  importId: text('importId')
+    .notNull()
+    .references(() => imports.id, { onDelete: 'cascade' }),
+  rowIndex: integer('rowIndex').notNull(),
+  date: timestamp('date', { mode: 'date' }),
+  description: text('description').notNull(),
+  value: numeric('value', { precision: 14, scale: 2 }),
+  balance: numeric('balance', { precision: 14, scale: 2 }),
+  reason: text('reason').$type<ImportSkippedRowReason>().notNull(),
+  errors: text('errors'),
 });
 
 export const transactions = pgTable('transaction', {
@@ -145,7 +170,18 @@ export const importsRelations = relations(imports, ({ one, many }) => ({
     references: [users.id],
   }),
   transactions: many(transactions),
+  skippedRows: many(importSkippedRows),
 }));
+
+export const importSkippedRowsRelations = relations(
+  importSkippedRows,
+  ({ one }) => ({
+    import: one(imports, {
+      fields: [importSkippedRows.importId],
+      references: [imports.id],
+    }),
+  }),
+);
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   transactions: many(transactions),
