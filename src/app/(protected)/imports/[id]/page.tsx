@@ -147,6 +147,7 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
       </dl>
 
       <ImportDetailTabs
+        importId={importRecord.id}
         skippedRows={skippedRows}
         transactions={importTransactions}
         skippedCount={importRecord.skippedCount}

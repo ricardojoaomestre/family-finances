@@ -1,6 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Check, Pencil } from 'lucide-react';
 
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import {
@@ -8,6 +9,7 @@ import {
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -15,6 +17,10 @@ import {
 } from '@/components/ui/tooltip';
 import type { ImportSkippedRowReason } from '@/db/schema';
 import { getDuplicateTooltipMessage } from '@/lib/file-import';
+import {
+  isDuplicateSkippedReason,
+  isSkippedRowReadyToImport,
+} from '@/lib/imports/classify-skipped-import-row';
 import { formatDisplayDate } from '@/lib/formatters';
 
 export type ImportSkippedRow = {
@@ -47,6 +53,14 @@ function createReasonColumn(): ColumnDef<ImportSkippedRow> {
     header: 'Validation',
     cell: ({ row }) => {
       const { reason, errors } = row.original;
+
+      if (isSkippedRowReadyToImport(reason, errors)) {
+        return (
+          <Badge variant="secondary" className="cursor-default">
+            Ready
+          </Badge>
+        );
+      }
 
       if (reason === 'invalid') {
         return (
@@ -87,7 +101,65 @@ function createReasonColumn(): ColumnDef<ImportSkippedRow> {
   };
 }
 
-function createColumns(includeBalance: boolean): ColumnDef<ImportSkippedRow>[] {
+function createActionsColumn(
+  onImport: (row: ImportSkippedRow) => void,
+  onEdit: (row: ImportSkippedRow) => void,
+  isImportingId: string | null,
+): ColumnDef<ImportSkippedRow> {
+  return {
+    id: 'actions',
+    header: () => <span className="sr-only">Actions</span>,
+    cell: ({ row }) => {
+      const skippedRow = row.original;
+      const showImport = isDuplicateSkippedReason(skippedRow.reason);
+      const isImporting = isImportingId === skippedRow.id;
+
+      return (
+        <div className="flex items-center justify-end gap-1">
+          {showImport ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={isImporting}
+                  onClick={() => onImport(skippedRow)}
+                  aria-label="Import row"
+                >
+                  <Check />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Import row</TooltipContent>
+            </Tooltip>
+          ) : null}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => onEdit(skippedRow)}
+                aria-label="Edit row"
+              >
+                <Pencil />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit row</TooltipContent>
+          </Tooltip>
+        </div>
+      );
+    },
+  };
+}
+
+function createColumns(
+  includeBalance: boolean,
+  onImport: (row: ImportSkippedRow) => void,
+  onEdit: (row: ImportSkippedRow) => void,
+  isImportingId: string | null,
+): ColumnDef<ImportSkippedRow>[] {
   const columns: ColumnDef<ImportSkippedRow>[] = [
     createReasonColumn(),
     {
@@ -117,17 +189,30 @@ function createColumns(includeBalance: boolean): ColumnDef<ImportSkippedRow>[] {
     });
   }
 
+  columns.push(createActionsColumn(onImport, onEdit, isImportingId));
+
   return columns;
 }
 
 type ImportSkippedRowsTableProps = {
   data: ImportSkippedRow[];
+  onImport: (row: ImportSkippedRow) => void;
+  onEdit: (row: ImportSkippedRow) => void;
+  isImportingId: string | null;
 };
 
-export function ImportSkippedRowsTable({ data }: ImportSkippedRowsTableProps) {
+export function ImportSkippedRowsTable({
+  data,
+  onImport,
+  onEdit,
+  isImportingId,
+}: ImportSkippedRowsTableProps) {
   const includeBalance = data.some((row) => row.balance != null);
 
   return (
-    <ImportDataTable columns={createColumns(includeBalance)} data={data} />
+    <ImportDataTable
+      columns={createColumns(includeBalance, onImport, onEdit, isImportingId)}
+      data={data}
+    />
   );
 }
