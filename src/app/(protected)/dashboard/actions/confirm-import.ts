@@ -5,14 +5,14 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { importSkippedRows, imports, type ImportStatus, transactions } from '@/db/schema';
+import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
 import { getActiveCategoriesForImport } from '@/lib/categories/get-active-categories-for-import';
 import { formatDbError } from '@/lib/db/format-db-error';
 import {
   classifyImportRows,
   formatTransactionValueForKey,
   getSkippedRowReason,
-  isImportableRow,
-  type ImportedSpreadsheetRow,
+  isImportableWithOverride,
 } from '@/lib/file-import';
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
 import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
@@ -20,7 +20,7 @@ import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 export type ConfirmImportInput = {
   filename: string;
   merchant: MerchantSlug;
-  rows: ImportedSpreadsheetRow[];
+  rows: ParsedImportRow[];
 };
 
 export type ConfirmImportResult =
@@ -58,10 +58,24 @@ export async function confirmImport(
   const merchant = input.merchant;
   const existingKeys = await getExistingDuplicateKeys(merchant);
   const classifiedRows = classifyImportRows(input.rows, existingKeys, merchant);
-  const importableRows = classifiedRows.filter(isImportableRow);
+  const importableRows = classifiedRows
+    .map((classified, index) => ({
+      classified,
+      clientRow: input.rows[index]!,
+    }))
+    .filter(({ classified, clientRow }) =>
+      isImportableWithOverride(classified, clientRow.duplicate),
+    );
   const skippedRows = classifiedRows
-    .map((classified, rowIndex) => ({ classified, rowIndex }))
-    .filter(({ classified }) => !isImportableRow(classified));
+    .map((classified, rowIndex) => ({
+      classified,
+      rowIndex,
+      clientRow: input.rows[rowIndex]!,
+    }))
+    .filter(
+      ({ classified, clientRow }) =>
+        !isImportableWithOverride(classified, clientRow.duplicate),
+    );
 
   const skippedCount = skippedRows.length;
   const status: ImportStatus =
@@ -71,7 +85,8 @@ export async function confirmImport(
   const activeCategories = await getActiveCategoriesForImport();
   const activeCategoryIds = new Set(activeCategories.map((category) => category.id));
 
-  for (const { row } of importableRows) {
+  for (const { classified } of importableRows) {
+    const { row } = classified;
     if (row.categoryId !== null && !activeCategoryIds.has(row.categoryId)) {
       return {
         ok: false,
@@ -94,7 +109,8 @@ export async function confirmImport(
 
     if (importableRows.length > 0) {
       await db.insert(transactions).values(
-        importableRows.map(({ row }) => {
+        importableRows.map(({ classified }) => {
+          const { row } = classified;
           const description = row.description.trim();
 
           return {

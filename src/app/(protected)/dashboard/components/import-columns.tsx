@@ -1,6 +1,8 @@
 "use client";
+
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 
 import type { ImportedSpreadsheetRow, RowDuplicateStatus, RowValidation } from "@/lib/file-import";
 import { getDuplicateTooltipMessage } from "@/lib/file-import";
@@ -12,6 +14,16 @@ import {
   TableMoneyCell,
 } from "@/components/data-table/table-money-cell";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,35 +47,18 @@ export type PreviewRow = ImportedSpreadsheetRow & {
 
 const NONE_CATEGORY_VALUE = "__none__";
 
-const validationColumn: ColumnDef<PreviewRow> = {
-  id: "validation",
-  header: "Validation",
-  cell: ({ row }) => {
-    const validation = row.original.validation;
+function DuplicateValidationCell({
+  duplicate,
+  onConfirmNotDuplicate,
+}: {
+  duplicate: RowDuplicateStatus;
+  onConfirmNotDuplicate: () => void;
+}) {
+  const [open, setOpen] = useState(false);
 
-    if (!validation.valid) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="destructive" className="cursor-default">
-              Invalid
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <ul className="list-inside list-disc space-y-0.5">
-              {validation.errors.map((error) => (
-                <li key={error}>{error}</li>
-              ))}
-            </ul>
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    const duplicate = row.original.duplicate;
-
-    if (duplicate.isDuplicate) {
-      return (
+  return (
+    <>
+      <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant="warning" className="cursor-default">
@@ -71,15 +66,97 @@ const validationColumn: ColumnDef<PreviewRow> = {
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
-            {getDuplicateTooltipMessage(duplicate.reason)}
+            {duplicate.isDuplicate
+              ? getDuplicateTooltipMessage(duplicate.reason)
+              : null}
           </TooltipContent>
         </Tooltip>
-      );
-    }
 
-    return <Badge variant="success">Valid</Badge>;
-  },
-};
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setOpen(true)}
+              aria-label="Confirm as not duplicate"
+            >
+              <Check />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Confirm as not duplicate</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Override duplicate?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This row appears to be a duplicate. By confirming, you are
+              manually overriding that and the row will be imported.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onConfirmNotDuplicate();
+                setOpen(false);
+              }}
+            >
+              Confirm import
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function createValidationColumn(
+  onOverrideDuplicate: (rowIndex: number) => void,
+): ColumnDef<PreviewRow> {
+  return {
+    id: "validation",
+    header: "Validation",
+    cell: ({ row }) => {
+      const validation = row.original.validation;
+
+      if (!validation.valid) {
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="destructive" className="cursor-default">
+                Invalid
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <ul className="list-inside list-disc space-y-0.5">
+                {validation.errors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+
+      const duplicate = row.original.duplicate;
+
+      if (duplicate.isDuplicate) {
+        return (
+          <DuplicateValidationCell
+            duplicate={duplicate}
+            onConfirmNotDuplicate={() => onOverrideDuplicate(row.index)}
+          />
+        );
+      }
+
+      return <Badge variant="success">Valid</Badge>;
+    },
+  };
+}
 
 function createCategoryColumn(
   categories: ImportCategoryOption[],
@@ -154,9 +231,10 @@ function getBaseColumns(
   categories: ImportCategoryOption[],
   onCategoryChange: (rowIndex: number, categoryId: string | null) => void,
   onCreateCategory: (description: string) => void,
+  onOverrideDuplicate: (rowIndex: number) => void,
 ): ColumnDef<PreviewRow>[] {
   return [
-    validationColumn,
+    createValidationColumn(onOverrideDuplicate),
     {
       accessorKey: "date",
       header: "Date",
@@ -191,11 +269,13 @@ export function getPreviewColumns(
   categories: ImportCategoryOption[],
   onCategoryChange: (rowIndex: number, categoryId: string | null) => void,
   onCreateCategory: (description: string) => void,
+  onOverrideDuplicate: (rowIndex: number) => void,
 ): ColumnDef<PreviewRow>[] {
   const columns = getBaseColumns(
     categories,
     onCategoryChange,
     onCreateCategory,
+    onOverrideDuplicate,
   );
 
   if (includeBalance) {

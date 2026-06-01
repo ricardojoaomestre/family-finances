@@ -4,10 +4,13 @@ export {
 } from './duplicate-key';
 export {
   classifyImportRows,
+  createDuplicateOverrideStatus,
   detectDuplicateStatuses,
   getDuplicateTooltipMessage,
   getSkippedRowReason,
+  isDuplicateOverridden,
   isImportableRow,
+  isImportableWithOverride,
   type ClassifiedImportRow,
   type DuplicateReason,
   type RowDuplicateStatus,

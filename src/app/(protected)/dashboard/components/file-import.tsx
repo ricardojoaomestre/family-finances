@@ -72,6 +72,13 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
     [dispatch],
   );
 
+  const handleOverrideDuplicate = useCallback(
+    (rowIndex: number) => {
+      dispatch({ type: 'override-duplicate', rowIndex });
+    },
+    [dispatch],
+  );
+
   const handleOpenCreateCategory = useCallback((description: string) => {
     setCreateCategoryPattern(escapeRegexLiteral(description.trim()));
     setCreateCategoryOpen(true);
@@ -117,12 +124,14 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
       categories,
       handleCategoryChange,
       handleOpenCreateCategory,
+      handleOverrideDuplicate,
     );
   }, [
     parsedData,
     categories,
     handleCategoryChange,
     handleOpenCreateCategory,
+    handleOverrideDuplicate,
   ]);
 
   const importableCount =

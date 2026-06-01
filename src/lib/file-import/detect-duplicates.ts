@@ -11,7 +11,15 @@ export type DuplicateReason = 'inFile' | 'existing';
 
 export type RowDuplicateStatus =
   | { isDuplicate: true; reason: DuplicateReason }
-  | { isDuplicate: false };
+  | { isDuplicate: false; duplicateOverridden?: boolean };
+
+export function isDuplicateOverridden(status: RowDuplicateStatus): boolean {
+  return !status.isDuplicate && status.duplicateOverridden === true;
+}
+
+export function createDuplicateOverrideStatus(): RowDuplicateStatus {
+  return { isDuplicate: false, duplicateOverridden: true };
+}
 
 export type ClassifiedImportRow = {
   row: ImportedSpreadsheetRow;
@@ -68,6 +76,21 @@ export function classifyImportRows(
 
 export function isImportableRow(classified: ClassifiedImportRow): boolean {
   return classified.validation.valid && !classified.duplicate.isDuplicate;
+}
+
+export function isImportableWithOverride(
+  classified: ClassifiedImportRow,
+  clientDuplicate: RowDuplicateStatus | undefined,
+): boolean {
+  if (!classified.validation.valid) {
+    return false;
+  }
+
+  if (clientDuplicate && isDuplicateOverridden(clientDuplicate)) {
+    return true;
+  }
+
+  return isImportableRow(classified);
 }
 
 export type SkippedRowReason =

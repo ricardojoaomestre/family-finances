@@ -2,6 +2,7 @@ import { useReducer } from 'react';
 
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
 import type { ImportCategoryOption } from '@/lib/categories/get-active-categories-for-import';
+import { createDuplicateOverrideStatus } from '@/lib/file-import';
 import type { MerchantSlug } from '@/lib/merchants';
 
 export type ImportPreviewState = {
@@ -30,6 +31,7 @@ export type ImportPreviewAction =
       rowIndex: number;
       categoryId: string | null;
     }
+  | { type: 'override-duplicate'; rowIndex: number }
   | {
       type: 'categories-rematched';
       data: ParsedImportRow[];
@@ -93,6 +95,19 @@ function importPreviewReducer(
         parsedData: state.parsedData.map((row, index) =>
           index === action.rowIndex
             ? { ...row, categoryId: action.categoryId }
+            : row,
+        ),
+      };
+    case 'override-duplicate':
+      if (!state.parsedData) {
+        return state;
+      }
+
+      return {
+        ...state,
+        parsedData: state.parsedData.map((row, index) =>
+          index === action.rowIndex
+            ? { ...row, duplicate: createDuplicateOverrideStatus() }
             : row,
         ),
       };

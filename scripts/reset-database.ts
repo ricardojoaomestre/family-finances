@@ -45,7 +45,8 @@ async function resetDatabase() {
 
   const sql = neon(getDatabaseUrl());
 
-  console.log('Dropping public schema...');
+  console.log('Dropping schemas...');
+  await sql`DROP SCHEMA IF EXISTS drizzle CASCADE`;
   await sql`DROP SCHEMA IF EXISTS public CASCADE`;
   await sql`CREATE SCHEMA public`;
   await sql`GRANT ALL ON SCHEMA public TO public`;
