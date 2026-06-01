@@ -9,6 +9,7 @@ const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/imports', label: 'Import jobs' },
   { href: '/transactions', label: 'Transactions' },
+  { href: '/reports', label: 'Reports' },
   { href: '/settings', label: 'Settings' },
 ] as const;
 
@@ -19,7 +20,9 @@ export function ProtectedNav() {
     <nav className="flex items-center gap-4">
       {links.map((link) => {
         const isActive =
-          pathname === link.href || pathname.startsWith(`${link.href}/`);
+          pathname === link.href ||
+          pathname.startsWith(`${link.href}/`) ||
+          (link.href === '/reports' && pathname.startsWith('/report/'));
 
         return (
           <Link

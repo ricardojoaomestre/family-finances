@@ -106,6 +106,7 @@ export async function updateTransaction(
   revalidatePath('/transactions');
   revalidatePath('/imports');
   revalidatePath('/dashboard');
+  revalidatePath('/report/new');
 
   return { ok: true };
 }

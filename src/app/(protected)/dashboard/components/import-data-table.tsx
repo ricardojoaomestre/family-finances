@@ -12,6 +12,7 @@ import {
 import { useState } from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { TableMoneyCell } from '@/components/data-table/table-money-cell';
 import { DATA_TABLE_DEFAULT_PAGE_SIZE } from '@/lib/data-table/pagination';
 import { DataTableLoadingOverlay } from '@/components/data-table/data-table-loading-overlay';
 import {
@@ -40,6 +41,10 @@ interface ImportDataTableProps<TData, TValue> {
   pageCount?: number;
   pagination?: PaginationState;
   onPaginationChange?: OnChangeFn<PaginationState>;
+  summaryFooter?: {
+    label: string;
+    value: string | number;
+  };
 }
 
 export function ImportDataTable<TData, TValue>({
@@ -53,6 +58,7 @@ export function ImportDataTable<TData, TValue>({
   pageCount,
   pagination: controlledPagination,
   onPaginationChange,
+  summaryFooter,
 }: ImportDataTableProps<TData, TValue>) {
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -135,24 +141,45 @@ export function ImportDataTable<TData, TValue>({
             </TableRow>
           )}
         </TableBody>
-        {usePagination ? (
+        {summaryFooter || usePagination ? (
           <TableFooter className="bg-transparent">
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={columns.length} className="p-0">
-                <DataTablePagination
-                  rowCount={resolvedRowCount}
-                  pageIndex={pagination.pageIndex}
-                  pageSize={pagination.pageSize}
-                  pageCount={resolvedPageCount}
-                  onPageChange={(pageIndex) =>
-                    handlePaginationChange((current) => ({ ...current, pageIndex }))
-                  }
-                  onPageSizeChange={(pageSize) =>
-                    handlePaginationChange({ pageIndex: 0, pageSize })
-                  }
-                />
-              </TableCell>
-            </TableRow>
+            {summaryFooter ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell
+                  colSpan={Math.max(1, columns.length - 1)}
+                  className="text-base font-semibold"
+                >
+                  {summaryFooter.label}
+                </TableCell>
+                <TableCell>
+                  <TableMoneyCell
+                    value={summaryFooter.value}
+                    className="text-xl font-semibold"
+                  />
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {usePagination ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length} className="p-0">
+                  <DataTablePagination
+                    rowCount={resolvedRowCount}
+                    pageIndex={pagination.pageIndex}
+                    pageSize={pagination.pageSize}
+                    pageCount={resolvedPageCount}
+                    onPageChange={(pageIndex) =>
+                      handlePaginationChange((current) => ({
+                        ...current,
+                        pageIndex,
+                      }))
+                    }
+                    onPageSizeChange={(pageSize) =>
+                      handlePaginationChange({ pageIndex: 0, pageSize })
+                    }
+                  />
+                </TableCell>
+              </TableRow>
+            ) : null}
           </TableFooter>
         ) : null}
       </Table>
