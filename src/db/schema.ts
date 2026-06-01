@@ -174,6 +174,8 @@ export const transactions = pgTable('transaction', {
   }),
   value: numeric('value', { precision: 14, scale: 2 }).notNull(),
   merchant: text('merchant').notNull(),
+  insertedAt: timestamp('inserted_at', { mode: 'date' }).defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow(),
 });
 
 export const importsRelations = relations(imports, ({ one, many }) => ({

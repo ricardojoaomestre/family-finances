@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -14,6 +15,9 @@ import {
 import type { ColumnDef, PaginationState } from '@tanstack/react-table';
 
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
+import { updateTransaction } from '@/app/(protected)/transactions/actions/update-transaction';
+import { TransactionDetailSheet } from '@/app/(protected)/transactions/components/transaction-detail-sheet';
+import { TransactionFormSheet } from '@/app/(protected)/transactions/components/transaction-form-sheet';
 import { TransactionsTableFilters } from '@/app/(protected)/transactions/components/transactions-table-filters';
 import {
   DEFAULT_TRANSACTION_FILTERS,
@@ -40,58 +44,72 @@ export type { TransactionRow };
 
 const DESCRIPTION_FILTER_DEBOUNCE_MS = 300;
 
-const columns: ColumnDef<TransactionRow>[] = [
-  {
-    accessorKey: 'date',
-    header: 'Date',
-    cell: ({ row }) => formatDisplayDate(row.original.date),
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => (
-      <span className="whitespace-normal">{row.getValue('description')}</span>
-    ),
-  },
-  {
-    accessorKey: 'categoryName',
-    header: 'Category',
-    cell: ({ row }) => {
-      const { categoryName, categoryColor } = row.original;
-
-      if (!categoryName || !categoryColor) {
-        return '—';
-      }
-
-      return <CategoryPill name={categoryName} color={categoryColor} />;
+function createTransactionColumns({
+  onViewDetails,
+  onEdit,
+}: {
+  onViewDetails: (transaction: TransactionRow) => void;
+  onEdit: (transaction: TransactionRow) => void;
+}): ColumnDef<TransactionRow>[] {
+  return [
+    {
+      accessorKey: 'date',
+      header: 'Date',
+      cell: ({ row }) => formatDisplayDate(row.original.date),
     },
-  },
-  {
-    accessorKey: 'value',
-    header: () => <div className={TABLE_MONEY_CELL_CLASS}>Value</div>,
-    cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
-  },
-  {
-    accessorKey: 'merchant',
-    header: 'Merchant',
-    cell: ({ row }) => getMerchantLabelOrSlug(row.original.merchant),
-  },
-  {
-    id: 'actions',
-    header: () => <span className="sr-only">Actions</span>,
-    meta: {
-      headerClassName: 'w-12',
-      cellClassName: 'w-12',
+    {
+      accessorKey: 'description',
+      header: 'Description',
+      cell: ({ row }) => (
+        <span className="whitespace-normal">{row.getValue('description')}</span>
+      ),
     },
-    cell: ({ row }) => (
-      <DataTableRowActions>
-        <DropdownMenuItem asChild>
-          <Link href={`/imports/${row.original.importId}`}>View import</Link>
-        </DropdownMenuItem>
-      </DataTableRowActions>
-    ),
-  },
-];
+    {
+      accessorKey: 'categoryName',
+      header: 'Category',
+      cell: ({ row }) => {
+        const { categoryName, categoryColor } = row.original;
+
+        if (!categoryName || !categoryColor) {
+          return '—';
+        }
+
+        return <CategoryPill name={categoryName} color={categoryColor} />;
+      },
+    },
+    {
+      accessorKey: 'value',
+      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Value</div>,
+      cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
+    },
+    {
+      accessorKey: 'merchant',
+      header: 'Merchant',
+      cell: ({ row }) => getMerchantLabelOrSlug(row.original.merchant),
+    },
+    {
+      id: 'actions',
+      header: () => <span className="sr-only">Actions</span>,
+      meta: {
+        headerClassName: 'w-12',
+        cellClassName: 'w-12',
+      },
+      cell: ({ row }) => (
+        <DataTableRowActions>
+          <DropdownMenuItem onSelect={() => onViewDetails(row.original)}>
+            View details
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onEdit(row.original)}>
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/imports/${row.original.importId}`}>View import</Link>
+          </DropdownMenuItem>
+        </DataTableRowActions>
+      ),
+    },
+  ];
+}
 
 type CategoryFilterOption = {
   id: string;
@@ -118,6 +136,11 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [editingTransaction, setEditingTransaction] =
+    useState<TransactionRow | null>(null);
+  const [detailsTransactionId, setDetailsTransactionId] = useState<
+    string | null
+  >(null);
   const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
   const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -204,6 +227,37 @@ export function TransactionsTable({
     });
   };
 
+  const handleViewTransactionDetails = useCallback((transaction: TransactionRow) => {
+    setDetailsTransactionId(transaction.id);
+  }, []);
+
+  const handleEditTransaction = useCallback((transaction: TransactionRow) => {
+    setEditingTransaction(transaction);
+  }, []);
+
+  const handleUpdateTransaction = useCallback(
+    async (input: Parameters<typeof updateTransaction>[0]) => {
+      const result = await updateTransaction(input);
+
+      if (result.ok) {
+        setEditingTransaction(null);
+        router.refresh();
+      }
+
+      return result;
+    },
+    [router],
+  );
+
+  const columns = useMemo(
+    () =>
+      createTransactionColumns({
+        onViewDetails: handleViewTransactionDetails,
+        onEdit: handleEditTransaction,
+      }),
+    [handleViewTransactionDetails, handleEditTransaction],
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <TransactionsTableFilters
@@ -211,7 +265,7 @@ export function TransactionsTable({
         categories={categories}
         onFiltersChange={handleFiltersChange}
         onClear={handleClearFilters}
-        showClear={hasActiveTransactionFilters(filters)}
+        hasActiveFilters={hasActiveTransactionFilters(filters)}
       />
       <ImportDataTable
         columns={columns}
@@ -222,6 +276,26 @@ export function TransactionsTable({
         pageCount={result.pageCount}
         pagination={pagination}
         onPaginationChange={handlePaginationChange}
+      />
+      <TransactionFormSheet
+        open={editingTransaction !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingTransaction(null);
+          }
+        }}
+        transaction={editingTransaction}
+        categories={categories}
+        onSubmit={handleUpdateTransaction}
+      />
+      <TransactionDetailSheet
+        transactionId={detailsTransactionId}
+        open={detailsTransactionId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailsTransactionId(null);
+          }
+        }}
       />
     </div>
   );

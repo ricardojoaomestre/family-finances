@@ -9,7 +9,7 @@ export const TABLE_MONEY_CELL_CLASS = cn(
   jetbrainsMono.className,
 );
 
-function getMoneyValueColorClass(
+export function getMoneyValueColorClass(
   value: string | number | null | undefined,
 ): string | undefined {
   if (value === null || value === undefined) {

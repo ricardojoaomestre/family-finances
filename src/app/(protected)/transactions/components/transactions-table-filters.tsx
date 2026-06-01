@@ -27,7 +27,7 @@ type TransactionsTableFiltersProps = {
   categories: CategoryFilterOption[];
   onFiltersChange: (filters: TransactionFilters) => void;
   onClear: () => void;
-  showClear: boolean;
+  hasActiveFilters: boolean;
 };
 
 export function TransactionsTableFilters({
@@ -35,7 +35,7 @@ export function TransactionsTableFilters({
   categories,
   onFiltersChange,
   onClear,
-  showClear,
+  hasActiveFilters,
 }: TransactionsTableFiltersProps) {
   function updateFilters(partial: Partial<TransactionFilters>) {
     onFiltersChange({ ...filters, ...partial });
@@ -123,11 +123,14 @@ export function TransactionsTableFilters({
         />
       </Field>
 
-      {showClear ? (
-        <Button type="button" variant="ghost" onClick={onClear}>
-          Clear filters
-        </Button>
-      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        disabled={!hasActiveFilters}
+        onClick={onClear}
+      >
+        Clear filters
+      </Button>
     </div>
   );
 }

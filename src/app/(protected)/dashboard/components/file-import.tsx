@@ -151,10 +151,13 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
     onPreviewChange?.(!!previewRows && !!filename);
   }, [previewRows, filename, onPreviewChange]);
 
-  const clearPreviewSideEffects = () => {
+  const handleCancelPreview = useCallback(() => {
+    dispatch({ type: 'clear-preview' });
     formRef.current?.reset();
     clear();
-  };
+    setCreateCategoryOpen(false);
+    setCreateCategoryPattern(null);
+  }, [clear, dispatch]);
 
   const handleMerchantChange = (value: string) => {
     if (!isMerchantSlug(value)) return;
@@ -270,6 +273,7 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
             <ImportDataTable
               columns={columns}
               data={previewRows}
+              paginate={false}
               tableClassName={isRematching ? 'opacity-60' : undefined}
             />
             <div className="flex gap-2">
@@ -277,10 +281,7 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
                 type="button"
                 variant="outline"
                 disabled={isConfirming}
-                onClick={() => {
-                  dispatch({ type: 'reset' });
-                  clearPreviewSideEffects();
-                }}
+                onClick={handleCancelPreview}
               >
                 Cancel
               </Button>
