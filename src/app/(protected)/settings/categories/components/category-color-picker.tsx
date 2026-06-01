@@ -37,7 +37,7 @@ export function CategoryColorPicker({
             disabled={disabled}
             onClick={() => onChange(token)}
             className={cn(
-              'size-8 rounded-full border-2 transition-all',
+              'size-8 cursor-pointer rounded-full border-2 transition-all',
               getCategorySwatchClasses(token),
               selected
                 ? 'border-foreground ring-2 ring-ring ring-offset-2 ring-offset-background'
