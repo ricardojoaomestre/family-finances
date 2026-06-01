@@ -26,6 +26,20 @@ function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
+export function isMissingRelationError(
+  error: unknown,
+  relation: string,
+): boolean {
+  const pg = getPostgresError(error);
+
+  if (pg?.code === '42P01') {
+    return true;
+  }
+
+  const message = getErrorMessage(error);
+  return message.includes(relation);
+}
+
 export function formatDbError(error: unknown, context: string): string {
   const message = getErrorMessage(error);
   const pg = getPostgresError(error);

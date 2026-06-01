@@ -2,12 +2,14 @@ import { relations } from 'drizzle-orm';
 import {
   boolean,
   integer,
+  jsonb,
   numeric,
   pgTable,
   primaryKey,
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
+import type { CategorySnapshotRow } from '@/lib/categories/import/types';
 
 export const users = pgTable('user', {
   id: text('id')
@@ -103,6 +105,16 @@ export const categories = pgTable('category', {
     .notNull()
     .defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date' })
+    .notNull()
+    .defaultNow(),
+});
+
+export const CATEGORY_IMPORT_SNAPSHOT_ID = 'latest' as const;
+
+export const categoryImportSnapshots = pgTable('category_import_snapshot', {
+  id: text('id').primaryKey(),
+  payload: jsonb('payload').$type<CategorySnapshotRow[]>().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()
     .defaultNow(),
 });

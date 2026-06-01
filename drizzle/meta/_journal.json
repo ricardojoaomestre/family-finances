@@ -50,6 +50,13 @@
       "when": 1780120000000,
       "tag": "0006_import_skipped_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780130000000,
+      "tag": "0007_category_import_snapshot",
+      "breakpoints": true
     }
   ]
 }
