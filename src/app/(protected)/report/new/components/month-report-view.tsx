@@ -12,8 +12,8 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import type { MonthReportSearchParams } from '@/lib/reports/month-report-search-params';
@@ -66,24 +66,14 @@ export function MonthReportView({
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end gap-3">
         <Field className="w-full sm:w-auto">
-          <FieldLabel htmlFor="report-date-from">Start date</FieldLabel>
-          <Input
-            id="report-date-from"
-            type="date"
-            className="w-full sm:w-36"
-            value={dateFrom}
-            onChange={(event) => setDateFrom(event.target.value)}
-          />
-        </Field>
-        <Field className="w-full sm:w-auto">
-          <FieldLabel htmlFor="report-date-to">End date</FieldLabel>
-          <Input
-            id="report-date-to"
-            type="date"
-            className="w-full sm:w-36"
-            value={dateTo}
-            min={dateFrom || undefined}
-            onChange={(event) => setDateTo(event.target.value)}
+          <FieldLabel htmlFor="report-date-range">Date range</FieldLabel>
+          <DateRangePicker
+            id="report-date-range"
+            value={{ dateFrom, dateTo }}
+            onValueChange={({ dateFrom: nextFrom, dateTo: nextTo }) => {
+              setDateFrom(nextFrom);
+              setDateTo(nextTo);
+            }}
           />
         </Field>
         <Button type="button" onClick={handleRun}>

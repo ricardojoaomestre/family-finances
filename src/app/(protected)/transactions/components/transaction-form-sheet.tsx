@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 
+import { CategoryCombobox } from '@/components/categories/category-combobox';
 import { Button } from '@/components/ui/button';
 import {
   Field,
@@ -11,6 +12,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -119,11 +121,11 @@ function TransactionFormBody({
         <Field data-invalid={Boolean(fieldErrors.date)}>
           <FieldLabel htmlFor="transaction-date">Date</FieldLabel>
           <FieldContent>
-            <Input
+            <DatePicker
               id="transaction-date"
-              type="date"
               value={date}
-              onChange={(event) => setDate(event.target.value)}
+              onValueChange={setDate}
+              disableFuture
               aria-invalid={Boolean(fieldErrors.date)}
               disabled={isPending}
             />
@@ -169,23 +171,15 @@ function TransactionFormBody({
         <Field data-invalid={Boolean(fieldErrors.categoryId)}>
           <FieldLabel htmlFor="transaction-category">Category</FieldLabel>
           <FieldContent>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger
-                id="transaction-category"
-                className="w-full"
-                disabled={isPending}
-              >
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNCATEGORIZED_CATEGORY_VALUE}>None</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryCombobox
+              id="transaction-category"
+              value={categoryId}
+              onValueChange={setCategoryId}
+              categories={categories}
+              noneValue={UNCATEGORIZED_CATEGORY_VALUE}
+              disabled={isPending}
+              aria-invalid={Boolean(fieldErrors.categoryId)}
+            />
             <FieldError>{fieldErrors.categoryId}</FieldError>
           </FieldContent>
         </Field>

@@ -6,6 +6,7 @@ import {
   UNCATEGORIZED_FILTER_VALUE,
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -101,25 +102,14 @@ export function TransactionsTableFilters({
       </Field>
 
       <Field className="w-full sm:w-auto">
-        <FieldLabel htmlFor="transaction-date-from-filter">From</FieldLabel>
-        <Input
-          id="transaction-date-from-filter"
-          type="date"
-          className="w-full sm:w-36"
-          value={filters.dateFrom}
-          onChange={(event) => updateFilters({ dateFrom: event.target.value })}
-        />
-      </Field>
-
-      <Field className="w-full sm:w-auto">
-        <FieldLabel htmlFor="transaction-date-to-filter">To</FieldLabel>
-        <Input
-          id="transaction-date-to-filter"
-          type="date"
-          className="w-full sm:w-36"
-          value={filters.dateTo}
-          min={filters.dateFrom || undefined}
-          onChange={(event) => updateFilters({ dateTo: event.target.value })}
+        <FieldLabel htmlFor="transaction-date-range-filter">Date range</FieldLabel>
+        <DateRangePicker
+          id="transaction-date-range-filter"
+          value={{ dateFrom: filters.dateFrom, dateTo: filters.dateTo }}
+          onValueChange={({ dateFrom, dateTo }) =>
+            updateFilters({ dateFrom, dateTo })
+          }
+          clearable
         />
       </Field>
 
