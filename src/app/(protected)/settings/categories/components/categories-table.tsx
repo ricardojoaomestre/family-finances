@@ -27,8 +27,8 @@ import {
   type Ref,
 } from 'react';
 
+import { CategoryTypeBadge } from '@/app/(protected)/settings/categories/components/category-type-badge';
 import { CategoryColorSwatch } from '@/components/categories/category-color-swatch';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -57,6 +57,7 @@ function useIsClient() {
 type CategoriesTableProps = {
   categories: CategoryRow[];
   disabled?: boolean;
+  reorderDisabled?: boolean;
   onEdit: (category: CategoryRow) => void;
   onReorder: (orderedIds: string[]) => Promise<{ ok: true } | { ok: false; error: string }>;
   onToggleActive: (id: string, active: boolean) => void;
@@ -104,27 +105,11 @@ function CategoryTableRow({
       <TableCell className="w-12">
         <CategoryColorSwatch color={category.color} label={category.name} />
       </TableCell>
-      <TableCell className="w-[18%]">
+      <TableCell>
         <span className="block truncate font-medium">{category.name}</span>
       </TableCell>
-      <TableCell className="max-w-xs overflow-hidden">
-        {category.pattern ? (
-          <code
-            className="block truncate text-xs text-muted-foreground"
-            title={category.pattern}
-          >
-            {category.pattern}
-          </code>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
-      </TableCell>
       <TableCell className="w-28">
-        {category.active ? (
-          <Badge variant="success">Active</Badge>
-        ) : (
-          <Badge variant="secondary">Inactive</Badge>
-        )}
+        <CategoryTypeBadge type={category.type} />
       </TableCell>
       <TableCell className="w-20">
         <Switch
@@ -192,7 +177,7 @@ function CategoriesTableBody({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={8} className="p-0">
+          <TableCell colSpan={7} className="p-0">
             <Empty className="border-0 py-12">
               <EmptyHeader>
                 <EmptyTitle>No results</EmptyTitle>
@@ -246,7 +231,8 @@ function categoriesMatch(a: CategoryRow[], b: CategoryRow[]): boolean {
       item.color === other.color &&
       item.pattern === other.pattern &&
       item.priority === other.priority &&
-      item.active === other.active
+      item.active === other.active &&
+      item.type === other.type
     );
   });
 }
@@ -254,6 +240,7 @@ function categoriesMatch(a: CategoryRow[], b: CategoryRow[]): boolean {
 export function CategoriesTable({
   categories,
   disabled = false,
+  reorderDisabled = false,
   onEdit,
   onReorder,
   onToggleActive,
@@ -261,7 +248,7 @@ export function CategoriesTable({
   const [items, setItems] = useState(categories);
   const [isReordering, setIsReordering] = useState(false);
   const isReorderingRef = useRef(false);
-  const sortable = useIsClient();
+  const sortable = useIsClient() && !reorderDisabled;
 
   useEffect(() => {
     isReorderingRef.current = isReordering;
@@ -332,9 +319,8 @@ export function CategoriesTable({
             <TableHead className="w-12">
               <span className="sr-only">Color</span>
             </TableHead>
-            <TableHead className="w-[18%]">Name</TableHead>
-            <TableHead className="max-w-xs">Pattern</TableHead>
-            <TableHead className="w-28">Status</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="w-28">Type</TableHead>
             <TableHead className="w-20">Active</TableHead>
             <TableHead className="w-24">
               <span className="sr-only">Actions</span>

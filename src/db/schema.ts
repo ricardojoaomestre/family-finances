@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
+import type { CategoryType } from '@/lib/categories/category-type';
 import type { CategorySnapshotRow } from '@/lib/categories/import/types';
 
 export const users = pgTable('user', {
@@ -101,6 +102,7 @@ export const categories = pgTable('category', {
   pattern: text('pattern'),
   priority: integer('priority').notNull(),
   active: boolean('active').notNull().default(true),
+  type: text('type').$type<CategoryType>().notNull().default('spending'),
   createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()
     .defaultNow(),
@@ -158,6 +160,21 @@ export const importSkippedRows = pgTable('import_skipped_row', {
   balance: numeric('balance', { precision: 14, scale: 2 }),
   reason: text('reason').$type<ImportSkippedRowReason>().notNull(),
   errors: text('errors'),
+});
+
+export const reports = pgTable('report', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  dateFrom: text('dateFrom').notNull(),
+  dateTo: text('dateTo').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' })
+    .notNull()
+    .defaultNow(),
 });
 
 export const transactions = pgTable('transaction', {

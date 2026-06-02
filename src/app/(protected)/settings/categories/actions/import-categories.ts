@@ -11,6 +11,10 @@ import {
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
 import {
+  DEFAULT_CATEGORY_TYPE,
+  resolveCategoryType,
+} from '@/lib/categories/category-type';
+import {
   buildCategoryImportPlan,
   pickCategoryImportColor,
   type CategoryImportCsvRow,
@@ -126,6 +130,7 @@ export async function importCategories(
         pattern: row.normalizedPattern,
         priority: nextPriority,
         active: true,
+        type: DEFAULT_CATEGORY_TYPE,
         updatedAt: now,
       });
 
@@ -253,6 +258,7 @@ export async function undoCategoryImport(): Promise<
           pattern: row.pattern,
           priority: row.priority,
           active: row.active,
+          type: resolveCategoryType(row.type),
           updatedAt: now,
         })
         .onConflictDoUpdate({
@@ -264,6 +270,7 @@ export async function undoCategoryImport(): Promise<
             pattern: row.pattern,
             priority: row.priority,
             active: row.active,
+            type: resolveCategoryType(row.type),
             updatedAt: now,
           },
         });

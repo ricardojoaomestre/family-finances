@@ -10,7 +10,10 @@ import {
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { Button } from '@/components/ui/button';
+import { categoryTypeLabels } from '@/lib/categories/category-type';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
+import type { MonthReportCategoryTableType } from '@/lib/reports/group-month-report-category-totals';
+import { sumCategoryTotals } from '@/lib/reports/sum-category-totals';
 import { cn } from '@/lib/utils';
 
 type CategoryOption = {
@@ -18,7 +21,14 @@ type CategoryOption = {
   name: string;
 };
 
+const sectionTitles: Record<MonthReportCategoryTableType, string> = {
+  spending: categoryTypeLabels.spending,
+  saving: categoryTypeLabels.saving,
+  transfer: categoryTypeLabels.transfer,
+};
+
 type MonthReportCategoryTotalsTableProps = {
+  tableType: MonthReportCategoryTableType;
   data: MonthReportCategoryTotal[];
   dateFrom: string;
   dateTo: string;
@@ -26,6 +36,7 @@ type MonthReportCategoryTotalsTableProps = {
 };
 
 export function MonthReportCategoryTotalsTable({
+  tableType,
   data,
   dateFrom,
   dateTo,
@@ -96,13 +107,20 @@ export function MonthReportCategoryTotalsTable({
     [],
   );
 
+  const summaryFooter = useMemo(
+    () => ({ label: 'Total', value: sumCategoryTotals(data) }),
+    [data],
+  );
+
   return (
-    <>
+    <section className="flex flex-col gap-3">
+      <h3 className="text-base font-semibold">{sectionTitles[tableType]}</h3>
       <ImportDataTable
         columns={columns}
         data={data}
         paginate={false}
         tableClassName="w-full table-fixed"
+        summaryFooter={summaryFooter}
       />
       <MonthReportCategoryDetailSheet
         open={sheetOpen}
@@ -117,6 +135,6 @@ export function MonthReportCategoryTotalsTable({
         category={selectedCategory}
         categories={categories}
       />
-    </>
+    </section>
   );
 }

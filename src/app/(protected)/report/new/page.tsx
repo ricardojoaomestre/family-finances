@@ -1,4 +1,7 @@
-import { MonthReportView } from '@/app/(protected)/report/new/components/month-report-view';
+import {
+  MonthReportView,
+  NEW_REPORT_TITLE,
+} from '@/app/(protected)/reports/components/month-report-view';
 import { getCategories } from '@/lib/categories/get-categories';
 import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
@@ -15,20 +18,14 @@ export default async function NewReportPage({
   const listParams = parseMonthReportSearchParams(resolvedSearchParams);
   const hasDatesInUrl = listParams.dateFrom !== '' || listParams.dateTo !== '';
 
-  const header = (
-    <div>
-      <h1 className="text-2xl font-semibold">Month processing</h1>
-      <p className="text-sm text-muted-foreground">
-        Filter transactions by date range and review totals by category
-      </p>
-    </div>
-  );
-
   if (!hasDatesInUrl) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
-        {header}
-        <MonthReportView listParams={listParams} />
+        <MonthReportView
+          mode="new"
+          listParams={listParams}
+          initialTitle={NEW_REPORT_TITLE}
+        />
       </div>
     );
   }
@@ -41,9 +38,10 @@ export default async function NewReportPage({
   if (!validation.ok) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
-        {header}
         <MonthReportView
+          mode="new"
           listParams={listParams}
+          initialTitle={NEW_REPORT_TITLE}
           validationError={validation.message}
         />
       </div>
@@ -67,9 +65,11 @@ export default async function NewReportPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      {header}
       <MonthReportView
+        key={`${resolvedListParams.dateFrom}-${resolvedListParams.dateTo}`}
+        mode="new"
         listParams={resolvedListParams}
+        initialTitle={NEW_REPORT_TITLE}
         categoryTotals={categoryTotals}
         categories={categories}
       />

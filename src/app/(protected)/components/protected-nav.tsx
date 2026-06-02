@@ -22,7 +22,9 @@ export function ProtectedNav() {
         const isActive =
           pathname === link.href ||
           pathname.startsWith(`${link.href}/`) ||
-          (link.href === '/reports' && pathname.startsWith('/report/'));
+          (link.href === '/reports' &&
+            (pathname.startsWith('/report/') ||
+              pathname.startsWith('/reports/')));
 
         return (
           <Link

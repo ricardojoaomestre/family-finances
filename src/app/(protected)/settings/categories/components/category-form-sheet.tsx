@@ -23,11 +23,25 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   getDefaultCategoryColor,
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
+import {
+  categoryTypeDescriptions,
+  categoryTypeLabels,
+  categoryTypeValues,
+  DEFAULT_CATEGORY_TYPE,
+  type CategoryType,
+} from '@/lib/categories/category-type';
 import type { CategoryRow } from '@/lib/categories/get-categories';
 
 type CategoryFormSheetProps = {
@@ -39,7 +53,7 @@ type CategoryFormSheetProps = {
     ok: boolean;
     error?: string;
     fieldErrors?: Partial<
-      Record<'name' | 'pattern' | 'description' | 'color', string>
+      Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
     >;
   }>;
 };
@@ -68,9 +82,14 @@ function CategoryFormBody({
     category?.pattern ?? defaultPattern ?? '',
   );
   const [active, setActive] = useState(category?.active ?? true);
+  const [type, setType] = useState<CategoryType>(
+    category?.type ?? DEFAULT_CATEGORY_TYPE,
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<'name' | 'pattern' | 'description' | 'color', string>>
+    Partial<
+      Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
+    >
   >({});
 
   const isEditing = category !== null;
@@ -88,6 +107,7 @@ function CategoryFormBody({
         color,
         pattern,
         active,
+        type,
       });
 
       if (!result.ok) {
@@ -140,6 +160,34 @@ function CategoryFormBody({
               Optional notes for your reference. Not shown on transactions.
             </FieldDescription>
             <FieldError>{fieldErrors.description}</FieldError>
+          </FieldContent>
+        </Field>
+
+        <Field data-invalid={Boolean(fieldErrors.type)}>
+          <FieldLabel htmlFor="category-type">Type</FieldLabel>
+          <FieldContent>
+            <Select
+              value={type}
+              onValueChange={(value) => setType(value as CategoryType)}
+              disabled={isPending}
+            >
+              <SelectTrigger
+                id="category-type"
+                className="w-full"
+                aria-invalid={Boolean(fieldErrors.type)}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categoryTypeValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {categoryTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>{categoryTypeDescriptions[type]}</FieldDescription>
+            <FieldError>{fieldErrors.type}</FieldError>
           </FieldContent>
         </Field>
 
@@ -233,7 +281,7 @@ export function CategoryFormSheet({
           <SheetTitle>{isEditing ? 'Edit category' : 'New category'}</SheetTitle>
           <SheetDescription>
             {isEditing
-              ? 'Update the name, description, color, pattern, or status. Transactions store the category by id, so renames show up automatically; pattern changes only affect new imports.'
+              ? 'Update the name, type, description, color, pattern, or status. Transactions store the category by id, so renames show up automatically; pattern changes only affect new imports.'
               : 'Create a rule to categorize matching transactions at import time.'}
           </SheetDescription>
         </SheetHeader>

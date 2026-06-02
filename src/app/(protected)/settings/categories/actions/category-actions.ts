@@ -7,11 +7,13 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories } from '@/db/schema';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryType } from '@/lib/categories/category-type';
 import {
   validateCategoryColor,
   validateCategoryDescription,
   validateCategoryName,
   validateCategoryPattern,
+  validateCategoryType,
 } from '@/lib/categories/validate-category';
 import { formatDbError } from '@/lib/db/format-db-error';
 
@@ -21,7 +23,10 @@ type ActionResult =
       ok: false;
       error: string;
       fieldErrors?: Partial<
-        Record<'name' | 'pattern' | 'description' | 'color', string>
+        Record<
+          'name' | 'pattern' | 'description' | 'color' | 'type',
+          string
+        >
       >;
     };
 
@@ -32,6 +37,7 @@ export type CategoryFormInput = {
   color: CategoryColorToken;
   pattern: string;
   active: boolean;
+  type: CategoryType;
 };
 
 const UUID_RE =
@@ -46,7 +52,7 @@ function getFieldErrors(
   options?: { existingName?: string | null },
 ) {
   const fieldErrors: Partial<
-    Record<'name' | 'pattern' | 'description' | 'color', string>
+    Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
   > = {};
   const nameError = validateCategoryName(input.name, {
     existingName: options?.existingName,
@@ -54,6 +60,7 @@ function getFieldErrors(
   const descriptionError = validateCategoryDescription(input.description);
   const patternError = validateCategoryPattern(input.pattern);
   const colorError = validateCategoryColor(input.color);
+  const typeError = validateCategoryType(input.type);
 
   if (nameError) {
     fieldErrors.name = nameError;
@@ -69,6 +76,10 @@ function getFieldErrors(
 
   if (colorError) {
     fieldErrors.color = colorError;
+  }
+
+  if (typeError) {
+    fieldErrors.type = typeError;
   }
 
   return fieldErrors;
@@ -150,6 +161,7 @@ export async function createCategory(
       color: input.color,
       pattern: input.pattern.trim() || null,
       active: input.active,
+      type: input.type,
       priority: await getNextPriority(),
       updatedAt: new Date(),
     });
@@ -212,6 +224,7 @@ export async function updateCategory(
         color: input.color,
         pattern: input.pattern.trim() || null,
         active: input.active,
+        type: input.type,
         updatedAt: new Date(),
       })
       .where(eq(categories.id, id))

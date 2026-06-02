@@ -6,6 +6,7 @@ import {
   CATEGORY_IMPORT_SNAPSHOT_ID,
   categoryImportSnapshots,
 } from '@/db/schema';
+import { resolveCategoryType } from '@/lib/categories/category-type';
 import type { CategorySnapshotRow } from '@/lib/categories/import/types';
 import { isMissingRelationError } from '@/lib/db/format-db-error';
 
@@ -19,10 +20,14 @@ export async function loadCategoryTableSnapshot(): Promise<CategorySnapshotRow[]
       pattern: categories.pattern,
       priority: categories.priority,
       active: categories.active,
+      type: categories.type,
     })
     .from(categories);
 
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    type: resolveCategoryType(row.type),
+  }));
 }
 
 export async function saveCategoryImportSnapshot(

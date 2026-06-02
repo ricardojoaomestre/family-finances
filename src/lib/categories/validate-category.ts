@@ -1,4 +1,5 @@
 import { isCategoryColorToken } from '@/lib/categories/category-colors';
+import { validateCategoryType } from '@/lib/categories/category-type';
 
 export function validateCategoryPattern(pattern: string): string | null {
   const trimmed = pattern.trim();
@@ -56,3 +57,5 @@ export function validateCategoryColor(color: string): string | null {
 
   return null;
 }
+
+export { validateCategoryType };

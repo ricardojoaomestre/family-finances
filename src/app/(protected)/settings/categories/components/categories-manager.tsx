@@ -27,10 +27,17 @@ import {
 import { Button } from '@/components/ui/button';
 import type { CategoryImportSnapshotMeta } from '@/lib/categories/get-category-import-snapshot-meta';
 import type { CategoryRow } from '@/lib/categories/get-categories';
+import {
+  DEFAULT_CATEGORY_TABLE_FILTERS,
+  filterCategories,
+  hasActiveCategoryTableFilters,
+  type CategoryTableFilters,
+} from '@/lib/categories/filter-categories';
 import type { CategoryForImportMatch } from '@/lib/categories/import';
 
 import { CategoryFormSheet } from './category-form-sheet';
 import { CategoriesTable } from './categories-table';
+import { CategoriesTableFilters } from './categories-table-filters';
 
 type CategoriesManagerProps = {
   categories: CategoryRow[];
@@ -68,6 +75,14 @@ export function CategoriesManager({
   const [reactivateCategories, setReactivateCategories] = useState<
     { id: string; name: string }[]
   >([]);
+  const [tableFilters, setTableFilters] = useState<CategoryTableFilters>(
+    DEFAULT_CATEGORY_TABLE_FILTERS,
+  );
+  const filteredCategories = useMemo(
+    () => filterCategories(categories, tableFilters),
+    [categories, tableFilters],
+  );
+  const hasActiveFilters = hasActiveCategoryTableFilters(tableFilters);
   const existingForImport = useMemo<CategoryForImportMatch[]>(
     () =>
       categories.map((row) => ({
@@ -267,9 +282,17 @@ export function CategoriesManager({
         </p>
       ) : null}
 
+      <CategoriesTableFilters
+        filters={tableFilters}
+        onFiltersChange={setTableFilters}
+        hasActiveFilters={hasActiveFilters}
+        onClear={() => setTableFilters(DEFAULT_CATEGORY_TABLE_FILTERS)}
+      />
+
       <CategoriesTable
-        categories={categories}
+        categories={filteredCategories}
         disabled={isPending}
+        reorderDisabled={hasActiveFilters}
         onEdit={openEdit}
         onReorder={handleReorder}
         onToggleActive={handleToggleActive}

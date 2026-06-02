@@ -1,3 +1,5 @@
+import type { CategoryType } from '@/lib/categories/category-type';
+
 export type CategoryImportCsvRow = {
   name: string;
   regex: string;
@@ -41,4 +43,5 @@ export type CategorySnapshotRow = {
   pattern: string | null;
   priority: number;
   active: boolean;
+  type: CategoryType;
 };

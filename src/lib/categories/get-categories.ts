@@ -7,6 +7,10 @@ import {
   isCategoryColorToken,
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
+import {
+  resolveCategoryType,
+  type CategoryType,
+} from '@/lib/categories/category-type';
 
 export type CategoryRow = {
   id: string;
@@ -16,6 +20,7 @@ export type CategoryRow = {
   pattern: string | null;
   priority: number;
   active: boolean;
+  type: CategoryType;
 };
 
 export async function getCategories(): Promise<CategoryRow[]> {
@@ -28,6 +33,7 @@ export async function getCategories(): Promise<CategoryRow[]> {
       pattern: categories.pattern,
       priority: categories.priority,
       active: categories.active,
+      type: categories.type,
     })
     .from(categories)
     .orderBy(asc(categories.priority))
@@ -37,6 +43,7 @@ export async function getCategories(): Promise<CategoryRow[]> {
         color: isCategoryColorToken(row.color)
           ? row.color
           : getDefaultCategoryColor(row.id),
+        type: resolveCategoryType(row.type),
       })),
     );
 }
