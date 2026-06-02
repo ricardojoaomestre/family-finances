@@ -104,12 +104,28 @@ export function DateRangePicker({
         <Calendar
           mode="range"
           numberOfMonths={2}
+          showOutsideDays={false}
+          resetOnSelect
           selected={selected}
           onSelect={(range) => {
-            onValueChange({
-              dateFrom: formatCalendarDayKey(range?.from),
-              dateTo: formatCalendarDayKey(range?.to),
-            });
+            if (!range?.from) {
+              onValueChange({ dateFrom: '', dateTo: '' });
+              return;
+            }
+
+            const dateFrom = formatCalendarDayKey(range.from);
+            const dateTo = formatCalendarDayKey(range.to);
+            const pickingEnd = Boolean(value.dateFrom && !value.dateTo);
+
+            if (pickingEnd) {
+              onValueChange({
+                dateFrom,
+                dateTo: dateTo || dateFrom,
+              });
+              return;
+            }
+
+            onValueChange({ dateFrom, dateTo: '' });
           }}
         />
         {clearable && hasValue ? (
