@@ -19,7 +19,7 @@ import { jetbrainsMono } from '@/lib/fonts';
 import {
   formatDisplayDate,
   formatDisplayDateTime,
-  formatDisplayNumber,
+  formatDisplayMoney,
   formatImportStatus,
 } from '@/lib/formatters';
 import { getMerchantLabelOrSlug } from '@/lib/merchants';
@@ -103,7 +103,7 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
                   valueColorClass,
                 )}
               >
-                {formatDisplayNumber(details.value)}
+                {formatDisplayMoney(details.value)}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 {details.categoryName && details.categoryColor ? (

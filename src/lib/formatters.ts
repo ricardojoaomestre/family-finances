@@ -9,7 +9,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
   timeStyle: 'short',
 });
 
-const numberFormatter = new Intl.NumberFormat(DISPLAY_LOCALE, {
+const moneyFormatter = new Intl.NumberFormat(DISPLAY_LOCALE, {
+  style: 'currency',
+  currency: 'EUR',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -26,11 +28,11 @@ export function formatDisplayDateTime(value: Date | string | null) {
   return Number.isNaN(date.getTime()) ? '—' : dateTimeFormatter.format(date);
 }
 
-export function formatDisplayNumber(value: string | number | null | undefined) {
+export function formatDisplayMoney(value: string | number | null | undefined) {
   if (value === null || value === undefined) return '—';
   const num = typeof value === 'string' ? Number(value) : value;
   if (!Number.isFinite(num)) return '—';
-  return numberFormatter.format(num);
+  return moneyFormatter.format(num);
 }
 
 export function formatImportStatus(status: string) {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
+import { ChevronDownIcon } from 'lucide-react';
 
 import { MonthReportCategoryDetailSheet } from '@/app/(protected)/report/new/components/month-report-category-detail-sheet';
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
@@ -10,6 +11,11 @@ import {
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { Button } from '@/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { categoryTypeLabels } from '@/lib/categories/category-type';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import type { MonthReportCategoryTableType } from '@/lib/reports/group-month-report-category-totals';
@@ -107,21 +113,29 @@ export function MonthReportCategoryTotalsTable({
     [],
   );
 
-  const summaryFooter = useMemo(
-    () => ({ label: 'Total', value: sumCategoryTotals(data) }),
-    [data],
-  );
+  const sectionTotal = useMemo(() => sumCategoryTotals(data), [data]);
+
+  if (data.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-base font-semibold">{sectionTitles[tableType]}</h3>
-      <ImportDataTable
-        columns={columns}
-        data={data}
-        paginate={false}
-        tableClassName="w-full table-fixed"
-        summaryFooter={summaryFooter}
-      />
+    <Collapsible className="overflow-hidden rounded-md border">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-muted/50 [&[data-state=open]_svg]:rotate-180">
+        <span className="flex min-w-0 items-center gap-2 text-base font-semibold">
+          <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform" />
+          {sectionTitles[tableType]}
+        </span>
+        <TableMoneyCell value={sectionTotal} className="shrink-0" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ImportDataTable
+          columns={columns}
+          data={data}
+          paginate={false}
+          tableClassName="w-full table-fixed border-t"
+        />
+      </CollapsibleContent>
       <MonthReportCategoryDetailSheet
         open={sheetOpen}
         onOpenChange={(open) => {
@@ -135,6 +149,6 @@ export function MonthReportCategoryTotalsTable({
         category={selectedCategory}
         categories={categories}
       />
-    </section>
+    </Collapsible>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { jetbrainsMono } from '@/lib/fonts';
-import { formatDisplayNumber } from '@/lib/formatters';
+import { formatDisplayMoney } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
 export const TABLE_MONEY_CELL_CLASS = cn(
@@ -39,7 +39,7 @@ export function TableMoneyCell({ value, className }: TableMoneyCellProps) {
         className,
       )}
     >
-      {formatDisplayNumber(value)}
+      {formatDisplayMoney(value)}
     </div>
   );
 }
