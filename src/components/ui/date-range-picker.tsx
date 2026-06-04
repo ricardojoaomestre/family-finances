@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
-import type { DateRange } from 'react-day-picker';
+import type { DateRange, Matcher } from 'react-day-picker';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  endOfTodayUtc,
   formatCalendarDayKey,
   parseCalendarDayKey,
 } from '@/lib/dates/calendar-day-key';
@@ -29,6 +30,7 @@ type DateRangePickerProps = {
   onValueChange: (value: DateRangeValue) => void;
   placeholder?: string;
   disabled?: boolean;
+  disableFuture?: boolean;
   clearable?: boolean;
   className?: string;
   'aria-invalid'?: boolean;
@@ -59,6 +61,7 @@ export function DateRangePicker({
   onValueChange,
   placeholder = 'Pick a date range',
   disabled = false,
+  disableFuture = false,
   clearable = false,
   className,
   'aria-invalid': ariaInvalid,
@@ -80,6 +83,10 @@ export function DateRangePicker({
     formatRangeLabel(value.dateFrom, value.dateTo) ?? placeholder;
 
   const hasValue = Boolean(value.dateFrom || value.dateTo);
+
+  const disabledDays: Matcher | undefined = disableFuture
+    ? { after: endOfTodayUtc() }
+    : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -106,6 +113,7 @@ export function DateRangePicker({
           numberOfMonths={2}
           showOutsideDays={false}
           resetOnSelect
+          disabled={disabledDays}
           selected={selected}
           onSelect={(range) => {
             if (!range?.from) {

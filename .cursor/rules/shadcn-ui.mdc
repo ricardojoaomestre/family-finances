@@ -35,7 +35,7 @@ Before building custom UI primitives, check whether [shadcn/ui](https://ui.shadc
 
 ## Already installed
 
-Components live under `src/components/ui/`. Check that folder before adding duplicates. Current set includes: `alert`, `badge`, `button`, `empty`, `field`, `input`, `label`, `separator`, `table`, `tooltip` (list may grow as components are added).
+Components live under `src/components/ui/`. Check that folder before adding duplicates. Current set includes: `alert`, `avatar`, `badge`, `breadcrumb`, `button`, `card`, `empty`, `field`, `input`, `label`, `separator`, `sidebar`, `skeleton`, `table`, `tooltip` (list may grow as components are added).
 
 ## When a custom component is OK
 

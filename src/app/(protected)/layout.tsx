@@ -1,7 +1,5 @@
-import { auth, signOut } from '@/auth';
-import { ProtectedNav } from '@/app/(protected)/components/protected-nav';
-import { ThemeModeToggle } from '@/components/theme-mode-toggle';
-import { Button } from '@/components/ui/button';
+import { auth } from '@/auth';
+import { ProtectedShell } from '@/app/(protected)/components/protected-shell';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -24,29 +22,12 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <div className="flex items-center gap-6">
-          <ProtectedNav />
-          <p className="text-sm text-muted-foreground">
-            Signed in as {session.user.name ?? session.user.email}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeModeToggle />
-          <form
-            action={async () => {
-              'use server';
-              await signOut({ redirectTo: '/' });
-            }}
-          >
-            <Button type="submit" variant="outline" size="sm">
-              Sign out
-            </Button>
-          </form>
-        </div>
-      </header>
-      <main className="flex flex-1 flex-col">{children}</main>
-    </div>
+    <ProtectedShell
+      userName={session.user.name}
+      userEmail={session.user.email}
+      userImage={session.user.image}
+    >
+      {children}
+    </ProtectedShell>
   );
 }
