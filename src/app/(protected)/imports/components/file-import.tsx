@@ -1,7 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 
 import { confirmImport } from '@/app/(protected)/dashboard/actions/confirm-import';
 import {
@@ -33,22 +39,25 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useImportPreviewState } from '@/hooks/use-import-preview-state';
 import { useSpreadsheetFile } from '@/hooks/use-spreadsheet-file';
 import { escapeRegexLiteral } from '@/lib/categories/escape-regex-literal';
-import { validateImportRow } from '@/lib/file-import';
 import {
   isMerchantSlug,
   MERCHANTS_SORTED_BY_LABEL,
 } from '@/lib/merchants';
 
-type FileImportProps = {
-  onPreviewChange?: (active: boolean) => void;
-};
-
-const FileImport = ({ onPreviewChange }: FileImportProps) => {
+export function FileImport() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const { validation, validate, clear } = useSpreadsheetFile();
   const [state, dispatch] = useImportPreviewState();
-  const { parsedData, categories, filename, error, merchant } = state;
+  const {
+    parsedData,
+    rowValidations,
+    includeBalanceColumn,
+    categories,
+    filename,
+    error,
+    merchant,
+  } = state;
   const [isParsing, startParseTransition] = useTransition();
   const [isConfirming, startConfirmTransition] = useTransition();
   const [isRematching, startRematchTransition] = useTransition();
@@ -58,12 +67,13 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
   >(null);
 
   const previewRows: PreviewRow[] | null = useMemo(() => {
-    if (!parsedData) return null;
-    return parsedData.map((row) => ({
+    if (!parsedData || !rowValidations) return null;
+
+    return parsedData.map((row, index) => ({
       ...row,
-      validation: validateImportRow(row),
+      validation: rowValidations[index]!,
     }));
-  }, [parsedData]);
+  }, [parsedData, rowValidations]);
 
   const handleCategoryChange = useCallback(
     (rowIndex: number, categoryId: string | null) => {
@@ -118,16 +128,16 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
 
   const columns = useMemo(() => {
     if (!categories) return [];
-    const includeBalance = parsedData?.some((row) => row.balance !== undefined);
+
     return getPreviewColumns(
-      includeBalance ?? false,
+      includeBalanceColumn,
       categories,
       handleCategoryChange,
       handleOpenCreateCategory,
       handleOverrideDuplicate,
     );
   }, [
-    parsedData,
+    includeBalanceColumn,
     categories,
     handleCategoryChange,
     handleOpenCreateCategory,
@@ -146,10 +156,6 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
 
   const invalidCount =
     previewRows?.filter((row) => !row.validation.valid).length ?? 0;
-
-  useEffect(() => {
-    onPreviewChange?.(!!previewRows && !!filename);
-  }, [previewRows, filename, onPreviewChange]);
 
   const handleCancelPreview = useCallback(() => {
     dispatch({ type: 'clear-preview' });
@@ -171,15 +177,13 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
         duplicateCount > 0
           ? `${duplicateCount} duplicate${duplicateCount === 1 ? '' : 's'}`
           : null,
-        invalidCount > 0
-          ? `${invalidCount} invalid`
-          : null,
+        invalidCount > 0 ? `${invalidCount} invalid` : null,
       ].filter(Boolean)
     : [];
 
   return (
     <TooltipProvider>
-      <div className="flex w-full max-w-4xl flex-col gap-6">
+      <div className="flex w-full flex-col gap-6">
         <Field>
           <FieldLabel htmlFor="merchant">Merchant</FieldLabel>
           <Select value={merchant} onValueChange={handleMerchantChange}>
@@ -297,16 +301,14 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
                     });
 
                     if (!result.ok) {
-                      dispatch({ type: 'confirm-failed', error: result.error });
+                      dispatch({
+                        type: 'confirm-failed',
+                        error: result.error,
+                      });
                       return;
                     }
 
-                    if (result.importedCount === 0) {
-                      router.push(`/imports/${result.importId}`);
-                      return;
-                    }
-
-                    router.push('/transactions');
+                    router.push('/imports');
                   });
                 }}
               >
@@ -326,6 +328,4 @@ const FileImport = ({ onPreviewChange }: FileImportProps) => {
       </div>
     </TooltipProvider>
   );
-};
-
-export default FileImport;
+}

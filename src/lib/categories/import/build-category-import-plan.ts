@@ -8,7 +8,13 @@ import {
   normalizeCategoryImportPattern,
   patternKeyForImport,
 } from './normalize-pattern';
+import {
+  resolveImportActive,
+  resolveImportColor,
+  resolveImportType,
+} from './resolve-category-import-fields';
 import type {
+  CategoryCsvOptionalColumns,
   CategoryImportApplyRow,
   CategoryImportCsvRow,
   CategoryImportPlanResult,
@@ -46,9 +52,15 @@ function findFirstByPattern(
   );
 }
 
+function formatOptionalPreviewValue(value: string | undefined): string {
+  const trimmed = value?.trim() ?? '';
+  return trimmed === '' ? '—' : trimmed;
+}
+
 export function buildCategoryImportPlan(
   existing: CategoryForImportMatch[],
   csvRows: CategoryImportCsvRow[],
+  columns: CategoryCsvOptionalColumns,
 ): CategoryImportPlanResult {
   const seenNameKeys = new Set<string>();
   const seenPatternKeys = new Set<string>();
@@ -85,6 +97,10 @@ export function buildCategoryImportPlan(
     seenNameKeys.add(nameKey);
     seenPatternKeys.add(patternKey);
 
+    const importType = resolveImportType(csvRow.type, columns.type);
+    const importActive = resolveImportActive(csvRow.active, columns.active);
+    const importColor = resolveImportColor(csvRow.color, columns.color);
+
     const nameMatch = findByName(existing, nameKey);
     const patternMatch =
       nameMatch === undefined
@@ -98,6 +114,15 @@ export function buildCategoryImportPlan(
         csvName,
         normalizedPattern,
         action: 'update',
+        ...(columns.type
+          ? { csvType: formatOptionalPreviewValue(csvRow.type) }
+          : {}),
+        ...(columns.active
+          ? { csvActive: formatOptionalPreviewValue(csvRow.active) }
+          : {}),
+        ...(columns.color
+          ? { csvColor: formatOptionalPreviewValue(csvRow.color) }
+          : {}),
       });
       rowsToApply.push({
         csvName,
@@ -105,6 +130,9 @@ export function buildCategoryImportPlan(
         action: 'update',
         targetCategoryId: target.id,
         wasInactive: !target.active,
+        ...(importType !== undefined ? { type: importType } : {}),
+        ...(importActive !== undefined ? { active: importActive } : {}),
+        ...(importColor !== undefined ? { color: importColor } : {}),
       });
       continue;
     }
@@ -113,11 +141,23 @@ export function buildCategoryImportPlan(
       csvName,
       normalizedPattern,
       action: 'create',
+      ...(columns.type
+        ? { csvType: formatOptionalPreviewValue(csvRow.type) }
+        : {}),
+      ...(columns.active
+        ? { csvActive: formatOptionalPreviewValue(csvRow.active) }
+        : {}),
+      ...(columns.color
+        ? { csvColor: formatOptionalPreviewValue(csvRow.color) }
+        : {}),
     });
     rowsToApply.push({
       csvName,
       normalizedPattern,
       action: 'create',
+      ...(importType !== undefined ? { type: importType } : {}),
+      ...(importActive !== undefined ? { active: importActive } : {}),
+      ...(importColor !== undefined ? { color: importColor } : {}),
     });
   }
 
@@ -133,5 +173,6 @@ export function buildCategoryImportPlan(
     rows: previewRows,
     skippedDuplicateCount,
     rowsToApply,
+    columns,
   };
 }

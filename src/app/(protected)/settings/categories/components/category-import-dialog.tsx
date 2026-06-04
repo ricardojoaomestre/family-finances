@@ -24,6 +24,7 @@ import {
 import {
   buildCategoryImportPlan,
   parseCategoryCsvRows,
+  type CategoryCsvOptionalColumns,
   type CategoryForImportMatch,
   type CategoryImportCsvRow,
   type CategoryImportPreviewRow,
@@ -51,6 +52,9 @@ export function CategoryImportDialog({
     null,
   );
   const [csvRows, setCsvRows] = useState<CategoryImportCsvRow[] | null>(null);
+  const [csvColumns, setCsvColumns] = useState<CategoryCsvOptionalColumns | null>(
+    null,
+  );
   const [skippedDuplicateCount, setSkippedDuplicateCount] = useState(0);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [isConfirming, startConfirmTransition] = useTransition();
@@ -59,6 +63,7 @@ export function CategoryImportDialog({
     setParseError(null);
     setPreviewRows(null);
     setCsvRows(null);
+    setCsvColumns(null);
     setSkippedDuplicateCount(0);
     setConfirmError(null);
   }
@@ -82,21 +87,26 @@ export function CategoryImportDialog({
     resetState();
 
     const content = await file.text();
-    const parsedRows = parseCategoryCsvRows(content);
+    const parsed = parseCategoryCsvRows(content);
 
-    if ('error' in parsedRows) {
-      setParseError(parsedRows.error);
+    if ('error' in parsed) {
+      setParseError(parsed.error);
       return;
     }
 
-    const plan = buildCategoryImportPlan(existing, parsedRows);
+    const plan = buildCategoryImportPlan(
+      existing,
+      parsed.rows,
+      parsed.columns,
+    );
 
     if (!plan.ok) {
       setParseError(plan.error);
       return;
     }
 
-    setCsvRows(parsedRows);
+    setCsvRows(parsed.rows);
+    setCsvColumns(parsed.columns);
     setPreviewRows(plan.rows);
     setSkippedDuplicateCount(plan.skippedDuplicateCount);
   }
@@ -106,14 +116,14 @@ export function CategoryImportDialog({
   }
 
   function handleConfirm() {
-    if (!csvRows) {
+    if (!csvRows || !csvColumns) {
       return;
     }
 
     setConfirmError(null);
 
     startConfirmTransition(async () => {
-      const result = await importCategories({ rows: csvRows });
+      const result = await importCategories({ rows: csvRows, columns: csvColumns });
 
       if (!result.ok) {
         setConfirmError(result.error);
@@ -136,7 +146,8 @@ export function CategoryImportDialog({
         <DialogHeader>
           <DialogTitle>Import categories</DialogTitle>
           <DialogDescription>
-            Semicolon-separated CSV with a header row: name;regex
+            Semicolon-separated CSV. Required header: name;regex. Optional:
+            type;active;color.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,6 +184,9 @@ export function CategoryImportDialog({
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Regex</TableHead>
+                    {csvColumns?.type ? <TableHead>Type</TableHead> : null}
+                    {csvColumns?.active ? <TableHead>Active</TableHead> : null}
+                    {csvColumns?.color ? <TableHead>Color</TableHead> : null}
                     <TableHead className="w-[120px]">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -183,6 +197,17 @@ export function CategoryImportDialog({
                       <TableCell className="font-mono text-xs">
                         {row.normalizedPattern ?? '—'}
                       </TableCell>
+                      {csvColumns?.type ? (
+                        <TableCell>{row.csvType}</TableCell>
+                      ) : null}
+                      {csvColumns?.active ? (
+                        <TableCell>{row.csvActive}</TableCell>
+                      ) : null}
+                      {csvColumns?.color ? (
+                        <TableCell className="font-mono text-xs">
+                          {row.csvColor}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         <Badge variant="secondary">
                           {row.action === 'create' ? 'New' : 'Updates existing'}

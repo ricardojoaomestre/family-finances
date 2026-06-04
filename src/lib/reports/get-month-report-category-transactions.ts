@@ -29,6 +29,7 @@ export async function getMonthReportCategoryTransactions(
       date: transactions.date,
       description: transactions.description,
       value: transactions.value,
+      balance: transactions.balance,
     })
     .from(transactions)
     .where(where)
@@ -39,5 +40,6 @@ export async function getMonthReportCategoryTransactions(
     date: row.date.toISOString(),
     description: row.description,
     value: row.value,
+    balance: row.balance,
   }));
 }

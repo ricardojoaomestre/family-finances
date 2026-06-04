@@ -66,6 +66,7 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         description: transactions.description,
         categoryName: categories.name,
         value: transactions.value,
+        balance: transactions.balance,
       })
       .from(transactions)
       .leftJoin(categories, eq(transactions.categoryId, categories.id))

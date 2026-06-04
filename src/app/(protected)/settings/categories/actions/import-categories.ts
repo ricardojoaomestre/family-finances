@@ -29,6 +29,11 @@ import { formatDbError } from '@/lib/db/format-db-error';
 
 export type ImportCategoriesInput = {
   rows: CategoryImportCsvRow[];
+  columns: {
+    type: boolean;
+    active: boolean;
+    color: boolean;
+  };
 };
 
 export type ImportCategoriesResult =
@@ -78,7 +83,7 @@ export async function importCategories(
     })
     .from(categories);
 
-  const plan = buildCategoryImportPlan(existing, input.rows);
+  const plan = buildCategoryImportPlan(existing, input.rows, input.columns);
 
   if (!plan.ok) {
     return { ok: false, error: plan.error };
@@ -98,15 +103,48 @@ export async function importCategories(
 
     for (const row of plan.rowsToApply) {
       if (row.action === 'update' && row.targetCategoryId) {
+        const updateSet: {
+          pattern: string | null;
+          updatedAt: Date;
+          type?: typeof categories.$inferInsert.type;
+          active?: boolean;
+          color?: string;
+        } = {
+          pattern: row.normalizedPattern,
+          updatedAt: now,
+        };
+
+        if (row.type !== undefined) {
+          updateSet.type = row.type;
+        }
+
+        if (row.active !== undefined) {
+          updateSet.active = row.active;
+        }
+
+        if (row.color !== undefined) {
+          updateSet.color = row.color;
+        }
+
         await db
           .update(categories)
-          .set({
-            pattern: row.normalizedPattern,
-            updatedAt: now,
-          })
+          .set(updateSet)
           .where(eq(categories.id, row.targetCategoryId));
 
-        if (row.wasInactive) {
+        const target = existing.find(
+          (category) => category.id === row.targetCategoryId,
+        );
+
+        if (target) {
+          const nextActive = row.active ?? target.active;
+          const nextColor = row.color ?? target.color;
+
+          if (nextActive && nextColor) {
+            usedByActive.add(nextColor);
+          }
+        }
+
+        if (row.wasInactive && row.active !== true) {
           const target = existing.find(
             (category) => category.id === row.targetCategoryId,
           );
@@ -119,7 +157,8 @@ export async function importCategories(
         continue;
       }
 
-      const color: CategoryColorToken = pickCategoryImportColor(usedByActive);
+      const color: CategoryColorToken =
+        row.color ?? pickCategoryImportColor(usedByActive);
       usedByActive.add(color);
 
       await db.insert(categories).values({
@@ -129,8 +168,8 @@ export async function importCategories(
         color: isCategoryColorToken(color) ? color : 'blue-200',
         pattern: row.normalizedPattern,
         priority: nextPriority,
-        active: true,
-        type: DEFAULT_CATEGORY_TYPE,
+        active: row.active ?? true,
+        type: row.type ?? DEFAULT_CATEGORY_TYPE,
         updatedAt: now,
       });
 

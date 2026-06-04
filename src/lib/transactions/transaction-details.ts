@@ -6,6 +6,7 @@ export type TransactionDetails = {
   date: string;
   description: string;
   value: string;
+  balance: string | null;
   merchant: string;
   categoryId: string | null;
   categoryName: string | null;

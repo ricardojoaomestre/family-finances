@@ -85,6 +85,20 @@
       "when": 1780170000000,
       "tag": "0011_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780200000000,
+      "tag": "0012_drop_transaction_balance_and_import_row_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780210000000,
+      "tag": "0013_add_transaction_balance",
+      "breakpoints": true
     }
   ]
 }

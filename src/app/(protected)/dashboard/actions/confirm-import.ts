@@ -1,6 +1,7 @@
 'use server';
 
 import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
@@ -118,6 +119,10 @@ export async function confirmImport(
             description,
             categoryId: row.categoryId,
             value: formatTransactionValueForKey(row.value!),
+            balance:
+              row.balance != null && Number.isFinite(row.balance)
+                ? formatTransactionValueForKey(row.balance)
+                : null,
             importId,
             merchant,
           };
@@ -166,6 +171,10 @@ export async function confirmImport(
       error: formatDbError(error, 'Could not save import'),
     };
   }
+
+  revalidatePath('/imports');
+  revalidatePath('/report/new');
+  revalidatePath('/reports');
 
   return {
     ok: true,

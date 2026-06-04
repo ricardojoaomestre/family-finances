@@ -28,6 +28,7 @@ type CategoryOption = {
 };
 
 const sectionTitles: Record<MonthReportCategoryTableType, string> = {
+  income: categoryTypeLabels.income,
   spending: categoryTypeLabels.spending,
   saving: categoryTypeLabels.saving,
   transfer: categoryTypeLabels.transfer,

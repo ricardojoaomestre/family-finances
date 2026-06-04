@@ -33,7 +33,8 @@ import {
   hasActiveCategoryTableFilters,
   type CategoryTableFilters,
 } from '@/lib/categories/filter-categories';
-import type { CategoryForImportMatch } from '@/lib/categories/import';
+import { buildCategoriesCsv, type CategoryForImportMatch } from '@/lib/categories/import';
+import { downloadTextFile } from '@/lib/download-text-file';
 
 import { CategoryFormSheet } from './category-form-sheet';
 import { CategoriesTable } from './categories-table';
@@ -115,6 +116,19 @@ export function CategoriesManager({
 
   function openImport() {
     setImportOpen(true);
+  }
+
+  function handleExportCsv() {
+    const csv = buildCategoriesCsv(
+      categories.map((row) => ({
+        name: row.name,
+        pattern: row.pattern,
+        type: row.type,
+        active: row.active,
+        color: row.color,
+      })),
+    );
+    downloadTextFile('categories.csv', csv);
   }
 
   function handleImported(result: {
@@ -233,6 +247,14 @@ export function CategoriesManager({
               Undo last import
             </Button>
           ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportCsv}
+            disabled={isPending}
+          >
+            Export CSV
+          </Button>
           <Button
             type="button"
             variant="outline"

@@ -3,6 +3,7 @@ import { resolveCategoryType } from '@/lib/categories/category-type';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 
 export const monthReportCategoryTableTypes = [
+  'income',
   'spending',
   'saving',
   'transfer',
@@ -20,6 +21,7 @@ export function groupMonthReportCategoryTotals(
   rows: MonthReportCategoryTotal[],
 ): MonthReportCategoryTotalsByTable {
   const grouped: MonthReportCategoryTotalsByTable = {
+    income: [],
     spending: [],
     saving: [],
     transfer: [],

@@ -4,6 +4,7 @@ import { MonthReportView } from '@/app/(protected)/reports/components/month-repo
 import { getCategories } from '@/lib/categories/get-categories';
 import { getReportById } from '@/lib/reports/get-report-by-id';
 import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
+import { getMonthReportBpiBalanceBeforeIncome } from '@/lib/reports/get-month-report-bpi-balance-before-income';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
 
@@ -45,10 +46,15 @@ export default async function ReportPage({
     );
   }
 
-  const [categoryTotals, categoryRows] = await Promise.all([
-    getMonthReportCategoryTotals(validation.dateFrom, validation.dateTo),
-    getCategories(),
-  ]);
+  const [categoryTotals, categoryRows, bpiBalanceBeforeIncome] =
+    await Promise.all([
+      getMonthReportCategoryTotals(validation.dateFrom, validation.dateTo),
+      getCategories(),
+      getMonthReportBpiBalanceBeforeIncome(
+        validation.dateFrom,
+        validation.dateTo,
+      ),
+    ]);
 
   const categories = categoryRows.map(({ id: categoryId, name }) => ({
     id: categoryId,
@@ -68,6 +74,7 @@ export default async function ReportPage({
         }}
         initialTitle={report.name}
         categoryTotals={categoryTotals}
+        bpiBalanceBeforeIncome={bpiBalanceBeforeIncome}
         categories={categories}
       />
     </div>

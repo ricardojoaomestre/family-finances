@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import { MonthReportCategoryTotalsTable } from '@/app/(protected)/report/new/components/month-report-category-totals-table';
+import { MonthReportSummaryTable } from '@/app/(protected)/reports/components/month-report-summary-table';
 import {
   createReport,
   updateReport,
@@ -33,6 +34,7 @@ import {
 } from '@/lib/reports/group-month-report-category-totals';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import type { MonthReportSearchParams } from '@/lib/reports/month-report-search-params';
+import { sumCategoryTotals } from '@/lib/reports/sum-category-totals';
 import type { ReportRow } from '@/lib/reports/get-report-by-id';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
 import { validateReportName } from '@/lib/reports/validate-report-name';
@@ -52,6 +54,7 @@ type MonthReportViewProps = {
   initialTitle: string;
   validationError?: string;
   categoryTotals?: MonthReportCategoryTotal[];
+  bpiBalanceBeforeIncome?: string | null;
   categories?: CategoryOption[];
 };
 
@@ -84,6 +87,7 @@ export function MonthReportView({
   initialTitle,
   validationError: serverValidationError,
   categoryTotals,
+  bpiBalanceBeforeIncome = null,
   categories = [],
 }: MonthReportViewProps) {
   const router = useRouter();
@@ -116,6 +120,17 @@ export function MonthReportView({
   );
   const hasTotals =
     groupedTotals !== null && hasMonthReportCategoryTotals(groupedTotals);
+
+  const summaryTotals = useMemo(() => {
+    if (!groupedTotals) {
+      return null;
+    }
+
+    return {
+      totalIncome: sumCategoryTotals(groupedTotals.income),
+      totalSpending: sumCategoryTotals(groupedTotals.spending),
+    };
+  }, [groupedTotals]);
 
   const resolvedDates = pickerValidation.ok ? pickerValidation : null;
 
@@ -322,38 +337,47 @@ export function MonthReportView({
       ) : null}
 
       {showDashboard && groupedTotals ? (
-        <section className="flex flex-col gap-6">
-          <div>
-            <h2 className="text-lg font-semibold">By category</h2>
-            <p className="text-sm text-muted-foreground">
-              Totals for transactions between {listParams.dateFrom} and{' '}
-              {listParams.dateTo}
-            </p>
-          </div>
-          {!hasTotals ? (
-            <Empty className="border">
-              <EmptyHeader>
-                <EmptyTitle>No transactions in range</EmptyTitle>
-                <EmptyDescription>
-                  Try a different date range.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <>
-              {monthReportCategoryTableTypes.map((tableType) => (
-                <MonthReportCategoryTotalsTable
-                  key={tableType}
-                  tableType={tableType}
-                  data={groupedTotals[tableType]}
-                  dateFrom={listParams.dateFrom}
-                  dateTo={listParams.dateTo}
-                  categories={categories}
-                />
-              ))}
-            </>
-          )}
-        </section>
+        <>
+          {hasTotals && summaryTotals ? (
+            <MonthReportSummaryTable
+              totalIncome={summaryTotals.totalIncome}
+              totalSpending={summaryTotals.totalSpending}
+              bpiBalanceBeforeIncome={bpiBalanceBeforeIncome}
+            />
+          ) : null}
+          <section className="flex flex-col gap-6">
+            <div>
+              <h2 className="text-lg font-semibold">By category</h2>
+              <p className="text-sm text-muted-foreground">
+                Totals for transactions between {listParams.dateFrom} and{' '}
+                {listParams.dateTo}
+              </p>
+            </div>
+            {!hasTotals ? (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>No transactions in range</EmptyTitle>
+                  <EmptyDescription>
+                    Try a different date range.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <>
+                {monthReportCategoryTableTypes.map((tableType) => (
+                  <MonthReportCategoryTotalsTable
+                    key={tableType}
+                    tableType={tableType}
+                    data={groupedTotals[tableType]}
+                    dateFrom={listParams.dateFrom}
+                    dateTo={listParams.dateTo}
+                    categories={categories}
+                  />
+                ))}
+              </>
+            )}
+          </section>
+        </>
       ) : null}
 
       <SaveReportDialog

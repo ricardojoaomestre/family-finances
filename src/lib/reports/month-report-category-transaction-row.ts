@@ -3,4 +3,5 @@ export type MonthReportCategoryTransactionRow = {
   date: string;
   description: string;
   value: string;
+  balance: string | null;
 };

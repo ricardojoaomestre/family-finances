@@ -1,4 +1,4 @@
-import type { CategoryImportCsvRow, CategoryImportPlanResult } from './types';
+import type { CategoryImportCsvRow, CategoryImportPlanResult, ParsedCategoryCsv } from './types';
 import { buildCategoryImportPlan, type CategoryForImportMatch } from './build-category-import-plan';
 import { parseSemicolonCsv } from './parse-semicolon-csv';
 
@@ -10,7 +10,9 @@ function stripBom(value: string): string {
   return value.replace(/^\uFEFF/, '');
 }
 
-export function parseCategoryCsvRows(content: string): CategoryImportCsvRow[] | { error: string } {
+export function parseCategoryCsvRows(
+  content: string,
+): ParsedCategoryCsv | { error: string } {
   const trimmed = content.trim();
 
   if (!trimmed) {
@@ -38,6 +40,15 @@ export function parseCategoryCsvRows(content: string): CategoryImportCsvRow[] | 
     return { error: 'Header row must include "name" and "regex" columns.' };
   }
 
+  const typeIndex = headerRow.indexOf('type');
+  const activeIndex = headerRow.indexOf('active');
+  const colorIndex = headerRow.indexOf('color');
+  const columns = {
+    type: typeIndex !== -1,
+    active: activeIndex !== -1,
+    color: colorIndex !== -1,
+  };
+
   const rows: CategoryImportCsvRow[] = [];
 
   for (let rowIndex = 1; rowIndex < table.length; rowIndex += 1) {
@@ -47,17 +58,31 @@ export function parseCategoryCsvRows(content: string): CategoryImportCsvRow[] | 
       continue;
     }
 
-    rows.push({
+    const row: CategoryImportCsvRow = {
       name: cells[nameIndex] ?? '',
       regex: cells[regexIndex] ?? '',
-    });
+    };
+
+    if (columns.type) {
+      row.type = cells[typeIndex] ?? '';
+    }
+
+    if (columns.active) {
+      row.active = cells[activeIndex] ?? '';
+    }
+
+    if (columns.color) {
+      row.color = cells[colorIndex] ?? '';
+    }
+
+    rows.push(row);
   }
 
   if (rows.length === 0) {
     return { error: 'No data rows found.' };
   }
 
-  return rows;
+  return { rows, columns };
 }
 
 export function planCategoryImportFromCsv(
@@ -70,5 +95,5 @@ export function planCategoryImportFromCsv(
     return parsed;
   }
 
-  return buildCategoryImportPlan(existing, parsed);
+  return buildCategoryImportPlan(existing, parsed.rows, parsed.columns);
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { TransactionsTable } from '@/app/(protected)/transactions/components/transactions-table';
@@ -57,7 +58,7 @@ export default async function TransactionsPage({
           <EmptyHeader>
             <EmptyTitle>No transactions yet</EmptyTitle>
             <EmptyDescription>
-              Import a file from the dashboard.
+              <Link href="/imports/new">Import a file</Link> to get started.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

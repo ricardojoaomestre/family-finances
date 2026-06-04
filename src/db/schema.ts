@@ -190,6 +190,7 @@ export const transactions = pgTable('transaction', {
     onDelete: 'restrict',
   }),
   value: numeric('value', { precision: 14, scale: 2 }).notNull(),
+  balance: numeric('balance', { precision: 14, scale: 2 }),
   merchant: text('merchant').notNull(),
   insertedAt: timestamp('inserted_at', { mode: 'date' }).defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow(),

@@ -28,6 +28,7 @@ export type ImportedSkippedTransaction = {
   description: string;
   categoryName: null;
   value: string;
+  balance: string | null;
 };
 
 export type ImportSkippedImportRowResult =
@@ -77,6 +78,7 @@ export async function importSkippedImportRow(input: {
       date: importSkippedRows.date,
       description: importSkippedRows.description,
       value: importSkippedRows.value,
+      balance: importSkippedRows.balance,
     })
     .from(importSkippedRows)
     .where(
@@ -133,6 +135,7 @@ export async function importSkippedImportRow(input: {
         description,
         categoryId: null,
         value,
+        balance: skippedRow.balance,
         importId: input.importId,
         merchant,
       })
@@ -141,6 +144,7 @@ export async function importSkippedImportRow(input: {
         date: transactions.date,
         description: transactions.description,
         value: transactions.value,
+        balance: transactions.balance,
       });
 
     if (!transaction) {
@@ -168,6 +172,8 @@ export async function importSkippedImportRow(input: {
     revalidatePath(`/imports/${input.importId}`);
     revalidatePath('/transactions');
     revalidatePath('/imports');
+    revalidatePath('/report/new');
+    revalidatePath('/reports');
 
     return {
       ok: true,
@@ -177,6 +183,7 @@ export async function importSkippedImportRow(input: {
         description: transaction.description,
         categoryName: null,
         value: transaction.value,
+        balance: transaction.balance,
       },
       rowCount: nextRowCount,
       skippedCount: nextSkippedCount,

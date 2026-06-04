@@ -42,13 +42,15 @@ type CategoryOption = {
 };
 
 function createColumns({
+  includeBalance,
   onViewDetails,
   onEdit,
 }: {
+  includeBalance: boolean;
   onViewDetails: (row: MonthReportCategoryTransactionRow) => void;
   onEdit: (row: MonthReportCategoryTransactionRow) => void;
 }): ColumnDef<MonthReportCategoryTransactionRow>[] {
-  return [
+  const columns: ColumnDef<MonthReportCategoryTransactionRow>[] = [
     {
       accessorKey: 'date',
       header: 'Date',
@@ -66,25 +68,36 @@ function createColumns({
       header: () => <div className={TABLE_MONEY_CELL_CLASS}>Amount</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
     },
-    {
-      id: 'actions',
-      header: () => <span className="sr-only">Actions</span>,
-      meta: {
-        headerClassName: 'w-12',
-        cellClassName: 'w-12',
-      },
-      cell: ({ row }) => (
-        <DataTableRowActions>
-          <DropdownMenuItem onSelect={() => onViewDetails(row.original)}>
-            View details
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => onEdit(row.original)}>
-            Edit
-          </DropdownMenuItem>
-        </DataTableRowActions>
-      ),
-    },
   ];
+
+  if (includeBalance) {
+    columns.push({
+      accessorKey: 'balance',
+      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Balance</div>,
+      cell: ({ row }) => <TableMoneyCell value={row.getValue('balance')} />,
+    });
+  }
+
+  columns.push({
+    id: 'actions',
+    header: () => <span className="sr-only">Actions</span>,
+    meta: {
+      headerClassName: 'w-12',
+      cellClassName: 'w-12',
+    },
+    cell: ({ row }) => (
+      <DataTableRowActions>
+        <DropdownMenuItem onSelect={() => onViewDetails(row.original)}>
+          View details
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onEdit(row.original)}>
+          Edit
+        </DropdownMenuItem>
+      </DataTableRowActions>
+    ),
+  });
+
+  return columns;
 }
 
 type MonthReportCategoryDetailSheetProps = {
@@ -205,13 +218,16 @@ export function MonthReportCategoryDetailSheet({
     [category, loadRows, router],
   );
 
+  const includeBalance = rows.some((row) => row.balance != null);
+
   const tableColumns = useMemo(
     () =>
       createColumns({
+        includeBalance,
         onViewDetails: handleViewDetails,
         onEdit: handleEdit,
       }),
-    [handleViewDetails, handleEdit],
+    [includeBalance, handleViewDetails, handleEdit],
   );
 
   const summaryFooter = useMemo(() => {

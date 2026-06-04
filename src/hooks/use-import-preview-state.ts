@@ -2,16 +2,29 @@ import { useReducer } from 'react';
 
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
 import type { ImportCategoryOption } from '@/lib/categories/get-active-categories-for-import';
-import { createDuplicateOverrideStatus } from '@/lib/file-import';
+import {
+  createDuplicateOverrideStatus,
+  validateImportRow,
+  type RowValidation,
+} from '@/lib/file-import';
 import type { MerchantSlug } from '@/lib/merchants';
 
 export type ImportPreviewState = {
   parsedData: ParsedImportRow[] | null;
+  rowValidations: RowValidation[] | null;
+  includeBalanceColumn: boolean;
   categories: ImportCategoryOption[] | null;
   filename: string | null;
   error: string | null;
   merchant: MerchantSlug | undefined;
 };
+
+function buildPreviewMeta(data: ParsedImportRow[]) {
+  return {
+    rowValidations: data.map((row) => validateImportRow(row)),
+    includeBalanceColumn: data.some((row) => row.balance !== undefined),
+  };
+}
 
 export type ImportPreviewAction =
   | { type: 'parse-started' }
@@ -40,6 +53,8 @@ export type ImportPreviewAction =
 
 const initialState: ImportPreviewState = {
   parsedData: null,
+  rowValidations: null,
+  includeBalanceColumn: false,
   categories: null,
   filename: null,
   error: null,
@@ -56,17 +71,24 @@ function importPreviewReducer(
         ...state,
         error: null,
         parsedData: null,
+        rowValidations: null,
+        includeBalanceColumn: false,
         categories: null,
         filename: null,
       };
-    case 'parse-succeeded':
+    case 'parse-succeeded': {
+      const previewMeta = buildPreviewMeta(action.data);
+
       return {
         ...state,
         error: null,
         parsedData: action.data,
+        rowValidations: previewMeta.rowValidations,
+        includeBalanceColumn: previewMeta.includeBalanceColumn,
         categories: action.categories,
         filename: action.filename,
       };
+    }
     case 'parse-failed':
     case 'confirm-failed':
       return { ...state, error: action.error };
@@ -74,6 +96,8 @@ function importPreviewReducer(
       return {
         ...state,
         parsedData: null,
+        rowValidations: null,
+        includeBalanceColumn: false,
         categories: null,
         filename: null,
         error: null,
@@ -111,16 +135,17 @@ function importPreviewReducer(
             : row,
         ),
       };
-    case 'categories-rematched':
-      if (!state.parsedData) {
-        return state;
-      }
+    case 'categories-rematched': {
+      const previewMeta = buildPreviewMeta(action.data);
 
       return {
         ...state,
         parsedData: action.data,
+        rowValidations: previewMeta.rowValidations,
+        includeBalanceColumn: previewMeta.includeBalanceColumn,
         categories: action.categories,
       };
+    }
   }
 }
 

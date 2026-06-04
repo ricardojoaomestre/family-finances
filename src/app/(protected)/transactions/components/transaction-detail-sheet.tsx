@@ -135,6 +135,18 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
                 <DetailField label="Merchant">
                   {getMerchantLabelOrSlug(details.merchant)}
                 </DetailField>
+                {details.balance != null ? (
+                  <DetailField label="Balance">
+                    <span
+                      className={cn(
+                        'tabular-nums',
+                        jetbrainsMono.className,
+                      )}
+                    >
+                      {formatDisplayMoney(details.balance)}
+                    </span>
+                  </DetailField>
+                ) : null}
               </dl>
             </section>
 

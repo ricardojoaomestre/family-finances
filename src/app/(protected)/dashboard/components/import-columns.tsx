@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Plus } from "lucide-react";
 
@@ -9,6 +9,7 @@ import { getDuplicateTooltipMessage } from "@/lib/file-import";
 import type { ImportCategoryOption } from "@/lib/categories/get-active-categories-for-import";
 
 import { CategoryColorSwatch } from "@/components/categories/category-color-swatch";
+import { CategoryCombobox } from "@/components/categories/category-combobox";
 import {
   TABLE_MONEY_CELL_CLASS,
   TableMoneyCell,
@@ -27,25 +28,83 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatDisplayDate } from "@/lib/formatters";
+import { UNCATEGORIZED_CATEGORY_VALUE } from "@/lib/transactions/validate-transaction-form";
 
 export type PreviewRow = ImportedSpreadsheetRow & {
   validation: RowValidation;
   duplicate: RowDuplicateStatus;
 };
 
-const NONE_CATEGORY_VALUE = "__none__";
+type ImportPreviewCategoryCellProps = {
+  rowIndex: number;
+  categoryId: string | null;
+  description: string;
+  categories: ImportCategoryOption[];
+  onCategoryChange: (rowIndex: number, categoryId: string | null) => void;
+  onCreateCategory: (description: string) => void;
+};
+
+const ImportPreviewCategoryCell = memo(function ImportPreviewCategoryCell({
+  rowIndex,
+  categoryId,
+  description,
+  categories,
+  onCategoryChange,
+  onCreateCategory,
+}: ImportPreviewCategoryCellProps) {
+  const value = categoryId ?? UNCATEGORIZED_CATEGORY_VALUE;
+  const selectedCategory = categoryId
+    ? categories.find((category) => category.id === categoryId)
+    : undefined;
+  const trimmedDescription = description.trim();
+
+  return (
+    <div className="flex items-center gap-2">
+      <CategoryCombobox
+        id={`import-row-${rowIndex}-category`}
+        value={value}
+        onValueChange={(next) => {
+          onCategoryChange(
+            rowIndex,
+            next === UNCATEGORIZED_CATEGORY_VALUE ? null : next,
+          );
+        }}
+        categories={categories}
+        noneValue={UNCATEGORIZED_CATEGORY_VALUE}
+        className="max-w-[220px]"
+      />
+
+      {selectedCategory ? (
+        <CategoryColorSwatch
+          color={selectedCategory.color}
+          className="size-3"
+          label={selectedCategory.name}
+        />
+      ) : null}
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            onClick={() => onCreateCategory(trimmedDescription)}
+            disabled={!trimmedDescription}
+            aria-label="Create category from description"
+          >
+            <Plus />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Create category</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+});
 
 function DuplicateValidationCell({
   duplicate,
@@ -166,64 +225,16 @@ function createCategoryColumn(
   return {
     id: "category",
     header: "Category",
-    cell: ({ row }) => {
-      const categoryId = row.original.categoryId;
-      const value = categoryId ?? NONE_CATEGORY_VALUE;
-      const selectedCategory = categoryId
-        ? categories.find((category) => category.id === categoryId)
-        : undefined;
-      const description = row.original.description.trim();
-
-      return (
-        <div className="flex items-center gap-2">
-          <Select
-            value={value}
-            onValueChange={(next) => {
-              onCategoryChange(
-                row.index,
-                next === NONE_CATEGORY_VALUE ? null : next,
-              );
-            }}
-          >
-            <SelectTrigger className="w-full max-w-[220px]" size="sm">
-              <SelectValue placeholder="None" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE_CATEGORY_VALUE}>None</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {selectedCategory ? (
-            <CategoryColorSwatch
-              color={selectedCategory.color}
-              className="size-3"
-              label={selectedCategory.name}
-            />
-          ) : null}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={() => onCreateCategory(description)}
-                disabled={!description}
-                aria-label="Create category from description"
-              >
-                <Plus />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create category</TooltipContent>
-          </Tooltip>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <ImportPreviewCategoryCell
+        rowIndex={row.index}
+        categoryId={row.original.categoryId}
+        description={row.original.description}
+        categories={categories}
+        onCategoryChange={onCategoryChange}
+        onCreateCategory={onCreateCategory}
+      />
+    ),
   };
 }
 
