@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatReportDate } from '@/lib/reports/format-report-date';
+import { formatReportMonth } from '@/lib/reports/report-month';
 import type { ReportListRow } from '@/lib/reports/get-reports';
 
 type ReportsTableProps = {
@@ -65,8 +65,7 @@ export function ReportsTable({ reports }: ReportsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="w-40">Start date</TableHead>
-              <TableHead className="w-40">End date</TableHead>
+              <TableHead className="w-40">Month</TableHead>
               <TableHead className="w-16">
                 <span className="sr-only">Actions</span>
               </TableHead>
@@ -83,8 +82,7 @@ export function ReportsTable({ reports }: ReportsTableProps) {
                     {report.name}
                   </Link>
                 </TableCell>
-                <TableCell>{formatReportDate(report.dateFrom)}</TableCell>
-                <TableCell>{formatReportDate(report.dateTo)}</TableCell>
+                <TableCell>{formatReportMonth(report.dateFrom)}</TableCell>
                 <TableCell>
                   <Button
                     type="button"

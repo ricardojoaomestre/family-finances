@@ -19,7 +19,7 @@ export default async function ReportsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Reports</h1>
           <p className="text-sm text-muted-foreground">
-            Saved month processing reports by date range
+            Saved monthly spending reports
           </p>
         </div>
         <Button asChild>
@@ -32,7 +32,7 @@ export default async function ReportsPage() {
           <EmptyHeader>
             <EmptyTitle>No saved reports</EmptyTitle>
             <EmptyDescription>
-              Create a report to review spending for a date range and save it
+              Create a report to review spending for a month and save it
               for later.
             </EmptyDescription>
           </EmptyHeader>

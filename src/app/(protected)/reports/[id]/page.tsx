@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { MonthReportView } from '@/app/(protected)/reports/components/month-report-view';
 import { getCategories } from '@/lib/categories/get-categories';
 import { getReportById } from '@/lib/reports/get-report-by-id';
+import { getSpendingCategoryMonthAverages } from '@/lib/reports/get-spending-category-month-averages';
 import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
 import { getMonthReportBpiBalanceBeforeIncome } from '@/lib/reports/get-month-report-bpi-balance-before-income';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
@@ -46,7 +47,7 @@ export default async function ReportPage({
     );
   }
 
-  const [categoryTotals, categoryRows, bpiBalanceBeforeIncome] =
+  const [categoryTotals, categoryRows, bpiBalanceBeforeIncome, spendingCategoryAverages] =
     await Promise.all([
       getMonthReportCategoryTotals(validation.dateFrom, validation.dateTo),
       getCategories(),
@@ -54,6 +55,7 @@ export default async function ReportPage({
         validation.dateFrom,
         validation.dateTo,
       ),
+      getSpendingCategoryMonthAverages(validation.dateFrom),
     ]);
 
   const categories = categoryRows.map(({ id: categoryId, name }) => ({
@@ -74,6 +76,7 @@ export default async function ReportPage({
         }}
         initialTitle={report.name}
         categoryTotals={categoryTotals}
+        spendingCategoryAverages={spendingCategoryAverages}
         bpiBalanceBeforeIncome={bpiBalanceBeforeIncome}
         categories={categories}
       />

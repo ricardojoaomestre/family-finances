@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { formatReportDate } from '@/lib/reports/format-report-date';
+import { formatReportMonth } from '@/lib/reports/report-month';
 
 type SaveReportDialogProps = {
   open: boolean;
@@ -33,6 +33,8 @@ export function SaveReportDialog({
   error,
   onConfirm,
 }: SaveReportDialogProps) {
+  void dateTo;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -47,10 +49,8 @@ export function SaveReportDialog({
                   <dd className="font-medium">{name}</dd>
                 </div>
                 <div>
-                  <dt className="sr-only">Date range</dt>
-                  <dd>
-                    {formatReportDate(dateFrom)} – {formatReportDate(dateTo)}
-                  </dd>
+                  <dt className="sr-only">Month</dt>
+                  <dd>{formatReportMonth(dateFrom)}</dd>
                 </div>
               </dl>
             </div>
