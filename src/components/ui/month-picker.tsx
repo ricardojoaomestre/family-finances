@@ -1,20 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarIcon } from 'lucide-react';
-import type { Matcher } from 'react-day-picker';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  endOfTodayUtc,
-  parseCalendarDayKey,
-} from '@/lib/dates/calendar-day-key';
+import { parseCalendarDayKey } from '@/lib/dates/calendar-day-key';
 import { formatReportMonth, getReportMonthBounds } from '@/lib/reports/report-month';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +29,28 @@ type MonthPickerProps = {
   'aria-invalid'?: boolean;
 };
 
+const monthLabels = Array.from({ length: 12 }, (_, monthIndex) =>
+  new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(
+    new Date(2024, monthIndex, 1),
+  ),
+);
+
+function isMonthDisabled(
+  year: number,
+  month: number,
+  disableFuture: boolean,
+): boolean {
+  if (!disableFuture) {
+    return false;
+  }
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  return year > currentYear || (year === currentYear && month > currentMonth);
+}
+
 export function MonthPicker({
   id,
   value,
@@ -46,16 +63,31 @@ export function MonthPicker({
 }: MonthPickerProps) {
   const [open, setOpen] = useState(false);
 
-  const selectedMonth = useMemo(() => parseCalendarDayKey(value.dateFrom), [value.dateFrom]);
+  const selectedMonth = useMemo(
+    () => parseCalendarDayKey(value.dateFrom),
+    [value.dateFrom],
+  );
 
-  const disabledDays: Matcher | undefined = disableFuture
-    ? { after: endOfTodayUtc() }
-    : undefined;
+  const [viewYear, setViewYear] = useState(() => {
+    return selectedMonth?.getFullYear() ?? new Date().getFullYear();
+  });
+
+  const currentYear = new Date().getFullYear();
+  const canGoToNextYear = !disableFuture || viewYear < currentYear;
 
   const label = value.dateFrom ? formatReportMonth(value.dateFrom) : placeholder;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+
+        if (nextOpen) {
+          setViewYear(selectedMonth?.getFullYear() ?? currentYear);
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -73,28 +105,79 @@ export function MonthPicker({
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          captionLayout="dropdown"
-          selected={selectedMonth}
-          disabled={disabledDays}
-          defaultMonth={selectedMonth}
-          onSelect={(date) => {
-            if (!date) {
-              onValueChange({ dateFrom: '', dateTo: '' });
-              return;
-            }
+      <PopoverContent className="w-auto p-3" align="start">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label="Previous year"
+              onClick={() => setViewYear((year) => year - 1)}
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <span className="min-w-16 text-center text-sm font-medium">
+              {viewYear}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              disabled={!canGoToNextYear}
+              aria-label="Next year"
+              onClick={() => setViewYear((year) => year + 1)}
+            >
+              <ChevronRightIcon className="size-4" />
+            </Button>
+          </div>
+          <div
+            role="grid"
+            aria-label={`Select a month in ${viewYear}`}
+            className="grid grid-cols-3 gap-1"
+          >
+            {monthLabels.map((monthLabel, monthIndex) => {
+              const month = monthIndex + 1;
+              const bounds = getReportMonthBounds(viewYear, month);
+              const isSelected =
+                value.dateFrom === bounds.dateFrom &&
+                value.dateTo === bounds.dateTo;
+              const monthDisabled = isMonthDisabled(
+                viewYear,
+                month,
+                disableFuture,
+              );
 
-            const bounds = getReportMonthBounds(
-              date.getFullYear(),
-              date.getMonth() + 1,
-            );
-
-            onValueChange(bounds);
-            setOpen(false);
-          }}
-        />
+              return (
+                <Button
+                  key={month}
+                  type="button"
+                  variant="ghost"
+                  role="gridcell"
+                  disabled={monthDisabled}
+                  aria-label={new Intl.DateTimeFormat('en-GB', {
+                    month: 'long',
+                    year: 'numeric',
+                  }).format(new Date(viewYear, monthIndex, 1))}
+                  aria-selected={isSelected}
+                  className={cn(
+                    'h-9 rounded-4xl text-sm font-normal',
+                    isSelected &&
+                      'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+                  )}
+                  onClick={() => {
+                    onValueChange(bounds);
+                    setOpen(false);
+                  }}
+                >
+                  {monthLabel}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
