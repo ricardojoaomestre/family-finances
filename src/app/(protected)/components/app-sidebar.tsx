@@ -41,9 +41,9 @@ export function AppSidebar({ userName, userEmail, userImage }: AppSidebarProps) 
               <SidebarMenuButton size="lg" asChild>
                 <Link href="/dashboard">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
-                    S
+                    F
                   </span>
-                  <span className="truncate font-semibold">Speed Test</span>
+                  <span className="truncate font-semibold">Family Finances</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
