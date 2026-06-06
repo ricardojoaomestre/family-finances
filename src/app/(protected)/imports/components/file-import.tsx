@@ -28,13 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useImportPreviewState } from '@/hooks/use-import-preview-state';
 import { useSpreadsheetFile } from '@/hooks/use-spreadsheet-file';
@@ -187,18 +181,18 @@ export function FileImport() {
       <div className="flex w-full flex-col gap-6">
         <Field>
           <FieldLabel htmlFor="merchant">Merchant</FieldLabel>
-          <Select value={merchant} onValueChange={handleMerchantChange}>
-            <SelectTrigger id="merchant" className="w-full max-w-md">
-              <SelectValue placeholder="Select merchant" />
-            </SelectTrigger>
-            <SelectContent>
-              {MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => (
-                <SelectItem key={slug} value={slug}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            id="merchant"
+            className="w-full max-w-md"
+            value={merchant}
+            onValueChange={handleMerchantChange}
+            placeholder="Select merchant"
+            searchPlaceholder="Search merchants…"
+            options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
+              value: slug,
+              label,
+            }))}
+          />
         </Field>
 
         <form

@@ -14,13 +14,7 @@ import {
 } from '@/components/ui/field';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Sheet,
   SheetContent,
@@ -187,29 +181,23 @@ function TransactionFormBody({
         <Field data-invalid={Boolean(fieldErrors.merchant)}>
           <FieldLabel htmlFor="transaction-merchant">Merchant</FieldLabel>
           <FieldContent>
-            <Select
+            <Combobox
+              id="transaction-merchant"
+              className="w-full"
               value={merchant}
               onValueChange={(next) => {
                 if (isMerchantSlug(next)) {
                   setMerchant(next);
                 }
               }}
-            >
-              <SelectTrigger
-                id="transaction-merchant"
-                className="w-full"
-                disabled={isPending}
-              >
-                <SelectValue placeholder="Select merchant" />
-              </SelectTrigger>
-              <SelectContent>
-                {MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => (
-                  <SelectItem key={slug} value={slug}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select merchant"
+              searchPlaceholder="Search merchants…"
+              disabled={isPending}
+              options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
+                value: slug,
+                label,
+              }))}
+            />
             <FieldError>{fieldErrors.merchant}</FieldError>
           </FieldContent>
         </Field>

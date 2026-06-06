@@ -23,13 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Textarea } from '@/components/ui/textarea';
 import {
   getDefaultCategoryColor,
@@ -166,26 +160,19 @@ function CategoryFormBody({
         <Field data-invalid={Boolean(fieldErrors.type)}>
           <FieldLabel htmlFor="category-type">Type</FieldLabel>
           <FieldContent>
-            <Select
+            <Combobox
+              id="category-type"
+              className="w-full"
               value={type}
               onValueChange={(value) => setType(value as CategoryType)}
               disabled={isPending}
-            >
-              <SelectTrigger
-                id="category-type"
-                className="w-full"
-                aria-invalid={Boolean(fieldErrors.type)}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryTypeValues.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {categoryTypeLabels[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              aria-invalid={Boolean(fieldErrors.type)}
+              searchPlaceholder="Search types…"
+              options={categoryTypeValues.map((value) => ({
+                value,
+                label: categoryTypeLabels[value],
+              }))}
+            />
             <FieldDescription>{categoryTypeDescriptions[type]}</FieldDescription>
             <FieldError>{fieldErrors.type}</FieldError>
           </FieldContent>

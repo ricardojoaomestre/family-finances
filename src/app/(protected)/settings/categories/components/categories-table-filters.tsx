@@ -3,13 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import {
   ALL_CATEGORY_STATUS_FILTER_VALUE,
   ALL_CATEGORY_TYPE_FILTER_VALUE,
@@ -53,51 +47,46 @@ export function CategoriesTableFilters({
 
       <Field className="w-full sm:w-auto">
         <FieldLabel htmlFor="category-type-filter">Type</FieldLabel>
-        <Select
+        <Combobox
+          id="category-type-filter"
+          className="w-full sm:w-40"
           value={filters.type}
           onValueChange={(type) =>
             updateFilters({
               type: type as CategoryTableFilters['type'],
             })
           }
-        >
-          <SelectTrigger id="category-type-filter" className="w-full sm:w-40">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORY_TYPE_FILTER_VALUE}>
-              All types
-            </SelectItem>
-            {categoryTypeValues.map((type) => (
-              <SelectItem key={type} value={type}>
-                {categoryTypeLabels[type]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="All types"
+          searchPlaceholder="Search types…"
+          options={[
+            { value: ALL_CATEGORY_TYPE_FILTER_VALUE, label: 'All types' },
+            ...categoryTypeValues.map((type) => ({
+              value: type,
+              label: categoryTypeLabels[type],
+            })),
+          ]}
+        />
       </Field>
 
       <Field className="w-full sm:w-auto">
         <FieldLabel htmlFor="category-status-filter">Status</FieldLabel>
-        <Select
+        <Combobox
+          id="category-status-filter"
+          className="w-full sm:w-36"
           value={filters.status}
           onValueChange={(status) =>
             updateFilters({
               status: status as CategoryTableFilters['status'],
             })
           }
-        >
-          <SelectTrigger id="category-status-filter" className="w-full sm:w-36">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORY_STATUS_FILTER_VALUE}>
-              All statuses
-            </SelectItem>
-            <SelectItem value={CATEGORY_STATUS_ACTIVE}>Active</SelectItem>
-            <SelectItem value={CATEGORY_STATUS_INACTIVE}>Inactive</SelectItem>
-          </SelectContent>
-        </Select>
+          placeholder="All statuses"
+          searchPlaceholder="Search statuses…"
+          options={[
+            { value: ALL_CATEGORY_STATUS_FILTER_VALUE, label: 'All statuses' },
+            { value: CATEGORY_STATUS_ACTIVE, label: 'Active' },
+            { value: CATEGORY_STATUS_INACTIVE, label: 'Inactive' },
+          ]}
+        />
       </Field>
 
       <Button

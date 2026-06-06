@@ -8,13 +8,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { DATA_TABLE_PAGE_SIZE_OPTIONS } from '@/lib/data-table/pagination';
 
 type DataTablePaginationProps = {
@@ -44,21 +38,18 @@ export function DataTablePagination({
       <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Rows per page</span>
-          <Select
+          <Combobox
+            size="sm"
+            className="w-[72px]"
+            aria-label="Rows per page"
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
-          >
-            <SelectTrigger className="h-8 w-[72px]" aria-label="Rows per page">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DATA_TABLE_PAGE_SIZE_OPTIONS.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            searchPlaceholder="Search…"
+            options={DATA_TABLE_PAGE_SIZE_OPTIONS.map((size) => ({
+              value: String(size),
+              label: String(size),
+            }))}
+          />
         </div>
         <p className="min-w-[88px] text-center text-sm text-muted-foreground">
           Page {pageIndex + 1} of {pageCount}
