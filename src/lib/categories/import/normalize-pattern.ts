@@ -1,9 +1,5 @@
 export function normalizeCategoryImportPattern(raw: string): string {
-  return raw
-    .trim()
-    .replace(/\(\?i\)/gi, '')
-    .replace(/\\b/g, '')
-    .trim();
+  return raw.trim().replace(/\(\?i\)/gi, '').trim();
 }
 
 export function patternKeyForImport(pattern: string | null): string {

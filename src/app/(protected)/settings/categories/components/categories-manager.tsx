@@ -232,8 +232,8 @@ export function CategoriesManager({
         <div>
           <h2 className="text-lg font-semibold">Categories</h2>
           <p className="text-sm text-muted-foreground">
-            Rules for auto-categorizing transactions at import time. First
-            match wins by priority order.
+            Rules for auto-categorizing transactions at import time. Longest
+            match wins; priority breaks ties.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">

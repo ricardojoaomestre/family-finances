@@ -3,10 +3,27 @@ export type CategoryRule = {
   pattern: string | null;
 };
 
+function getMatchLength(pattern: string, description: string): number | null {
+  try {
+    const match = new RegExp(pattern, 'i').exec(description);
+
+    if (!match) {
+      return null;
+    }
+
+    return match[0].length;
+  } catch {
+    return null;
+  }
+}
+
 export function matchCategoryId(
   description: string,
   rules: CategoryRule[],
 ): string | null {
+  let bestId: string | null = null;
+  let bestLength = -1;
+
   for (const rule of rules) {
     const pattern = rule.pattern?.trim();
 
@@ -14,16 +31,15 @@ export function matchCategoryId(
       continue;
     }
 
-    try {
-      const regex = new RegExp(pattern, 'i');
+    const matchLength = getMatchLength(pattern, description);
 
-      if (regex.test(description)) {
-        return rule.id;
-      }
-    } catch {
+    if (matchLength === null || matchLength <= bestLength) {
       continue;
     }
+
+    bestLength = matchLength;
+    bestId = rule.id;
   }
 
-  return null;
+  return bestId;
 }
