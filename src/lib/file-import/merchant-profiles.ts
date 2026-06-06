@@ -74,10 +74,16 @@ const MERCHANT_IMPORT_PROFILES: Partial<
     signRule: "invert",
     dateFormat: "DMY",
   },
+  "santander-refeicao": {
+    ...GENERIC_IMPORT_PROFILE,
+    dateColumns: ["data operação"],
+    signRule: "debit-negative",
+    dateFormat: "DMY",
+  },
   bpi: {
     ...GENERIC_IMPORT_PROFILE,
     descriptionColumns: ["descrição do movimento"],
-    valueColumns: ['valor em eur', 'valor movimento'],
+    valueColumns: ["valor em eur", "valor movimento"],
     balanceColumns: ["saldo em eur"],
     dateFormat: "DMY",
     signRule: "debit-negative",
