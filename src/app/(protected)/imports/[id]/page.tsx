@@ -100,10 +100,10 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
         <Link
-          href="/transactions"
+          href="/imports"
           className="text-sm text-muted-foreground hover:text-foreground"
         >
-          ← Back to transactions
+          ← Back to imports
         </Link>
         <h1 className="text-2xl font-semibold">{importRecord.filename}</h1>
       </div>

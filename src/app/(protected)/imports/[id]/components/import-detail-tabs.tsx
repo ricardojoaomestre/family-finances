@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 
+import { deleteImportTransactions } from '@/app/(protected)/imports/[id]/actions/delete-import-transactions';
 import { importSkippedImportRow } from '@/app/(protected)/imports/[id]/actions/import-skipped-import-row';
 import { DUPLICATE_IN_FILE_MESSAGE } from '@/lib/imports/duplicate-in-file-message';
 import {
@@ -73,8 +74,14 @@ export function ImportDetailTabs({
   );
   const [duplicateOverrideRow, setDuplicateOverrideRow] =
     useState<ImportSkippedRow | null>(null);
+  const [activeTab, setActiveTab] = useState<'missing' | 'transactions'>(() =>
+    (initialSkippedCount ?? initialSkippedRows.length) > 0
+      ? 'missing'
+      : 'transactions',
+  );
+  const [isDeletingTransactions, setIsDeletingTransactions] = useState(false);
+  const [transactionsSelectionKey, setTransactionsSelectionKey] = useState(0);
 
-  const defaultTab = (skippedCount ?? skippedRows.length) > 0 ? 'missing' : 'transactions';
   const missingRowsTabCount = skippedCount ?? skippedRows.length;
 
   const refreshPage = useCallback(() => {
@@ -169,6 +176,33 @@ export function ImportDetailTabs({
     await handleImportRow(row, { allowDuplicateInFile: true });
   }, [duplicateOverrideRow, handleImportRow]);
 
+  const handleDeleteSelectedTransactions = useCallback(
+    async (transactionIds: string[]) => {
+      setActionError(null);
+      setIsDeletingTransactions(true);
+
+      const result = await deleteImportTransactions({
+        importId,
+        transactionIds,
+      });
+
+      setIsDeletingTransactions(false);
+
+      if (!result.ok) {
+        setActionError(result.error);
+        return false;
+      }
+
+      const deletedIds = new Set(transactionIds);
+      setTransactions((current) =>
+        current.filter((transaction) => !deletedIds.has(transaction.id)),
+      );
+      refreshPage();
+      return true;
+    },
+    [importId, refreshPage],
+  );
+
   return (
     <TooltipProvider>
       {actionError ? (
@@ -177,7 +211,18 @@ export function ImportDetailTabs({
         </p>
       ) : null}
 
-      <Tabs defaultValue={defaultTab}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          const nextTab = value as 'missing' | 'transactions';
+
+          if (activeTab === 'transactions' && nextTab !== 'transactions') {
+            setTransactionsSelectionKey((current) => current + 1);
+          }
+
+          setActiveTab(nextTab);
+        }}
+      >
         <TabsList>
           <TabsTrigger value="missing">
             Missing rows ({missingRowsTabCount})
@@ -216,7 +261,12 @@ export function ImportDetailTabs({
               </EmptyHeader>
             </Empty>
           ) : (
-            <ImportTransactionsTable data={transactions} />
+            <ImportTransactionsTable
+              key={transactionsSelectionKey}
+              data={transactions}
+              isDeleting={isDeletingTransactions}
+              onDeleteSelected={handleDeleteSelectedTransactions}
+            />
           )}
         </TabsContent>
       </Tabs>
