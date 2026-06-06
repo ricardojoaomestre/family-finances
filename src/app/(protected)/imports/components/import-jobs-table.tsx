@@ -1,8 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 
+import { ImportJobsTableFilters } from '@/app/(protected)/imports/components/import-jobs-table-filters';
+import {
+  DEFAULT_IMPORT_JOB_FILTERS,
+  filterImportJobs,
+  type ImportJobFilters,
+} from '@/app/(protected)/imports/lib/filter-import-jobs';
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import { Badge } from '@/components/ui/badge';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
@@ -12,26 +19,21 @@ import { importStatusBadgeVariant } from '@/lib/status-badge';
 
 const columns: ColumnDef<ImportJobRow>[] = [
   {
-    accessorKey: 'filename',
-    header: 'Filename',
+    accessorKey: 'importedAt',
+    header: 'Date',
+    cell: ({ row }) => formatDisplayDate(row.original.importedAt),
+  },
+  {
+    accessorKey: 'merchant',
+    header: 'Merchant',
     cell: ({ row }) => (
       <Link
         href={`/imports/${row.original.id}`}
         className="text-primary underline-offset-4 hover:underline"
       >
-        {row.original.filename}
+        {getMerchantLabelOrSlug(row.original.merchant)}
       </Link>
     ),
-  },
-  {
-    accessorKey: 'merchant',
-    header: 'Merchant',
-    cell: ({ row }) => getMerchantLabelOrSlug(row.original.merchant),
-  },
-  {
-    accessorKey: 'importedAt',
-    header: 'Date',
-    cell: ({ row }) => formatDisplayDate(row.original.importedAt),
   },
   {
     accessorKey: 'status',
@@ -49,6 +51,17 @@ const columns: ColumnDef<ImportJobRow>[] = [
       <div className="text-right tabular-nums">{row.original.rowCount}</div>
     ),
   },
+  {
+    accessorKey: 'filename',
+    header: 'Filename',
+    meta: {
+      headerClassName: 'w-full',
+      cellClassName: 'w-full',
+    },
+    cell: ({ row }) => (
+      <span className="block truncate">{row.original.filename}</span>
+    ),
+  },
 ];
 
 type ImportJobsTableProps = {
@@ -56,6 +69,33 @@ type ImportJobsTableProps = {
   paginate?: boolean;
 };
 
+function getImportJobRowClassName(row: ImportJobRow) {
+  if (row.rowCount === 0) {
+    return 'bg-muted/50 hover:bg-muted/50 text-muted-foreground italic [&_a]:text-inherit [&_a:hover]:text-inherit **:data-[slot=badge]:border-border **:data-[slot=badge]:bg-muted **:data-[slot=badge]:text-muted-foreground';
+  }
+
+  return undefined;
+}
+
 export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps) {
-  return <ImportDataTable columns={columns} data={data} paginate={paginate} />;
+  const [filters, setFilters] = useState<ImportJobFilters>(
+    DEFAULT_IMPORT_JOB_FILTERS,
+  );
+
+  const filteredData = useMemo(
+    () => filterImportJobs(data, filters),
+    [data, filters],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ImportJobsTableFilters filters={filters} onFiltersChange={setFilters} />
+      <ImportDataTable
+        columns={columns}
+        data={filteredData}
+        paginate={paginate}
+        getRowClassName={getImportJobRowClassName}
+      />
+    </div>
+  );
 }

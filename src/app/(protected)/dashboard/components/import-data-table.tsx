@@ -54,6 +54,7 @@ interface ImportDataTableProps<TData, TValue> {
   selectAllInDataset?: boolean;
   onSelectAllInDatasetChange?: (selected: boolean) => void;
   selectAllBannerLabel?: string;
+  getRowClassName?: (row: TData) => string | undefined;
 }
 
 export function ImportDataTable<TData, TValue>({
@@ -75,6 +76,7 @@ export function ImportDataTable<TData, TValue>({
   selectAllInDataset = false,
   onSelectAllInDatasetChange,
   selectAllBannerLabel = 'in this list',
+  getRowClassName,
 }: ImportDataTableProps<TData, TValue>) {
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -246,6 +248,7 @@ export function ImportDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
+                  className={getRowClassName?.(row.original)}
                   data-state={
                     selectAllInDataset || row.getIsSelected()
                       ? 'selected'
