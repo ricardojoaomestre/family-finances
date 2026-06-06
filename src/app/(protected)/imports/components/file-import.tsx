@@ -57,6 +57,7 @@ export function FileImport() {
     filename,
     error,
     merchant,
+    usingGenericProfile,
   } = state;
   const [isParsing, startParseTransition] = useTransition();
   const [isConfirming, startConfirmTransition] = useTransition();
@@ -225,6 +226,7 @@ export function FileImport() {
                 data: result.data,
                 categories: result.categories,
                 filename: parsedFilename,
+                usingGenericProfile: result.usingGenericProfile,
               });
               formRef.current?.reset();
               clear();
@@ -268,6 +270,16 @@ export function FileImport() {
 
         {previewRows && filename && merchant && categories && (
           <div className="flex flex-col gap-4">
+            {usingGenericProfile && (
+              <Alert>
+                <AlertTitle>Generic import profile</AlertTitle>
+                <AlertDescription>
+                  No dedicated import profile is configured for this merchant.
+                  Column detection uses generic rules and results may need
+                  review before confirming.
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium">{filename}</p>
               <p className="text-sm text-muted-foreground">

@@ -17,6 +17,7 @@ export type ImportPreviewState = {
   filename: string | null;
   error: string | null;
   merchant: MerchantSlug | undefined;
+  usingGenericProfile: boolean;
 };
 
 function buildPreviewMeta(data: ParsedImportRow[]) {
@@ -33,6 +34,7 @@ export type ImportPreviewAction =
       data: ParsedImportRow[];
       categories: ImportCategoryOption[];
       filename: string | null;
+      usingGenericProfile: boolean;
     }
   | { type: 'parse-failed'; error: string }
   | { type: 'confirm-failed'; error: string }
@@ -59,6 +61,7 @@ const initialState: ImportPreviewState = {
   filename: null,
   error: null,
   merchant: undefined,
+  usingGenericProfile: false,
 };
 
 function importPreviewReducer(
@@ -75,6 +78,7 @@ function importPreviewReducer(
         includeBalanceColumn: false,
         categories: null,
         filename: null,
+        usingGenericProfile: false,
       };
     case 'parse-succeeded': {
       const previewMeta = buildPreviewMeta(action.data);
@@ -87,6 +91,7 @@ function importPreviewReducer(
         includeBalanceColumn: previewMeta.includeBalanceColumn,
         categories: action.categories,
         filename: action.filename,
+        usingGenericProfile: action.usingGenericProfile,
       };
     }
     case 'parse-failed':
@@ -101,6 +106,7 @@ function importPreviewReducer(
         categories: null,
         filename: null,
         error: null,
+        usingGenericProfile: false,
       };
     case 'reset':
       return initialState;

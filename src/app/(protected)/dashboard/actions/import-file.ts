@@ -2,12 +2,10 @@
 
 import {
   detectDuplicateStatuses,
-  parseLocalizedNumber,
-  parseSpreadsheetToJson,
+  parseBankSpreadsheet,
+  validateSpreadsheetFile,
   type ImportedSpreadsheetRow,
   type RowDuplicateStatus,
-  type SpreadsheetRow,
-  validateSpreadsheetFile,
 } from "@/lib/file-import";
 import {
   getActiveCategoriesForImport,
@@ -22,56 +20,13 @@ export type ParsedImportRow = ImportedSpreadsheetRow & {
 };
 
 export type ImportSpreadsheetResult =
-  | { ok: true; data: ParsedImportRow[]; categories: ImportCategoryOption[] }
-  | { ok: false; error: string };
-
-const normalizeHeader = (header: string) =>
-  header.trim().toLowerCase().replace(/\s+/g, " ");
-
-const findColumnKey = (rows: SpreadsheetRow[], aliases: string[]) => {
-  const normalizedAliases = aliases.map(normalizeHeader);
-
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (normalizedAliases.includes(normalizeHeader(key))) {
-        return key;
-      }
+  | {
+      ok: true;
+      data: ParsedImportRow[];
+      categories: ImportCategoryOption[];
+      usingGenericProfile: boolean;
     }
-  }
-
-  return null;
-};
-
-const toNullableString = (value: SpreadsheetRow[string]) => {
-  if (value === null || value === undefined) return null;
-  const normalized = String(value).trim();
-  return normalized.length ? normalized : null;
-};
-
-const toIsoDateString = (value: SpreadsheetRow[string]) => {
-  if (value === null || value === undefined) return null;
-
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value.toISOString();
-  }
-
-  const parsed = new Date(String(value));
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
-};
-
-const toNullableNumber = (value: SpreadsheetRow[string]) => {
-  if (value === null || value === undefined) return null;
-
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-
-  if (typeof value === "boolean") {
-    return value ? 1 : 0;
-  }
-
-  return parseLocalizedNumber(String(value));
-};
+  | { ok: false; error: string };
 
 export async function importSpreadsheetFile(
   formData: FormData,
@@ -96,73 +51,37 @@ export async function importSpreadsheetFile(
   }
 
   const buffer = await file.arrayBuffer();
-  const parsed = parseSpreadsheetToJson(
+  const parsed = parseBankSpreadsheet(
     buffer,
     file.name,
     validation.fileType,
+    merchant,
   );
 
-  const firstNonEmptySheet = Object.values(parsed.sheets).find(
-    (rows) => rows.length > 0,
-  );
-
-  if (!firstNonEmptySheet) {
-    return {
-      ok: false as const,
-      error: "Could not find any rows in the spreadsheet.",
-    };
+  if (!parsed.ok) {
+    return { ok: false as const, error: parsed.error };
   }
 
-  const dateColumn = findColumnKey(firstNonEmptySheet, ["date"]);
-  const descriptionColumn = findColumnKey(firstNonEmptySheet, [
-    "description",
-  ]);
-  const valueColumn = findColumnKey(firstNonEmptySheet, ["value"]);
-  const balanceColumn = findColumnKey(firstNonEmptySheet, ["balance"]);
-
-  if (!dateColumn || !descriptionColumn || !valueColumn) {
-    return {
-      ok: false as const,
-      error:
-        "Spreadsheet must include Date, Description, and Value columns.",
-    };
-  }
-
-  const data: ImportedSpreadsheetRow[] = firstNonEmptySheet
-    .map((row) => {
-      const mappedRow: ImportedSpreadsheetRow = {
-        date: toIsoDateString(row[dateColumn]),
-        description: toNullableString(row[descriptionColumn]) ?? "",
-        value: toNullableNumber(row[valueColumn]),
-        categoryId: null,
-      };
-
-      if (balanceColumn) {
-        mappedRow.balance = toNullableNumber(row[balanceColumn]);
-      }
-
-      return mappedRow;
-    })
-    .filter(
-      (row) =>
-        row.date !== null ||
-        row.description.length > 0 ||
-        row.value !== null ||
-        (row.balance ?? null) !== null,
-    );
+  const data: ImportedSpreadsheetRow[] = parsed.rows.map((row) => ({
+    ...row,
+    description: row.description.trim(),
+  }));
 
   const existingKeys = await getExistingDuplicateKeys(merchant);
   const duplicateStatuses = detectDuplicateStatuses(data, existingKeys, merchant);
 
   const rowsWithDuplicates: ParsedImportRow[] = data.map((row, index) => ({
     ...row,
-    description: row.description.trim(),
     duplicate: duplicateStatuses[index]!,
   }));
 
   const matched = await matchImportRowsToCategories(rowsWithDuplicates);
 
-  return { ok: true as const, ...matched };
+  return {
+    ok: true as const,
+    ...matched,
+    usingGenericProfile: parsed.usingGenericProfile,
+  };
 }
 
 export type RematchImportCategoriesResult = {

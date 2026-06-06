@@ -73,8 +73,12 @@ export function parseLocalizedNumber(raw: string): number | null {
   let normalized = raw.trim();
   if (!normalized) return null;
 
-  if (normalized.startsWith("(") && normalized.endsWith(")")) {
+  if (normalized.startsWith('(') && normalized.endsWith(')')) {
     normalized = `-${normalized.slice(1, -1).trim()}`;
+  }
+
+  if (normalized.startsWith('--')) {
+    normalized = `-${normalized.slice(2).trimStart()}`;
   }
 
   normalized = stripCurrency(normalized);
