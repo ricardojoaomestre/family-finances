@@ -20,7 +20,7 @@ export default async function ImportJobsPage() {
       <SetPageHeader
         description="All spreadsheet imports"
         actions={
-          <Button asChild>
+          <Button asChild className="hidden md:inline-flex">
             <Link href="/imports/new">Import file</Link>
           </Button>
         }
@@ -31,10 +31,15 @@ export default async function ImportJobsPage() {
           <EmptyHeader>
             <EmptyTitle>No imports yet</EmptyTitle>
             <EmptyDescription>
-              Upload a bank or card export to create your first import job.
+              <span className="hidden md:inline">
+                Upload a bank or card export to create your first import job.
+              </span>
+              <span className="md:hidden">
+                Use a desktop browser to upload your first import.
+              </span>
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
+          <EmptyContent className="hidden md:flex">
             <Button variant="outline" asChild>
               <Link href="/imports/new">Import file</Link>
             </Button>

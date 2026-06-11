@@ -27,6 +27,7 @@ import {
 import { PrimaryOverflowActions } from '@/app/(protected)/components/primary-overflow-actions';
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { CategoryImportSnapshotMeta } from '@/lib/categories/get-category-import-snapshot-meta';
 import type { CategoryRow } from '@/lib/categories/get-categories';
 import {
@@ -63,6 +64,7 @@ export function CategoriesManager({
   importSnapshot,
 }: CategoriesManagerProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [isPending, startTransition] = useTransition();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -238,7 +240,7 @@ export function CategoriesManager({
             onPrimaryClick={openCreate}
             primaryDisabled={isPending}
             overflowActions={[
-              ...(importSnapshot.canUndo
+              ...(!isMobile && importSnapshot.canUndo
                 ? [
                     {
                       label: 'Undo last import',
@@ -252,17 +254,21 @@ export function CategoriesManager({
                 onSelect: handleExportCsv,
                 disabled: isPending,
               },
-              {
-                label: 'Import CSV',
-                onSelect: openImport,
-                disabled: isPending,
-              },
+              ...(!isMobile
+                ? [
+                    {
+                      label: 'Import CSV',
+                      onSelect: openImport,
+                      disabled: isPending,
+                    },
+                  ]
+                : []),
             ]}
           />
         }
       />
 
-      {showImportNotice ? (
+      {showImportNotice && !isMobile ? (
         <Alert>
           <AlertTitle>Categories imported</AlertTitle>
           <AlertDescription>

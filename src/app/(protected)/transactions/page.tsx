@@ -54,7 +54,12 @@ export default async function TransactionsPage({
           <EmptyHeader>
             <EmptyTitle>No transactions yet</EmptyTitle>
             <EmptyDescription>
-              <Link href="/imports/new">Import a file</Link> to get started.
+              <span className="hidden md:contents">
+                <Link href="/imports/new">Import a file</Link> to get started.
+              </span>
+              <span className="md:hidden">
+                Use a desktop browser to import your first transactions.
+              </span>
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
