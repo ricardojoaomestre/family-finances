@@ -47,57 +47,114 @@ function getDuplicateReasonForTooltip(
   }
 }
 
+function SkippedRowReasonBadge({
+  reason,
+  errors,
+}: Pick<ImportSkippedRow, 'reason' | 'errors'>) {
+  if (isSkippedRowReadyToImport(reason, errors)) {
+    return (
+      <Badge variant="secondary" className="cursor-default">
+        Ready
+      </Badge>
+    );
+  }
+
+  if (reason === 'invalid') {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="destructive" className="cursor-default">
+            Invalid
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <ul className="list-inside list-disc space-y-0.5">
+            {(errors ?? []).map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  const duplicateReason = getDuplicateReasonForTooltip(reason);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant="warning" className="cursor-default">
+          Duplicate
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent>
+        {duplicateReason ? getDuplicateTooltipMessage(duplicateReason) : null}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SkippedRowActions({
+  skippedRow,
+  onImport,
+  onEdit,
+  isImporting,
+}: {
+  skippedRow: ImportSkippedRow;
+  onImport: (row: ImportSkippedRow) => void;
+  onEdit: (row: ImportSkippedRow) => void;
+  isImporting: boolean;
+}) {
+  const showImport = isDuplicateSkippedReason(skippedRow.reason);
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {showImport ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              disabled={isImporting}
+              onClick={() => onImport(skippedRow)}
+              aria-label="Import row"
+            >
+              <Check />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Import row</TooltipContent>
+        </Tooltip>
+      ) : null}
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            onClick={() => onEdit(skippedRow)}
+            aria-label="Edit row"
+          >
+            <Pencil />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Edit row</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
 function createReasonColumn(): ColumnDef<ImportSkippedRow> {
   return {
     id: 'reason',
     header: 'Validation',
-    cell: ({ row }) => {
-      const { reason, errors } = row.original;
-
-      if (isSkippedRowReadyToImport(reason, errors)) {
-        return (
-          <Badge variant="secondary" className="cursor-default">
-            Ready
-          </Badge>
-        );
-      }
-
-      if (reason === 'invalid') {
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive" className="cursor-default">
-                Invalid
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <ul className="list-inside list-disc space-y-0.5">
-                {(errors ?? []).map((error) => (
-                  <li key={error}>{error}</li>
-                ))}
-              </ul>
-            </TooltipContent>
-          </Tooltip>
-        );
-      }
-
-      const duplicateReason = getDuplicateReasonForTooltip(reason);
-
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="warning" className="cursor-default">
-              Duplicate
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {duplicateReason
-              ? getDuplicateTooltipMessage(duplicateReason)
-              : null}
-          </TooltipContent>
-        </Tooltip>
-      );
-    },
+    cell: ({ row }) => (
+      <SkippedRowReasonBadge
+        reason={row.original.reason}
+        errors={row.original.errors}
+      />
+    ),
   };
 }
 
@@ -109,48 +166,14 @@ function createActionsColumn(
   return {
     id: 'actions',
     header: () => <span className="sr-only">Actions</span>,
-    cell: ({ row }) => {
-      const skippedRow = row.original;
-      const showImport = isDuplicateSkippedReason(skippedRow.reason);
-      const isImporting = isImportingId === skippedRow.id;
-
-      return (
-        <div className="flex items-center justify-end gap-1">
-          {showImport ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={isImporting}
-                  onClick={() => onImport(skippedRow)}
-                  aria-label="Import row"
-                >
-                  <Check />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Import row</TooltipContent>
-            </Tooltip>
-          ) : null}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={() => onEdit(skippedRow)}
-                aria-label="Edit row"
-              >
-                <Pencil />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Edit row</TooltipContent>
-          </Tooltip>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <SkippedRowActions
+        skippedRow={row.original}
+        onImport={onImport}
+        onEdit={onEdit}
+        isImporting={isImportingId === row.original.id}
+      />
+    ),
   };
 }
 
@@ -217,6 +240,44 @@ export function ImportSkippedRowsTable({
     <ImportDataTable
       columns={createColumns(includeBalance, onImport, onEdit, isImportingId)}
       data={data}
+      renderMobileCard={({ original: skippedRow }) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium whitespace-normal">
+                {skippedRow.description}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatDisplayDate(skippedRow.date)}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-0.5">
+              <TableMoneyCell value={skippedRow.value} />
+              {skippedRow.balance != null ? (
+                <div className="flex items-baseline gap-1 text-xs text-muted-foreground">
+                  <span>Balance:</span>
+                  <TableMoneyCell
+                    value={skippedRow.balance}
+                    className="text-xs"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <SkippedRowReasonBadge
+              reason={skippedRow.reason}
+              errors={skippedRow.errors}
+            />
+            <SkippedRowActions
+              skippedRow={skippedRow}
+              onImport={onImport}
+              onEdit={onEdit}
+              isImporting={isImportingId === skippedRow.id}
+            />
+          </div>
+        </div>
+      )}
     />
   );
 }

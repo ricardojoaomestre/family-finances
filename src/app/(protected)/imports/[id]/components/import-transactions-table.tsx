@@ -156,6 +156,31 @@ export function ImportTransactionsTable({
         selectAllInDataset={selectAllInImport}
         onSelectAllInDatasetChange={setSelectAllInImport}
         selectAllBannerLabel="in this import"
+        renderMobileCard={({ original: transaction }) => (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">{transaction.description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatDisplayDate(transaction.date)}
+                {transaction.categoryName
+                  ? ` · ${transaction.categoryName}`
+                  : null}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-0.5">
+              <TableMoneyCell value={transaction.value} />
+              {transaction.balance != null ? (
+                <div className="flex items-baseline gap-1 text-xs text-muted-foreground">
+                  <span>Balance:</span>
+                  <TableMoneyCell
+                    value={transaction.balance}
+                    className="text-xs"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
       />
 
       <AlertDialog

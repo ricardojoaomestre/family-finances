@@ -101,6 +101,28 @@ export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps)
         data={filteredData}
         paginate={paginate}
         getRowClassName={getImportJobRowClassName}
+        renderMobileCard={({ original: job }) => (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/imports/${job.id}`}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {getMerchantLabelOrSlug(job.merchant)}
+              </Link>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatDisplayDate(job.importedAt)} · {job.rowCount}{' '}
+                {job.rowCount === 1 ? 'row' : 'rows'}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {job.filename}
+              </p>
+            </div>
+            <Badge variant={importStatusBadgeVariant(job.status)}>
+              {formatImportStatus(job.status)}
+            </Badge>
+          </div>
+        )}
       />
     </div>
   );

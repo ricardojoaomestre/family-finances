@@ -61,7 +61,38 @@ export function ReportsTable({ reports }: ReportsTableProps) {
   return (
     <>
       <div className="overflow-hidden rounded-md border">
-        <Table>
+        <ul className="divide-y md:hidden">
+          {reports.map((report) => (
+            <li
+              key={report.id}
+              className="flex items-center justify-between gap-3 p-4"
+            >
+              <Link
+                href={`/reports/${report.id}`}
+                className="min-w-0 flex-1"
+              >
+                <p className="truncate text-sm font-medium">{report.name}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {formatReportMonth(report.dateFrom)}
+                </p>
+              </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={isPending}
+                aria-label={`Delete ${report.name}`}
+                onClick={() => {
+                  setDeleteError(null);
+                  setDeleteTarget(report);
+                }}
+              >
+                <Trash2Icon />
+              </Button>
+            </li>
+          ))}
+        </ul>
+        <Table containerClassName="hidden md:block">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>

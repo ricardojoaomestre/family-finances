@@ -8,9 +8,12 @@ import {
   type ColumnDef,
   type OnChangeFn,
   type PaginationState,
+  type Row,
   type RowSelectionState,
 } from '@tanstack/react-table';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+
+import { cn } from '@/lib/utils';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { TableMoneyCell } from '@/components/data-table/table-money-cell';
@@ -55,6 +58,11 @@ interface ImportDataTableProps<TData, TValue> {
   onSelectAllInDatasetChange?: (selected: boolean) => void;
   selectAllBannerLabel?: string;
   getRowClassName?: (row: TData) => string | undefined;
+  /**
+   * When provided, rows are rendered as a stacked card list on small screens
+   * (the table is only shown from `md` up).
+   */
+  renderMobileCard?: (row: Row<TData>) => ReactNode;
 }
 
 export function ImportDataTable<TData, TValue>({
@@ -77,6 +85,7 @@ export function ImportDataTable<TData, TValue>({
   onSelectAllInDatasetChange,
   selectAllBannerLabel = 'in this list',
   getRowClassName,
+  renderMobileCard,
 }: ImportDataTableProps<TData, TValue>) {
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -200,6 +209,83 @@ export function ImportDataTable<TData, TValue>({
     table.getIsAllPageRowsSelected() &&
     data.length > pageRowCount;
 
+  const emptyState = (
+    <Empty className="border-0 py-12">
+      <EmptyHeader>
+        <EmptyTitle>No results</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
+  );
+
+  const mobileCardList = renderMobileCard ? (
+    <div className="md:hidden">
+      {table.getRowModel().rows.length ? (
+        <ul className="divide-y">
+          {table.getRowModel().rows.map((row) => {
+            const selectCell = useRowSelection
+              ? row
+                  .getAllCells()
+                  .find((cell) => cell.column.id === 'select')
+              : undefined;
+
+            return (
+              <li
+                key={row.id}
+                data-state={
+                  selectAllInDataset || row.getIsSelected()
+                    ? 'selected'
+                    : undefined
+                }
+                className={cn(
+                  'flex items-start gap-3 p-4 data-[state=selected]:bg-muted',
+                  getRowClassName?.(row.original),
+                )}
+              >
+                {selectCell ? (
+                  <div className="pt-1">
+                    {flexRender(
+                      selectCell.column.columnDef.cell,
+                      selectCell.getContext(),
+                    )}
+                  </div>
+                ) : null}
+                <div className="min-w-0 flex-1">{renderMobileCard(row)}</div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        emptyState
+      )}
+      {summaryFooter ? (
+        <div className="flex items-center justify-between gap-3 border-t bg-muted/50 px-4 py-3">
+          <span className="text-base font-semibold">{summaryFooter.label}</span>
+          <TableMoneyCell
+            value={summaryFooter.value}
+            className="text-xl font-semibold"
+          />
+        </div>
+      ) : null}
+      {usePagination ? (
+        <DataTablePagination
+          rowCount={resolvedRowCount}
+          pageIndex={pagination.pageIndex}
+          pageSize={pagination.pageSize}
+          pageCount={resolvedPageCount}
+          onPageChange={(pageIndex) =>
+            handlePaginationChange((current) => ({
+              ...current,
+              pageIndex,
+            }))
+          }
+          onPageSizeChange={(pageSize) =>
+            handlePaginationChange({ pageIndex: 0, pageSize })
+          }
+        />
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <div className="flex flex-col gap-0">
       {showSelectAllBanner ? (
@@ -223,7 +309,11 @@ export function ImportDataTable<TData, TValue>({
             : 'overflow-hidden rounded-md border'
         }
       >
-        <Table className={tableClassName}>
+        {mobileCardList}
+        <Table
+          className={tableClassName}
+          containerClassName={renderMobileCard ? 'hidden md:block' : undefined}
+        >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -271,11 +361,7 @@ export function ImportDataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={resolvedColumns.length} className="p-0">
-                  <Empty className="border-0 py-12">
-                    <EmptyHeader>
-                      <EmptyTitle>No results</EmptyTitle>
-                    </EmptyHeader>
-                  </Empty>
+                  {emptyState}
                 </TableCell>
               </TableRow>
             )}

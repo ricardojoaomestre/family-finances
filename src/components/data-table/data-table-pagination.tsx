@@ -31,12 +31,12 @@ export function DataTablePagination({
   const rowLabel = rowCount === 1 ? 'row' : 'rows';
 
   return (
-    <div className="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex items-center justify-between gap-3 border-t px-4 py-3 max-sm:flex-wrap">
       <p className="text-sm text-muted-foreground">
         {rowCount.toLocaleString()} {rowLabel}
       </p>
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 sm:flex">
           <span className="text-sm text-muted-foreground">Rows per page</span>
           <Combobox
             size="sm"
@@ -51,7 +51,7 @@ export function DataTablePagination({
             }))}
           />
         </div>
-        <p className="min-w-[88px] text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground sm:min-w-[88px]">
           Page {pageIndex + 1} of {pageCount}
         </p>
         <div className="flex items-center gap-1">
@@ -59,6 +59,7 @@ export function DataTablePagination({
             type="button"
             variant="outline"
             size="icon-sm"
+            className="hidden sm:inline-flex"
             aria-label="First page"
             disabled={pageIndex <= 0}
             onClick={() => onPageChange(0)}
@@ -89,6 +90,7 @@ export function DataTablePagination({
             type="button"
             variant="outline"
             size="icon-sm"
+            className="hidden sm:inline-flex"
             aria-label="Last page"
             disabled={pageIndex >= pageCount - 1}
             onClick={() => onPageChange(pageCount - 1)}

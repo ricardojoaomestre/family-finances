@@ -306,6 +306,47 @@ export function TransactionsTable({
         pageCount={result.pageCount}
         pagination={pagination}
         onPaginationChange={handlePaginationChange}
+        renderMobileCard={({ original: transaction }) => (
+          <div className="flex items-start justify-between gap-3">
+            <button
+              type="button"
+              className="min-w-0 flex-1 text-left"
+              onClick={() => handleViewTransactionDetails(transaction)}
+            >
+              <p className="text-sm font-medium">{transaction.description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {formatDisplayDate(transaction.date)} ·{' '}
+                {getMerchantLabelOrSlug(transaction.merchant)}
+              </p>
+              {transaction.categoryName && transaction.categoryColor ? (
+                <span className="mt-2 inline-flex">
+                  <CategoryPill
+                    name={transaction.categoryName}
+                    color={transaction.categoryColor}
+                  />
+                </span>
+              ) : null}
+            </button>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <TableMoneyCell value={transaction.value} />
+              <DataTableRowActions>
+                <DropdownMenuItem
+                  onSelect={() => handleViewTransactionDetails(transaction)}
+                >
+                  View details
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleEditTransaction(transaction)}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/imports/${transaction.importId}`}>
+                    View import
+                  </Link>
+                </DropdownMenuItem>
+              </DataTableRowActions>
+            </div>
+          </div>
+        )}
       />
       <TransactionFormSheet
         open={editingTransaction !== null}

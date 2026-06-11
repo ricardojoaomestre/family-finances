@@ -91,7 +91,7 @@ function CategoryTableRow({
       <TableCell className="w-10">
         <button
           type="button"
-          className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+          className="-m-3 flex size-11 cursor-grab touch-none items-center justify-center text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50 md:size-9 md:-m-2"
           disabled={dragDisabled}
           aria-label={`Reorder ${category.name}`}
           {...dragHandleProps}

@@ -71,7 +71,7 @@ export function Combobox({
           disabled={disabled}
           className={cn(
             'justify-between gap-1.5 rounded-3xl border border-transparent bg-input/50 px-3 py-2 font-normal shadow-none hover:bg-input/50',
-            size === 'sm' ? 'h-8' : 'h-9',
+            size === 'sm' ? 'h-10 md:h-8' : 'h-11 md:h-9',
             !selected && 'text-muted-foreground',
             className,
           )}
