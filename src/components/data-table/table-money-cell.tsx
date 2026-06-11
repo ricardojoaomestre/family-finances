@@ -1,13 +1,12 @@
 'use client';
 
-import { jetbrainsMono } from '@/lib/fonts';
 import { formatDisplayMoney } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
-export const TABLE_MONEY_CELL_CLASS = cn(
-  'text-right tabular-nums',
-  jetbrainsMono.className,
-);
+export const TABLE_MONEY_HEADER_CLASS = 'text-right';
+
+export const TABLE_MONEY_CELL_CLASS =
+  'text-right font-mono text-[13px] tabular-nums';
 
 export function getMoneyValueColorClass(
   value: string | number | null | undefined,
@@ -22,7 +21,7 @@ export function getMoneyValueColorClass(
     return undefined;
   }
 
-  return num < 0 ? 'text-red-400' : 'text-green-500';
+  return num < 0 ? 'text-destructive' : 'text-success';
 }
 
 type TableMoneyCellProps = {

@@ -19,7 +19,7 @@ import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-d
 import { CategoryPill } from '@/components/categories/category-pill';
 import { DataTableRowActions } from '@/components/data-table/row-actions';
 import {
-  TABLE_MONEY_CELL_CLASS,
+  TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -65,7 +65,7 @@ function createColumns({
     },
     {
       accessorKey: 'value',
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Amount</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Amount</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
     },
   ];
@@ -73,7 +73,7 @@ function createColumns({
   if (includeBalance) {
     columns.push({
       accessorKey: 'balance',
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Balance</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Balance</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('balance')} />,
     });
   }

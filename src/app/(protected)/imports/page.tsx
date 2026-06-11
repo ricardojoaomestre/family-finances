@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ImportJobsTable } from '@/app/(protected)/imports/components/import-jobs-table';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -15,18 +16,16 @@ export default async function ImportJobsPage() {
   const importJobs = await getImports();
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Import jobs</h1>
-          <p className="text-sm text-muted-foreground">
-            All spreadsheet imports
-          </p>
-        </div>
-        <Button variant="outline" className="shrink-0" asChild>
-          <Link href="/imports/new">Import file</Link>
-        </Button>
-      </div>
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <PageHeader
+        title="Import jobs"
+        description="All spreadsheet imports"
+        actions={
+          <Button variant="outline" asChild>
+            <Link href="/imports/new">Import file</Link>
+          </Button>
+        }
+      />
 
       {importJobs.length === 0 ? (
         <Empty>

@@ -5,7 +5,7 @@ import { Check, Pencil } from 'lucide-react';
 
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import {
-  TABLE_MONEY_CELL_CLASS,
+  TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { Badge } from '@/components/ui/badge';
@@ -176,7 +176,7 @@ function createColumns(
     },
     {
       accessorKey: 'value',
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Value</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Value</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
     },
   ];
@@ -184,8 +184,12 @@ function createColumns(
   if (includeBalance) {
     columns.push({
       accessorKey: 'balance',
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Balance</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Balance</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('balance')} />,
+      meta: {
+        headerClassName: 'hidden lg:table-cell',
+        cellClassName: 'hidden lg:table-cell',
+      },
     });
   }
 

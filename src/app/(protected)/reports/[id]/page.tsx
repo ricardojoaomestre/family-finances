@@ -34,7 +34,7 @@ export default async function ReportPage({
 
   if (!validation.ok) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-6">
+      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
         <MonthReportView
           mode="edit"
           reportId={report.id}
@@ -64,7 +64,7 @@ export default async function ReportPage({
   }));
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       <MonthReportView
         key={`${report.id}-${report.updatedAt.getTime()}-${validation.dateFrom}-${validation.dateTo}`}
         mode="edit"

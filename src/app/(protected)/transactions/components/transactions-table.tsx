@@ -26,7 +26,7 @@ import {
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { CategoryPill } from '@/components/categories/category-pill';
 import {
-  TABLE_MONEY_CELL_CLASS,
+  TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { DataTableRowActions } from '@/components/data-table/row-actions';
@@ -56,13 +56,32 @@ function createTransactionColumns({
       accessorKey: 'date',
       header: 'Date',
       cell: ({ row }) => formatDisplayDate(row.original.date),
+      meta: {
+        cellClassName: 'align-top text-muted-foreground md:align-middle md:text-foreground',
+      },
     },
     {
       accessorKey: 'description',
       header: 'Description',
-      cell: ({ row }) => (
-        <span className="whitespace-normal">{row.getValue('description')}</span>
-      ),
+      cell: ({ row }) => {
+        const { categoryName, categoryColor } = row.original;
+
+        return (
+          <div className="flex flex-col gap-1.5">
+            <span className="whitespace-normal">
+              {row.getValue('description')}
+            </span>
+            {categoryName && categoryColor ? (
+              <span className="md:hidden">
+                <CategoryPill name={categoryName} color={categoryColor} />
+              </span>
+            ) : null}
+          </div>
+        );
+      },
+      meta: {
+        cellClassName: 'align-top md:align-middle',
+      },
     },
     {
       accessorKey: 'categoryName',
@@ -76,16 +95,27 @@ function createTransactionColumns({
 
         return <CategoryPill name={categoryName} color={categoryColor} />;
       },
+      meta: {
+        headerClassName: 'hidden md:table-cell',
+        cellClassName: 'hidden md:table-cell',
+      },
     },
     {
       accessorKey: 'value',
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Value</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Value</div>,
       cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
+      meta: {
+        cellClassName: 'align-top md:align-middle',
+      },
     },
     {
       accessorKey: 'merchant',
       header: 'Merchant',
       cell: ({ row }) => getMerchantLabelOrSlug(row.original.merchant),
+      meta: {
+        headerClassName: 'hidden lg:table-cell',
+        cellClassName: 'hidden lg:table-cell',
+      },
     },
     {
       id: 'actions',

@@ -11,7 +11,7 @@ import type { ImportCategoryOption } from "@/lib/categories/get-active-categorie
 import { CategoryColorSwatch } from "@/components/categories/category-color-swatch";
 import { CategoryCombobox } from "@/components/categories/category-combobox";
 import {
-  TABLE_MONEY_CELL_CLASS,
+  TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
 } from "@/components/data-table/table-money-cell";
 
@@ -261,7 +261,7 @@ function getBaseColumns(
     createCategoryColumn(categories, onCategoryChange, onCreateCategory),
     {
       accessorKey: "value",
-      header: () => <div className={TABLE_MONEY_CELL_CLASS}>Value</div>,
+      header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Value</div>,
       cell: ({ row }) => (
         <TableMoneyCell value={row.getValue("value")} />
       ),
@@ -271,8 +271,12 @@ function getBaseColumns(
 
 const balanceColumn: ColumnDef<PreviewRow> = {
   accessorKey: "balance",
-  header: () => <div className={TABLE_MONEY_CELL_CLASS}>Balance</div>,
+  header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Balance</div>,
   cell: ({ row }) => <TableMoneyCell value={row.getValue("balance")} />,
+  meta: {
+    headerClassName: "hidden lg:table-cell",
+    cellClassName: "hidden lg:table-cell",
+  },
 };
 
 export function getPreviewColumns(

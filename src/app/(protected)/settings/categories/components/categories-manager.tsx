@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
 import type { CategoryImportSnapshotMeta } from '@/lib/categories/get-category-import-snapshot-meta';
 import type { CategoryRow } from '@/lib/categories/get-categories';
 import {
@@ -227,45 +228,42 @@ export function CategoriesManager({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Categories</h2>
-          <p className="text-sm text-muted-foreground">
-            Rules for auto-categorizing transactions at import time. Longest
-            match wins; priority breaks ties.
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {importSnapshot.canUndo ? (
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <PageHeader
+        title="Categories"
+        description="Rules for auto-categorizing transactions at import time. Longest match wins; priority breaks ties."
+        actions={
+          <>
+            {importSnapshot.canUndo ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setUndoDialogOpen(true)}
+                disabled={isPending}
+              >
+                Undo last import
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
-              onClick={() => setUndoDialogOpen(true)}
+              onClick={handleExportCsv}
               disabled={isPending}
             >
-              Undo last import
+              Export CSV
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExportCsv}
-            disabled={isPending}
-          >
-            Export CSV
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={openImport}
-            disabled={isPending}
-          >
-            Import CSV
-          </Button>
-          <Button onClick={openCreate}>New category</Button>
-        </div>
-      </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openImport}
+              disabled={isPending}
+            >
+              Import CSV
+            </Button>
+            <Button onClick={openCreate}>New category</Button>
+          </>
+        }
+      />
 
       {showImportNotice ? (
         <Alert>

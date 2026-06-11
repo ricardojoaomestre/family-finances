@@ -99,7 +99,7 @@ function CategoryTableRow({
           <GripVerticalIcon className="size-4" />
         </button>
       </TableCell>
-      <TableCell className="w-12">
+      <TableCell className="hidden w-12 md:table-cell">
         <span className="tabular-nums text-muted-foreground">{index + 1}</span>
       </TableCell>
       <TableCell className="w-12">
@@ -108,7 +108,7 @@ function CategoryTableRow({
       <TableCell>
         <span className="block truncate font-medium">{category.name}</span>
       </TableCell>
-      <TableCell className="w-28">
+      <TableCell className="hidden w-28 sm:table-cell">
         <CategoryTypeBadge type={category.type} />
       </TableCell>
       <TableCell className="w-20">
@@ -119,16 +119,17 @@ function CategoryTableRow({
           onCheckedChange={(checked) => onToggleActive(category.id, checked)}
         />
       </TableCell>
-      <TableCell className="w-24">
+      <TableCell className="w-14 sm:w-24">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           disabled={disabled}
           onClick={() => onEdit(category)}
+          aria-label={`Edit ${category.name}`}
         >
           <PencilIcon />
-          Edit
+          <span className="hidden sm:inline">Edit</span>
         </Button>
       </TableCell>
     </TableRow>
@@ -315,14 +316,14 @@ export function CategoriesTable({
             <TableHead className="w-10">
               <span className="sr-only">Reorder</span>
             </TableHead>
-            <TableHead className="w-12">#</TableHead>
+            <TableHead className="hidden w-12 md:table-cell">#</TableHead>
             <TableHead className="w-12">
               <span className="sr-only">Color</span>
             </TableHead>
             <TableHead>Name</TableHead>
-            <TableHead className="w-28">Type</TableHead>
+            <TableHead className="hidden w-28 sm:table-cell">Type</TableHead>
             <TableHead className="w-20">Active</TableHead>
-            <TableHead className="w-24">
+            <TableHead className="w-14 sm:w-24">
               <span className="sr-only">Actions</span>
             </TableHead>
           </TableRow>

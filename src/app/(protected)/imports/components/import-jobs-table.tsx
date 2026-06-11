@@ -50,16 +50,22 @@ const columns: ColumnDef<ImportJobRow>[] = [
     cell: ({ row }) => (
       <div className="text-right tabular-nums">{row.original.rowCount}</div>
     ),
+    meta: {
+      headerClassName: 'hidden sm:table-cell',
+      cellClassName: 'hidden sm:table-cell',
+    },
   },
   {
     accessorKey: 'filename',
     header: 'Filename',
     meta: {
-      headerClassName: 'w-full',
-      cellClassName: 'w-full',
+      headerClassName: 'hidden w-full md:table-cell',
+      cellClassName: 'hidden w-full md:table-cell',
     },
     cell: ({ row }) => (
-      <span className="block truncate">{row.original.filename}</span>
+      <span className="block truncate text-muted-foreground">
+        {row.original.filename}
+      </span>
     ),
   },
 ];

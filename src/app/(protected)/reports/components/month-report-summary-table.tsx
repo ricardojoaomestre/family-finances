@@ -1,12 +1,7 @@
-import {
-  TableMoneyCell,
-} from '@/components/data-table/table-money-cell';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
+import { getMoneyValueColorClass } from '@/components/data-table/table-money-cell';
+import { Card, CardContent } from '@/components/ui/card';
+import { formatDisplayMoney } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
 
 type MonthReportSummaryTableProps = {
   totalIncome: string;
@@ -41,21 +36,30 @@ export function MonthReportSummaryTable({
 
   return (
     <section className="flex flex-col gap-3">
-      <div>
-        <h2 className="text-lg font-semibold">Summary</h2>
+      <h2 className="text-lg font-semibold">Summary</h2>
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        {summaryRows.map((row) => {
+          const value = values[row.valueKey];
+
+          return (
+            <Card key={row.key} size="sm" className="rounded-xl shadow-xs">
+              <CardContent className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {row.label}
+                </p>
+                <p
+                  className={cn(
+                    'font-mono text-2xl font-semibold tracking-tight tabular-nums',
+                    getMoneyValueColorClass(value),
+                  )}
+                >
+                  {formatDisplayMoney(value)}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
-      <Table>
-        <TableBody>
-          {summaryRows.map((row) => (
-            <TableRow key={row.key}>
-              <TableCell className="font-medium">{row.label}</TableCell>
-              <TableCell className="text-right">
-                <TableMoneyCell value={values[row.valueKey]} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
     </section>
   );
 }

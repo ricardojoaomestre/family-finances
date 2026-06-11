@@ -22,7 +22,7 @@ export default async function NewReportPage({
 
   if (!hasDatesInUrl) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-6">
+      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
         <MonthReportView
           mode="new"
           listParams={listParams}
@@ -39,7 +39,7 @@ export default async function NewReportPage({
 
   if (!validation.ok) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-6">
+      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
         <MonthReportView
           mode="new"
           listParams={listParams}
@@ -72,7 +72,7 @@ export default async function NewReportPage({
   const categories = categoryRows.map(({ id, name }) => ({ id, name }));
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       <MonthReportView
         key={`${resolvedListParams.dateFrom}-${resolvedListParams.dateTo}`}
         mode="new"

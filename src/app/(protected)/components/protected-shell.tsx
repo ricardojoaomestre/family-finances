@@ -29,7 +29,7 @@ export function ProtectedShell({
         userImage={userImage}
       />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <div
@@ -39,7 +39,9 @@ export function ProtectedShell({
           </div>
           <ProtectedBreadcrumbs />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

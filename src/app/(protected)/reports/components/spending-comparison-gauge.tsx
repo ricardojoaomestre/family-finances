@@ -64,7 +64,7 @@ export function SpendingComparisonGauge({
           <span
             className={cn(
               'inline-flex items-center gap-0.5 text-xs font-medium tabular-nums',
-              isUp ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400',
+              isUp ? 'text-destructive' : 'text-success',
             )}
             aria-label={label}
           >

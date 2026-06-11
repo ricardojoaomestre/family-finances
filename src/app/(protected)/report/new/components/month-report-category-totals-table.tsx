@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 
 import { MonthReportCategoryDetailSheet } from '@/app/(protected)/report/new/components/month-report-category-detail-sheet';
 import { SpendingComparisonGauge } from '@/app/(protected)/reports/components/spending-comparison-gauge';
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import {
   TABLE_MONEY_CELL_CLASS,
+  TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
 } from '@/components/data-table/table-money-cell';
 import { Button } from '@/components/ui/button';
@@ -85,10 +86,10 @@ export function MonthReportCategoryTotalsTable({
       },
       {
         accessorKey: 'total',
-        header: () => <div className={TABLE_MONEY_CELL_CLASS}>Total</div>,
+        header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Total</div>,
         meta: {
-          headerClassName: cn(TABLE_MONEY_CELL_CLASS, 'w-44'),
-          cellClassName: cn(TABLE_MONEY_CELL_CLASS, 'w-44'),
+          headerClassName: cn(TABLE_MONEY_HEADER_CLASS, 'w-32 sm:w-44'),
+          cellClassName: cn(TABLE_MONEY_CELL_CLASS, 'w-32 sm:w-44'),
         },
         cell: ({ row }) => {
           const { categoryId, total } = row.original;
@@ -112,8 +113,8 @@ export function MonthReportCategoryTotalsTable({
         id: 'actions',
         header: () => <span className="sr-only">Actions</span>,
         meta: {
-          headerClassName: 'w-36 text-right',
-          cellClassName: 'w-36 text-right',
+          headerClassName: 'w-12 text-right sm:w-36',
+          cellClassName: 'w-12 text-right sm:w-36',
         },
         cell: ({ row }) => (
           <div className="flex justify-end">
@@ -121,12 +122,14 @@ export function MonthReportCategoryTotalsTable({
               type="button"
               variant="ghost"
               size="sm"
+              aria-label="View details"
               onClick={() => {
                 setSelectedCategory(row.original);
                 setSheetOpen(true);
               }}
             >
-              View details
+              <span className="hidden sm:inline">View details</span>
+              <ChevronRightIcon className="sm:hidden" />
             </Button>
           </div>
         ),

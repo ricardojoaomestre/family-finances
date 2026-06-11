@@ -15,7 +15,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { jetbrainsMono } from '@/lib/fonts';
 import {
   formatDisplayDate,
   formatDisplayDateTime,
@@ -98,8 +97,7 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
               </p>
               <p
                 className={cn(
-                  'mt-2 text-4xl font-semibold tracking-tight tabular-nums',
-                  jetbrainsMono.className,
+                  'mt-2 font-mono text-4xl font-semibold tracking-tight tabular-nums',
                   valueColorClass,
                 )}
               >
@@ -137,12 +135,7 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
                 </DetailField>
                 {details.balance != null ? (
                   <DetailField label="Balance">
-                    <span
-                      className={cn(
-                        'tabular-nums',
-                        jetbrainsMono.className,
-                      )}
-                    >
+                    <span className="font-mono tabular-nums">
                       {formatDisplayMoney(details.balance)}
                     </span>
                   </DetailField>

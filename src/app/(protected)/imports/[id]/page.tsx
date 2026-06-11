@@ -97,53 +97,69 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
     importRecord.importerName ?? importRecord.importerEmail ?? 'Unknown';
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-col gap-2">
         <Link
           href="/imports"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           ← Back to imports
         </Link>
-        <h1 className="text-2xl font-semibold">{importRecord.filename}</h1>
+        <h1 className="break-all text-2xl font-semibold tracking-tight">
+          {importRecord.filename}
+        </h1>
       </div>
 
-      <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <dt className="text-muted-foreground">Imported at</dt>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-5 rounded-xl border bg-card p-4 text-sm sm:grid-cols-3 sm:p-5 lg:grid-cols-6">
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Imported at
+          </dt>
           <dd className="font-medium">
             {formatDisplayDate(importRecord.importedAt)}
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Rows imported</dt>
-          <dd className="font-medium">{importRecord.rowCount}</dd>
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Rows imported
+          </dt>
+          <dd className="font-medium tabular-nums">{importRecord.rowCount}</dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Rows skipped</dt>
-          <dd className="font-medium">
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Rows skipped
+          </dt>
+          <dd className="font-medium tabular-nums">
             {importRecord.skippedCount != null
               ? importRecord.skippedCount
               : '—'}
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Status</dt>
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Status
+          </dt>
           <dd>
             <Badge variant={importStatusBadgeVariant(importRecord.status)}>
               {formatImportStatus(importRecord.status)}
             </Badge>
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Merchant</dt>
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Merchant
+          </dt>
           <dd className="font-medium">
             {getMerchantLabelOrSlug(importRecord.merchant)}
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Imported by</dt>
-          <dd className="font-medium">{importedBy}</dd>
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Imported by
+          </dt>
+          <dd className="truncate font-medium" title={importedBy}>
+            {importedBy}
+          </dd>
         </div>
       </dl>
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { TransactionsTable } from '@/app/(protected)/transactions/components/transactions-table';
+import { PageHeader } from '@/components/page-header';
 import {
   Empty,
   EmptyDescription,
@@ -46,13 +47,11 @@ export default async function TransactionsPage({
   const categoryOptions = categoryRows.map(({ id, name }) => ({ id, name }));
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Transactions</h1>
-        <p className="text-sm text-muted-foreground">
-          All transactions from every import
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      <PageHeader
+        title="Transactions"
+        description="All transactions from every import"
+      />
       {totalInDb === 0 ? (
         <Empty>
           <EmptyHeader>

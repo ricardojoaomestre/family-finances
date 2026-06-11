@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Roboto } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { jetbrainsMono } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
-
-const roboto = Roboto({subsets:['latin'],variable:'--font-sans'});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +28,11 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, jetbrainsMono.variable, "font-sans", roboto.variable)}
+      className={cn(
+        "h-full antialiased font-sans",
+        geistSans.variable,
+        geistMono.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>
