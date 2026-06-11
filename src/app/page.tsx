@@ -4,14 +4,13 @@ import {
   PiggyBankIcon,
   TrendingUpIcon,
   UploadIcon,
-  WalletIcon,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 import { auth, signIn } from '@/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { SignInSubmitButton } from '@/components/sign-in-submit-button';
 import {
   Card,
   CardDescription,
@@ -102,10 +101,7 @@ export default async function Home({
             await signIn('google', { redirectTo });
           }}
         >
-          <Button type="submit" size="lg" className="gap-2 px-8">
-            <WalletIcon className="size-4" />
-            Sign in with Google
-          </Button>
+          <SignInSubmitButton />
         </form>
 
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
