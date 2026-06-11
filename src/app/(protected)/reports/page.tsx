@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
+import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { ReportsTable } from '@/app/(protected)/reports/components/reports-table';
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -16,8 +16,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        title="Reports"
+      <SetPageHeader
         description="Saved monthly spending reports"
         actions={
           <Button asChild>

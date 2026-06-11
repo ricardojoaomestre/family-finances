@@ -24,8 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { PrimaryOverflowActions } from '@/app/(protected)/components/primary-overflow-actions';
+import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/page-header';
 import type { CategoryImportSnapshotMeta } from '@/lib/categories/get-category-import-snapshot-meta';
 import type { CategoryRow } from '@/lib/categories/get-categories';
 import {
@@ -229,39 +230,35 @@ export function CategoriesManager({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        title="Categories"
+      <SetPageHeader
         description="Rules for auto-categorizing transactions at import time. Longest match wins; priority breaks ties."
         actions={
-          <>
-            {importSnapshot.canUndo ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setUndoDialogOpen(true)}
-                disabled={isPending}
-              >
-                Undo last import
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleExportCsv}
-              disabled={isPending}
-            >
-              Export CSV
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={openImport}
-              disabled={isPending}
-            >
-              Import CSV
-            </Button>
-            <Button onClick={openCreate}>New category</Button>
-          </>
+          <PrimaryOverflowActions
+            primaryLabel="New category"
+            onPrimaryClick={openCreate}
+            primaryDisabled={isPending}
+            overflowActions={[
+              ...(importSnapshot.canUndo
+                ? [
+                    {
+                      label: 'Undo last import',
+                      onSelect: () => setUndoDialogOpen(true),
+                      disabled: isPending,
+                    },
+                  ]
+                : []),
+              {
+                label: 'Export CSV',
+                onSelect: handleExportCsv,
+                disabled: isPending,
+              },
+              {
+                label: 'Import CSV',
+                onSelect: openImport,
+                disabled: isPending,
+              },
+            ]}
+          />
         }
       />
 

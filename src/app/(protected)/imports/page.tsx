@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
+import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { ImportJobsTable } from '@/app/(protected)/imports/components/import-jobs-table';
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -17,11 +17,10 @@ export default async function ImportJobsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        title="Import jobs"
+      <SetPageHeader
         description="All spreadsheet imports"
         actions={
-          <Button variant="outline" asChild>
+          <Button asChild>
             <Link href="/imports/new">Import file</Link>
           </Button>
         }

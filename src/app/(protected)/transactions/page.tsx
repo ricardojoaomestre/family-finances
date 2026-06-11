@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { TransactionsTable } from '@/app/(protected)/transactions/components/transactions-table';
-import { PageHeader } from '@/components/page-header';
 import {
   Empty,
   EmptyDescription,
@@ -48,10 +48,7 @@ export default async function TransactionsPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        title="Transactions"
-        description="All transactions from every import"
-      />
+      <SetPageHeader description="All transactions from every import" />
       {totalInDb === 0 ? (
         <Empty>
           <EmptyHeader>

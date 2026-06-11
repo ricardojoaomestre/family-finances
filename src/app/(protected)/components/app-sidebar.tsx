@@ -34,8 +34,8 @@ export function AppSidebar({ userName, userEmail, userImage }: AppSidebarProps) 
 
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-2">
+      <SidebarHeader className="h-14 shrink-0 justify-center gap-0 border-b border-sidebar-border px-2 py-0">
+        <div className="flex h-full w-full items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-2">
           <SidebarMenu className="min-w-0 flex-1 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:flex-none">
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>

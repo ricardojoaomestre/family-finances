@@ -16,9 +16,7 @@ export default async function ProtectedLayout({
       headersList.get('x-pathname') ??
       headersList.get('next-url')?.split('?')[0] ??
       '/dashboard';
-    redirect(
-      `/sign-in?callbackUrl=${encodeURIComponent(pathname)}`
-    );
+    redirect(`/?callbackUrl=${encodeURIComponent(pathname)}`);
   }
 
   return (

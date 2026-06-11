@@ -65,9 +65,8 @@ npm run db:reset -- --confirm   # drop all tables and re-migrate (destructive)
 
 ```
 src/app/
-├── page.tsx                    # landing: sign-in link or dashboard link
-├── sign-in/page.tsx            # Google OAuth
-└── (protected)/                # auth-gated via layout (redirects to /sign-in)
+├── page.tsx                    # landing page with Google sign-in
+└── (protected)/                # auth-gated via layout (redirects to /)
     ├── layout.tsx              # session check + ProtectedShell (sidebar)
     ├── dashboard/page.tsx      # welcome placeholder
     ├── imports/
@@ -83,7 +82,7 @@ src/app/
         └── categories/page.tsx # category CRUD, import/export, reorder
 ```
 
-Protected routes live under `src/app/(protected)/`. The layout calls `auth()` and redirects unauthenticated users to `/sign-in?callbackUrl=…`.
+Protected routes live under `src/app/(protected)/`. The layout calls `auth()` and redirects unauthenticated users to `/?callbackUrl=…`.
 
 There is **no middleware** — auth is enforced in the protected layout only.
 
@@ -172,7 +171,7 @@ Defined in `src/lib/file-import/duplicate-key.ts`. A row is duplicate if the key
 
 - Google OAuth only (`src/auth.ts`)
 - Database session strategy (not JWT)
-- Sign-in page: `/sign-in`
+- Sign-in page: `/` (landing)
 - Session exposes `user.id` to server actions
 
 ### File import pipeline

@@ -2,6 +2,7 @@ import { asc, desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { SetPageTitle } from '@/app/(protected)/components/protected-page-context';
 import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/import-detail-tabs';
 import type { ImportSkippedRow } from '@/app/(protected)/imports/[id]/components/import-skipped-rows-table';
 import { Badge } from '@/components/ui/badge';
@@ -98,17 +99,13 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-2">
-        <Link
-          href="/imports"
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          ← Back to imports
-        </Link>
-        <h1 className="break-all text-2xl font-semibold tracking-tight">
-          {importRecord.filename}
-        </h1>
-      </div>
+      <SetPageTitle title={importRecord.filename} />
+      <Link
+        href="/imports"
+        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        ← Back to imports
+      </Link>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-5 rounded-xl border bg-card p-4 text-sm sm:grid-cols-3 sm:p-5 lg:grid-cols-6">
         <div className="flex flex-col gap-1">
