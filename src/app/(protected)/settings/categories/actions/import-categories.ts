@@ -15,6 +15,11 @@ import {
   resolveCategoryType,
 } from '@/lib/categories/category-type';
 import {
+  guessCategoryIcon,
+  resolveCategoryIcon,
+  type CategoryIconName,
+} from '@/lib/categories/category-icons';
+import {
   buildCategoryImportPlan,
   pickCategoryImportColor,
   type CategoryImportCsvRow,
@@ -33,6 +38,7 @@ export type ImportCategoriesInput = {
     type: boolean;
     active: boolean;
     color: boolean;
+    icon: boolean;
   };
 };
 
@@ -109,6 +115,7 @@ export async function importCategories(
           type?: typeof categories.$inferInsert.type;
           active?: boolean;
           color?: string;
+          icon?: CategoryIconName;
         } = {
           pattern: row.normalizedPattern,
           updatedAt: now,
@@ -124,6 +131,10 @@ export async function importCategories(
 
         if (row.color !== undefined) {
           updateSet.color = row.color;
+        }
+
+        if (row.icon !== undefined) {
+          updateSet.icon = row.icon;
         }
 
         await db
@@ -166,6 +177,7 @@ export async function importCategories(
         name: row.csvName.trim(),
         description: null,
         color: isCategoryColorToken(color) ? color : 'blue-200',
+        icon: row.icon ?? guessCategoryIcon(row.csvName),
         pattern: row.normalizedPattern,
         priority: nextPriority,
         active: row.active ?? true,
@@ -294,6 +306,9 @@ export async function undoCategoryImport(): Promise<
           name: row.name,
           description: row.description,
           color: row.color,
+          icon: row.icon
+            ? resolveCategoryIcon(row.icon)
+            : guessCategoryIcon(row.name),
           pattern: row.pattern,
           priority: row.priority,
           active: row.active,
@@ -306,6 +321,9 @@ export async function undoCategoryImport(): Promise<
             name: row.name,
             description: row.description,
             color: row.color,
+            icon: row.icon
+              ? resolveCategoryIcon(row.icon)
+              : guessCategoryIcon(row.name),
             pattern: row.pattern,
             priority: row.priority,
             active: row.active,

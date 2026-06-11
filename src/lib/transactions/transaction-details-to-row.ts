@@ -11,6 +11,7 @@ export function transactionDetailsToRow(
     categoryId: details.categoryId,
     categoryName: details.categoryName,
     categoryColor: details.categoryColor,
+    categoryIcon: details.categoryIcon,
     value: details.value,
     importId: details.importId,
     merchant: details.merchant,

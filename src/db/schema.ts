@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
+import type { CategoryIconName } from '@/lib/categories/category-icon-names';
 import type { CategoryType } from '@/lib/categories/category-type';
 import type { CategorySnapshotRow } from '@/lib/categories/import/types';
 
@@ -99,6 +100,7 @@ export const categories = pgTable('category', {
   name: text('name').notNull().unique(),
   description: text('description'),
   color: text('color').notNull(),
+  icon: text('icon').$type<CategoryIconName>().notNull().default('tag'),
   pattern: text('pattern'),
   priority: integer('priority').notNull(),
   active: boolean('active').notNull().default(true),

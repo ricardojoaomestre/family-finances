@@ -28,7 +28,7 @@ import {
 } from 'react';
 
 import { CategoryTypeBadge } from '@/app/(protected)/settings/categories/components/category-type-badge';
-import { CategoryColorSwatch } from '@/components/categories/category-color-swatch';
+import { CategoryIcon } from '@/components/categories/category-icon';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -103,7 +103,7 @@ function CategoryTableRow({
         <span className="tabular-nums text-muted-foreground">{index + 1}</span>
       </TableCell>
       <TableCell className="w-12">
-        <CategoryColorSwatch color={category.color} label={category.name} />
+        <CategoryIcon icon={category.icon} color={category.color} />
       </TableCell>
       <TableCell>
         <span className="block truncate font-medium">{category.name}</span>

@@ -25,6 +25,8 @@ import {
   type TransactionFilters,
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { CategoryPill } from '@/components/categories/category-pill';
+import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 import {
   TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
@@ -64,7 +66,7 @@ function createTransactionColumns({
       accessorKey: 'description',
       header: 'Description',
       cell: ({ row }) => {
-        const { categoryName, categoryColor } = row.original;
+        const { categoryName, categoryColor, categoryIcon } = row.original;
 
         return (
           <div className="flex flex-col gap-1.5">
@@ -73,7 +75,11 @@ function createTransactionColumns({
             </span>
             {categoryName && categoryColor ? (
               <span className="md:hidden">
-                <CategoryPill name={categoryName} color={categoryColor} />
+                <CategoryPill
+                  name={categoryName}
+                  color={categoryColor}
+                  icon={categoryIcon ?? 'tag'}
+                />
               </span>
             ) : null}
           </div>
@@ -87,13 +93,19 @@ function createTransactionColumns({
       accessorKey: 'categoryName',
       header: 'Category',
       cell: ({ row }) => {
-        const { categoryName, categoryColor } = row.original;
+        const { categoryName, categoryColor, categoryIcon } = row.original;
 
         if (!categoryName || !categoryColor) {
           return '—';
         }
 
-        return <CategoryPill name={categoryName} color={categoryColor} />;
+        return (
+          <CategoryPill
+            name={categoryName}
+            color={categoryColor}
+            icon={categoryIcon ?? 'tag'}
+          />
+        );
       },
       meta: {
         headerClassName: 'hidden md:table-cell',
@@ -141,15 +153,17 @@ function createTransactionColumns({
   ];
 }
 
-type CategoryFilterOption = {
+type CategoryOption = {
   id: string;
   name: string;
+  color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 type TransactionsTableProps = {
   listParams: TransactionListSearchParams;
   result: PaginatedTransactionsResult;
-  categories: CategoryFilterOption[];
+  categories: CategoryOption[];
 };
 
 function resolvePagination(
@@ -323,6 +337,7 @@ export function TransactionsTable({
                   <CategoryPill
                     name={transaction.categoryName}
                     color={transaction.categoryColor}
+                    icon={transaction.categoryIcon ?? 'tag'}
                   />
                 </span>
               ) : null}

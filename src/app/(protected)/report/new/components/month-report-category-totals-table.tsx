@@ -18,6 +18,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { CategoryPill } from '@/components/categories/category-pill';
+import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 import { categoryTypeLabels } from '@/lib/categories/category-type';
 import { computeSpendingComparison } from '@/lib/reports/compute-spending-comparison';
 import type { SpendingCategoryAverage } from '@/lib/reports/get-spending-category-month-averages';
@@ -29,6 +32,8 @@ import { cn } from '@/lib/utils';
 type CategoryOption = {
   id: string;
   name: string;
+  color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 const sectionTitles: Record<MonthReportCategoryTableType, string> = {
@@ -81,7 +86,19 @@ export function MonthReportCategoryTotalsTable({
             return '—';
           }
 
-          return categoryName;
+          const { categoryColor, categoryIcon } = row.original;
+
+          if (!categoryColor) {
+            return categoryName;
+          }
+
+          return (
+            <CategoryPill
+              name={categoryName}
+              color={categoryColor}
+              icon={categoryIcon ?? 'tag'}
+            />
+          );
         },
       },
       {

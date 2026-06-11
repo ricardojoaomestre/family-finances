@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 
 import type { CategoryFormInput } from '@/app/(protected)/settings/categories/actions/category-actions';
 import { CategoryColorPicker } from '@/app/(protected)/settings/categories/components/category-color-picker';
+import { CategoryIconPicker } from '@/app/(protected)/settings/categories/components/category-icon-picker';
 import { Button } from '@/components/ui/button';
 import {
   Field,
@@ -30,6 +31,10 @@ import {
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
 import {
+  guessCategoryIcon,
+  type CategoryIconName,
+} from '@/lib/categories/category-icons';
+import {
   categoryTypeDescriptions,
   categoryTypeLabels,
   categoryTypeValues,
@@ -47,7 +52,10 @@ type CategoryFormSheetProps = {
     ok: boolean;
     error?: string;
     fieldErrors?: Partial<
-      Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
+      Record<
+        'name' | 'pattern' | 'description' | 'color' | 'icon' | 'type',
+        string
+      >
     >;
   }>;
 };
@@ -79,14 +87,23 @@ function CategoryFormBody({
   const [type, setType] = useState<CategoryType>(
     category?.type ?? DEFAULT_CATEGORY_TYPE,
   );
+  const [icon, setIcon] = useState<CategoryIconName>(
+    category?.icon ?? guessCategoryIcon(category?.name ?? ''),
+  );
+  const [iconTouched, setIconTouched] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<
-      Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
+      Record<
+        'name' | 'pattern' | 'description' | 'color' | 'icon' | 'type',
+        string
+      >
     >
   >({});
 
   const isEditing = category !== null;
+  const resolvedIcon =
+    isEditing || iconTouched ? icon : guessCategoryIcon(name);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -99,6 +116,7 @@ function CategoryFormBody({
         name,
         description,
         color,
+        icon: resolvedIcon,
         pattern,
         active,
         type,
@@ -187,6 +205,27 @@ function CategoryFormBody({
               disabled={isPending}
             />
             <FieldError>{fieldErrors.color}</FieldError>
+          </FieldContent>
+        </Field>
+
+        <Field data-invalid={Boolean(fieldErrors.icon)}>
+          <FieldLabel>Icon</FieldLabel>
+          <FieldContent>
+            <CategoryIconPicker
+              value={resolvedIcon}
+              color={color}
+              onChange={(nextIcon) => {
+                setIconTouched(true);
+                setIcon(nextIcon);
+              }}
+              disabled={isPending}
+            />
+            <FieldDescription>
+              {isEditing
+                ? 'Icon is not changed when you rename the category.'
+                : 'Suggested from the name as you type. Pick a different icon to override.'}
+            </FieldDescription>
+            <FieldError>{fieldErrors.icon}</FieldError>
           </FieldContent>
         </Field>
 

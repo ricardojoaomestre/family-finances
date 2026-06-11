@@ -36,9 +36,14 @@ import type { MonthReportCategoryTransactionRow } from '@/lib/reports/month-repo
 import { transactionDetailsToRow } from '@/lib/transactions/transaction-details-to-row';
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 
+import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
+
 type CategoryOption = {
   id: string;
   name: string;
+  color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 function createColumns({
@@ -254,6 +259,7 @@ export function MonthReportCategoryDetailSheet({
                 <CategoryPill
                   name={category.categoryName}
                   color={category.categoryColor}
+                  icon={category.categoryIcon ?? 'tag'}
                 />
               ) : (
                 title

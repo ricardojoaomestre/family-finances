@@ -130,6 +130,7 @@ export function CategoriesManager({
         type: row.type,
         active: row.active,
         color: row.color,
+        icon: row.icon,
       })),
     );
     downloadTextFile('categories.csv', csv);

@@ -58,10 +58,14 @@ export default async function ReportPage({
       getSpendingCategoryMonthAverages(validation.dateFrom),
     ]);
 
-  const categories = categoryRows.map(({ id: categoryId, name }) => ({
-    id: categoryId,
-    name,
-  }));
+  const categories = categoryRows.map(
+    ({ id: categoryId, name, color, icon }) => ({
+      id: categoryId,
+      name,
+      color,
+      icon,
+    }),
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">

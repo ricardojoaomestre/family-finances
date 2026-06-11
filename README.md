@@ -141,7 +141,7 @@ Schema: `src/db/schema.ts`. Migrations: `drizzle/`.
 
 **`category`** — labeling rule.
 
-- `name` (unique), `description`, `color` (token), `pattern` (regex, optional)
+- `name` (unique), `description`, `color` (token), `icon` (Lucide kebab-case name from curated set), `pattern` (regex, optional)
 - `priority` (integer, lower = higher priority for tie-breaking)
 - `active`, `type`: `spending` | `income` | `transfer` | `saving`
 
@@ -248,7 +248,7 @@ All transactions across imports. Server-side pagination and filtering via URL pa
 
 Manage labeling rules used at import time and in reports.
 
-**CRUD** — create/edit in a sheet: name, description, color (palette tokens), regex pattern (optional), type, active toggle.
+**CRUD** — create/edit in a sheet: name, description, color (palette tokens), icon (curated Lucide set with live name-based suggestion on create), regex pattern (optional), type, active toggle.
 
 **Drag-to-reorder** — updates `priority` (lower number = higher priority for tie-breaking only).
 
@@ -257,9 +257,11 @@ Manage labeling rules used at import time and in reports.
 **CSV import/export** — semicolon-delimited format:
 
 ```
-name;regex;type;active;color
-Groceries;continente|pingo;spending;true;emerald
+name;regex;type;active;color;icon
+Groceries;continente|pingo;spending;true;emerald-200;shopping-cart
 ```
+
+`icon` is optional on import (auto-assigned from name when missing); included on export.
 
 - Import builds a plan (new, update, deactivate) with word-boundary normalization on patterns
 - Snapshot saved before import for **undo**

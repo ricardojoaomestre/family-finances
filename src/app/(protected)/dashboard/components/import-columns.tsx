@@ -8,7 +8,6 @@ import type { ImportedSpreadsheetRow, RowDuplicateStatus, RowValidation } from "
 import { getDuplicateTooltipMessage } from "@/lib/file-import";
 import type { ImportCategoryOption } from "@/lib/categories/get-active-categories-for-import";
 
-import { CategoryColorSwatch } from "@/components/categories/category-color-swatch";
 import { CategoryCombobox } from "@/components/categories/category-combobox";
 import {
   TABLE_MONEY_HEADER_CLASS,
@@ -58,9 +57,6 @@ const ImportPreviewCategoryCell = memo(function ImportPreviewCategoryCell({
   onCreateCategory,
 }: ImportPreviewCategoryCellProps) {
   const value = categoryId ?? UNCATEGORIZED_CATEGORY_VALUE;
-  const selectedCategory = categoryId
-    ? categories.find((category) => category.id === categoryId)
-    : undefined;
   const trimmedDescription = description.trim();
 
   return (
@@ -78,14 +74,6 @@ const ImportPreviewCategoryCell = memo(function ImportPreviewCategoryCell({
         noneValue={UNCATEGORIZED_CATEGORY_VALUE}
         className="max-w-[220px]"
       />
-
-      {selectedCategory ? (
-        <CategoryColorSwatch
-          color={selectedCategory.color}
-          className="size-3"
-          label={selectedCategory.name}
-        />
-      ) : null}
 
       <Tooltip>
         <TooltipTrigger asChild>

@@ -108,6 +108,7 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
                   <CategoryPill
                     name={details.categoryName}
                     color={details.categoryColor}
+                    icon={details.categoryIcon ?? 'tag'}
                     className="max-w-none text-sm"
                   />
                 ) : (

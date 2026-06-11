@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { CategoryPill } from '@/components/categories/category-pill';
 import { Button } from '@/components/ui/button';
 import { formatDisplayDate } from '@/lib/formatters';
 
@@ -26,6 +27,8 @@ export type ImportTransactionRow = {
   date: Date;
   description: string;
   categoryName: string | null;
+  categoryColor: string | null;
+  categoryIcon: string | null;
   value: string;
   balance: string | null;
 };
@@ -49,7 +52,21 @@ function createColumns(
     {
       accessorKey: 'categoryName',
       header: 'Category',
-      cell: ({ row }) => row.original.categoryName ?? '—',
+      cell: ({ row }) => {
+        const { categoryName, categoryColor, categoryIcon } = row.original;
+
+        if (!categoryName || !categoryColor) {
+          return '—';
+        }
+
+        return (
+          <CategoryPill
+            name={categoryName}
+            color={categoryColor}
+            icon={categoryIcon ?? 'tag'}
+          />
+        );
+      },
       meta: {
         headerClassName: 'hidden md:table-cell',
         cellClassName: 'hidden md:table-cell',

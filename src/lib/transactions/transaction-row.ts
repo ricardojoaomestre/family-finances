@@ -5,6 +5,7 @@ export type TransactionRow = {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
+  categoryIcon: string | null;
   value: string;
   importId: string;
   merchant: string;

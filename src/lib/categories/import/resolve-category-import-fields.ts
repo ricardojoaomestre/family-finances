@@ -2,6 +2,10 @@ import {
   isCategoryColorToken,
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
+import {
+  isCategoryIconName,
+  type CategoryIconName,
+} from '@/lib/categories/category-icons';
 import { isCategoryType, type CategoryType } from '@/lib/categories/category-type';
 
 export function resolveImportType(
@@ -61,4 +65,21 @@ export function resolveImportColor(
   }
 
   return isCategoryColorToken(trimmed) ? trimmed : undefined;
+}
+
+export function resolveImportIcon(
+  raw: string | undefined,
+  columnPresent: boolean,
+): CategoryIconName | undefined {
+  if (!columnPresent) {
+    return undefined;
+  }
+
+  const trimmed = (raw ?? '').trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return isCategoryIconName(trimmed) ? trimmed : undefined;
 }

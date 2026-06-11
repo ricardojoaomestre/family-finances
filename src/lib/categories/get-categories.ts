@@ -8,6 +8,10 @@ import {
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
 import {
+  resolveCategoryIcon,
+  type CategoryIconName,
+} from '@/lib/categories/category-icons';
+import {
   resolveCategoryType,
   type CategoryType,
 } from '@/lib/categories/category-type';
@@ -17,6 +21,7 @@ export type CategoryRow = {
   name: string;
   description: string | null;
   color: CategoryColorToken;
+  icon: CategoryIconName;
   pattern: string | null;
   priority: number;
   active: boolean;
@@ -30,6 +35,7 @@ export async function getCategories(): Promise<CategoryRow[]> {
       name: categories.name,
       description: categories.description,
       color: categories.color,
+      icon: categories.icon,
       pattern: categories.pattern,
       priority: categories.priority,
       active: categories.active,
@@ -43,6 +49,7 @@ export async function getCategories(): Promise<CategoryRow[]> {
         color: isCategoryColorToken(row.color)
           ? row.color
           : getDefaultCategoryColor(row.id),
+        icon: resolveCategoryIcon(row.icon),
         type: resolveCategoryType(row.type),
       })),
     );

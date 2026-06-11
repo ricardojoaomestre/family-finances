@@ -1,4 +1,5 @@
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 import type { CategoryType } from '@/lib/categories/category-type';
 
 export type CategoryImportCsvRow = {
@@ -7,12 +8,14 @@ export type CategoryImportCsvRow = {
   type?: string;
   active?: string;
   color?: string;
+  icon?: string;
 };
 
 export type CategoryCsvOptionalColumns = {
   type: boolean;
   active: boolean;
   color: boolean;
+  icon: boolean;
 };
 
 export type ParsedCategoryCsv = {
@@ -27,6 +30,7 @@ export type CategoryImportPreviewRow = {
   csvType?: string;
   csvActive?: string;
   csvColor?: string;
+  csvIcon?: string;
 };
 
 export type CategoryImportPlanSuccess = {
@@ -55,6 +59,7 @@ export type CategoryImportApplyRow = {
   type?: CategoryType;
   active?: boolean;
   color?: CategoryColorToken;
+  icon?: CategoryIconName;
 };
 
 export type CategorySnapshotRow = {
@@ -62,6 +67,7 @@ export type CategorySnapshotRow = {
   name: string;
   description: string | null;
   color: string;
+  icon: string;
   pattern: string | null;
   priority: number;
   active: boolean;

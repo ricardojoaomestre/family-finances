@@ -1,9 +1,17 @@
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 import type { CategoryType } from '@/lib/categories/category-type';
 
 import { serializeSemicolonCsv } from './serialize-semicolon-csv';
 
-const CATEGORY_CSV_HEADER = ['name', 'regex', 'type', 'active', 'color'] as const;
+const CATEGORY_CSV_HEADER = [
+  'name',
+  'regex',
+  'type',
+  'active',
+  'color',
+  'icon',
+] as const;
 
 export type CategoryCsvExportRow = {
   name: string;
@@ -11,6 +19,7 @@ export type CategoryCsvExportRow = {
   type: CategoryType;
   active: boolean;
   color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 export function buildCategoriesCsv(rows: CategoryCsvExportRow[]): string {
@@ -22,6 +31,7 @@ export function buildCategoriesCsv(rows: CategoryCsvExportRow[]): string {
       row.type,
       String(row.active),
       row.color,
+      row.icon,
     ]),
   ];
 

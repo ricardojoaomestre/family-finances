@@ -9,6 +9,7 @@ import {
   getDefaultCategoryColor,
   isCategoryColorToken,
 } from '@/lib/categories/category-colors';
+import { resolveCategoryIcon } from '@/lib/categories/category-icons';
 import { isTransactionId } from '@/lib/transactions/validate-transaction-form';
 import type { TransactionDetails } from '@/lib/transactions/transaction-details';
 
@@ -48,6 +49,7 @@ export async function getTransactionDetails(
       categoryId: transactions.categoryId,
       categoryName: categories.name,
       categoryColor: categories.color,
+      categoryIcon: categories.icon,
       importId: transactions.importId,
       importFilename: imports.filename,
       importStatus: imports.status,
@@ -84,6 +86,9 @@ export async function getTransactionDetails(
       categoryId: row.categoryId,
       categoryName: row.categoryName,
       categoryColor,
+      categoryIcon: row.categoryIcon
+        ? resolveCategoryIcon(row.categoryIcon)
+        : null,
       importId: row.importId,
       importFilename: row.importFilename,
       importStatus: row.importStatus,

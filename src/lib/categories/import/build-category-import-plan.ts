@@ -1,3 +1,4 @@
+import { guessCategoryIcon } from '@/lib/categories/category-icons';
 import {
   validateCategoryName,
   validateCategoryPattern,
@@ -11,6 +12,7 @@ import {
 import {
   resolveImportActive,
   resolveImportColor,
+  resolveImportIcon,
   resolveImportType,
 } from './resolve-category-import-fields';
 import type {
@@ -100,6 +102,9 @@ export function buildCategoryImportPlan(
     const importType = resolveImportType(csvRow.type, columns.type);
     const importActive = resolveImportActive(csvRow.active, columns.active);
     const importColor = resolveImportColor(csvRow.color, columns.color);
+    const importIcon = columns.icon
+      ? (resolveImportIcon(csvRow.icon, true) ?? guessCategoryIcon(csvName))
+      : undefined;
 
     const nameMatch = findByName(existing, nameKey);
     const patternMatch =
@@ -123,6 +128,9 @@ export function buildCategoryImportPlan(
         ...(columns.color
           ? { csvColor: formatOptionalPreviewValue(csvRow.color) }
           : {}),
+        ...(columns.icon
+          ? { csvIcon: formatOptionalPreviewValue(csvRow.icon) }
+          : {}),
       });
       rowsToApply.push({
         csvName,
@@ -133,6 +141,7 @@ export function buildCategoryImportPlan(
         ...(importType !== undefined ? { type: importType } : {}),
         ...(importActive !== undefined ? { active: importActive } : {}),
         ...(importColor !== undefined ? { color: importColor } : {}),
+        ...(importIcon !== undefined ? { icon: importIcon } : {}),
       });
       continue;
     }
@@ -150,6 +159,9 @@ export function buildCategoryImportPlan(
       ...(columns.color
         ? { csvColor: formatOptionalPreviewValue(csvRow.color) }
         : {}),
+      ...(columns.icon
+        ? { csvIcon: formatOptionalPreviewValue(csvRow.icon) }
+        : {}),
     });
     rowsToApply.push({
       csvName,
@@ -158,6 +170,7 @@ export function buildCategoryImportPlan(
       ...(importType !== undefined ? { type: importType } : {}),
       ...(importActive !== undefined ? { active: importActive } : {}),
       ...(importColor !== undefined ? { color: importColor } : {}),
+      ...(importIcon !== undefined ? { icon: importIcon } : {}),
     });
   }
 

@@ -1,11 +1,16 @@
 'use client';
 
+import { CategoryIcon } from '@/components/categories/category-icon';
 import { Combobox } from '@/components/ui/combobox';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
+import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import { cn } from '@/lib/utils';
 
 type CategoryComboboxOption = {
   id: string;
   name: string;
+  color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 type CategoryComboboxProps = {
@@ -38,6 +43,9 @@ export function CategoryCombobox({
     ...categories.map((category) => ({
       value: category.id,
       label: category.name,
+      leading: (
+        <CategoryIcon icon={category.icon} color={category.color} />
+      ),
     })),
   ];
 

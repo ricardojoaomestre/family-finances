@@ -7,10 +7,12 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories } from '@/db/schema';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 import type { CategoryType } from '@/lib/categories/category-type';
 import {
   validateCategoryColor,
   validateCategoryDescription,
+  validateCategoryIcon,
   validateCategoryName,
   validateCategoryPattern,
   validateCategoryType,
@@ -24,7 +26,7 @@ type ActionResult =
       error: string;
       fieldErrors?: Partial<
         Record<
-          'name' | 'pattern' | 'description' | 'color' | 'type',
+          'name' | 'pattern' | 'description' | 'color' | 'icon' | 'type',
           string
         >
       >;
@@ -35,6 +37,7 @@ export type CategoryFormInput = {
   name: string;
   description: string;
   color: CategoryColorToken;
+  icon: CategoryIconName;
   pattern: string;
   active: boolean;
   type: CategoryType;
@@ -52,7 +55,7 @@ function getFieldErrors(
   options?: { existingName?: string | null },
 ) {
   const fieldErrors: Partial<
-    Record<'name' | 'pattern' | 'description' | 'color' | 'type', string>
+    Record<'name' | 'pattern' | 'description' | 'color' | 'icon' | 'type', string>
   > = {};
   const nameError = validateCategoryName(input.name, {
     existingName: options?.existingName,
@@ -60,6 +63,7 @@ function getFieldErrors(
   const descriptionError = validateCategoryDescription(input.description);
   const patternError = validateCategoryPattern(input.pattern);
   const colorError = validateCategoryColor(input.color);
+  const iconError = validateCategoryIcon(input.icon);
   const typeError = validateCategoryType(input.type);
 
   if (nameError) {
@@ -76,6 +80,10 @@ function getFieldErrors(
 
   if (colorError) {
     fieldErrors.color = colorError;
+  }
+
+  if (iconError) {
+    fieldErrors.icon = iconError;
   }
 
   if (typeError) {
@@ -159,6 +167,7 @@ export async function createCategory(
       name: input.name.trim(),
       description,
       color: input.color,
+      icon: input.icon,
       pattern: input.pattern.trim() || null,
       active: input.active,
       type: input.type,
@@ -222,6 +231,7 @@ export async function updateCategory(
         name: input.name.trim(),
         description,
         color: input.color,
+        icon: input.icon,
         pattern: input.pattern.trim() || null,
         active: input.active,
         type: input.type,

@@ -13,6 +13,7 @@ export type MonthReportCategoryTotal = {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
+  categoryIcon: string | null;
   type: CategoryType;
   total: string;
 };
@@ -32,6 +33,7 @@ export async function getMonthReportCategoryTotals(
       categoryId: transactions.categoryId,
       categoryName: categories.name,
       categoryColor: categories.color,
+      categoryIcon: categories.icon,
       type: categories.type,
       total: sql<string>`sum(${transactions.value})::text`,
     })
@@ -42,6 +44,7 @@ export async function getMonthReportCategoryTotals(
       transactions.categoryId,
       categories.name,
       categories.color,
+      categories.icon,
       categories.type,
     )
     .orderBy(desc(sql`sum(${transactions.value})`));
@@ -50,6 +53,7 @@ export async function getMonthReportCategoryTotals(
     categoryId: row.categoryId,
     categoryName: row.categoryName,
     categoryColor: row.categoryColor,
+    categoryIcon: row.categoryIcon,
     type: resolveCategoryType(row.type),
     total: row.total,
   }));

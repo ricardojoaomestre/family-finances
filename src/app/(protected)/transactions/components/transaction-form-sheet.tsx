@@ -36,9 +36,14 @@ import {
   type TransactionFormField,
 } from '@/lib/transactions/validate-transaction-form';
 
+import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
+
 type CategoryOption = {
   id: string;
   name: string;
+  color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 type TransactionFormSheetProps = {

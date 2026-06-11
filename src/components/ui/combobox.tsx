@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 export type ComboboxOption = {
   value: string;
   label: string;
+  leading?: ReactNode;
 };
 
 export type ComboboxProps = {
@@ -76,7 +77,10 @@ export function Combobox({
             className,
           )}
         >
-          <span className="truncate">{selected?.label ?? placeholder}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            {selected?.leading}
+            <span className="truncate">{selected?.label ?? placeholder}</span>
+          </span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -99,7 +103,10 @@ export function Combobox({
                     setOpen(false);
                   }}
                 >
-                  {option.label}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {option.leading}
+                    <span className="truncate">{option.label}</span>
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>

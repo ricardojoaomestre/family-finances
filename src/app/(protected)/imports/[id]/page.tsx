@@ -66,6 +66,8 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         date: transactions.date,
         description: transactions.description,
         categoryName: categories.name,
+        categoryColor: categories.color,
+        categoryIcon: categories.icon,
         value: transactions.value,
         balance: transactions.balance,
       })

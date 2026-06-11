@@ -1,4 +1,5 @@
 import { isCategoryColorToken } from '@/lib/categories/category-colors';
+import { isCategoryIconName } from '@/lib/categories/category-icons';
 import { validateCategoryType } from '@/lib/categories/category-type';
 
 export function validateCategoryPattern(pattern: string): string | null {
@@ -53,6 +54,14 @@ export function validateCategoryDescription(description: string): string | null 
 export function validateCategoryColor(color: string): string | null {
   if (!isCategoryColorToken(color)) {
     return 'Select a color from the palette.';
+  }
+
+  return null;
+}
+
+export function validateCategoryIcon(icon: string): string | null {
+  if (!isCategoryIconName(icon)) {
+    return 'Select an icon from the list.';
   }
 
   return null;

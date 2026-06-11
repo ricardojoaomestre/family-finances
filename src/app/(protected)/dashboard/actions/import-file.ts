@@ -100,7 +100,7 @@ async function matchImportRowsToCategories(
 ): Promise<RematchImportCategoriesResult> {
   const categoryRules = await getActiveCategoriesForImport();
   const categories: ImportCategoryOption[] = categoryRules.map(
-    ({ id, name, color }) => ({ id, name, color }),
+    ({ id, name, color, icon }) => ({ id, name, color, icon }),
   );
 
   const data = rows.map((row) => ({

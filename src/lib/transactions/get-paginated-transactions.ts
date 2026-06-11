@@ -40,6 +40,7 @@ export async function getPaginatedTransactions(
       categoryId: transactions.categoryId,
       categoryName: categories.name,
       categoryColor: categories.color,
+      categoryIcon: categories.icon,
       value: transactions.value,
       importId: transactions.importId,
       merchant: transactions.merchant,

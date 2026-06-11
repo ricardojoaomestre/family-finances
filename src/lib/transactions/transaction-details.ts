@@ -1,5 +1,6 @@
 import type { ImportStatus } from '@/db/schema';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import type { CategoryIconName } from '@/lib/categories/category-icons';
 
 export type TransactionDetails = {
   id: string;
@@ -11,6 +12,7 @@ export type TransactionDetails = {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: CategoryColorToken | null;
+  categoryIcon: CategoryIconName | null;
   importId: string;
   importFilename: string;
   importStatus: ImportStatus;

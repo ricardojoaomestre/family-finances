@@ -44,7 +44,12 @@ export default async function TransactionsPage({
     );
   }
 
-  const categoryOptions = categoryRows.map(({ id, name }) => ({ id, name }));
+  const categoryOptions = categoryRows.map(({ id, name, color, icon }) => ({
+    id,
+    name,
+    color,
+    icon,
+  }));
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">

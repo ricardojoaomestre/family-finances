@@ -43,10 +43,12 @@ export function parseCategoryCsvRows(
   const typeIndex = headerRow.indexOf('type');
   const activeIndex = headerRow.indexOf('active');
   const colorIndex = headerRow.indexOf('color');
+  const iconIndex = headerRow.indexOf('icon');
   const columns = {
     type: typeIndex !== -1,
     active: activeIndex !== -1,
     color: colorIndex !== -1,
+    icon: iconIndex !== -1,
   };
 
   const rows: CategoryImportCsvRow[] = [];
@@ -73,6 +75,10 @@ export function parseCategoryCsvRows(
 
     if (columns.color) {
       row.color = cells[colorIndex] ?? '';
+    }
+
+    if (columns.icon) {
+      row.icon = cells[iconIndex] ?? '';
     }
 
     rows.push(row);

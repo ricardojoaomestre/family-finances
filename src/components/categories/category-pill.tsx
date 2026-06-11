@@ -1,35 +1,27 @@
-import { Badge } from '@/components/ui/badge';
-import {
-  getCategoryPillClasses,
-  isCategoryColorToken,
-  type CategoryColorToken,
-} from '@/lib/categories/category-colors';
+'use client';
+
+import { CategoryIcon } from '@/components/categories/category-icon';
+import type { CategoryIconName } from '@/lib/categories/category-icon-names';
 import { cn } from '@/lib/utils';
 
 type CategoryPillProps = {
   name: string;
   color: string;
+  icon: CategoryIconName | string;
   className?: string;
 };
 
-export function CategoryPill({ name, color, className }: CategoryPillProps) {
-  const token: CategoryColorToken = isCategoryColorToken(color)
-    ? color
-    : 'sky-200';
-
+export function CategoryPill({ name, color, icon, className }: CategoryPillProps) {
   return (
-    <Badge
-      variant="outline"
+    <span
       className={cn(
-        'max-w-[12rem] border-transparent',
-        isCategoryColorToken(color)
-          ? getCategoryPillClasses(token)
-          : 'bg-muted text-muted-foreground',
+        'inline-flex max-w-[12rem] items-center gap-1.5 text-sm',
         className,
       )}
       title={name}
     >
+      <CategoryIcon icon={icon} color={color} />
       <span className="truncate">{name}</span>
-    </Badge>
+    </span>
   );
 }

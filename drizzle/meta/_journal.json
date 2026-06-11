@@ -99,6 +99,13 @@
       "when": 1780210000000,
       "tag": "0013_add_transaction_balance",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1780230000000,
+      "tag": "0014_category_icon",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,7 @@ export async function loadCategoryTableSnapshot(): Promise<CategorySnapshotRow[]
       name: categories.name,
       description: categories.description,
       color: categories.color,
+      icon: categories.icon,
       pattern: categories.pattern,
       priority: categories.priority,
       active: categories.active,

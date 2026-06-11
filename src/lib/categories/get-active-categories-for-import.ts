@@ -7,11 +7,16 @@ import {
   isCategoryColorToken,
   type CategoryColorToken,
 } from '@/lib/categories/category-colors';
+import {
+  resolveCategoryIcon,
+  type CategoryIconName,
+} from '@/lib/categories/category-icons';
 
 export type ImportCategoryOption = {
   id: string;
   name: string;
   color: CategoryColorToken;
+  icon: CategoryIconName;
 };
 
 export type ImportCategoryRule = ImportCategoryOption & {
@@ -26,6 +31,7 @@ export async function getActiveCategoriesForImport(): Promise<
       id: categories.id,
       name: categories.name,
       color: categories.color,
+      icon: categories.icon,
       pattern: categories.pattern,
     })
     .from(categories)
@@ -37,6 +43,7 @@ export async function getActiveCategoriesForImport(): Promise<
         color: isCategoryColorToken(row.color)
           ? row.color
           : getDefaultCategoryColor(row.id),
+        icon: resolveCategoryIcon(row.icon),
       })),
     );
 }
