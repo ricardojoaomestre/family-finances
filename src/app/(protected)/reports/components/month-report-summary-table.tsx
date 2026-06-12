@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 type MonthReportSummaryTableProps = {
   totalIncome: string;
   totalSpending: string;
-  bpiBalanceBeforeIncome: string | null;
+  primaryAccountBalanceBeforeIncome: string | null;
 };
 
 const summaryRows = [
@@ -19,19 +19,19 @@ const summaryRows = [
   {
     key: 'balance',
     label: 'BPI balance before income',
-    valueKey: 'bpiBalanceBeforeIncome' as const,
+    valueKey: 'primaryAccountBalanceBeforeIncome' as const,
   },
 ] as const;
 
 export function MonthReportSummaryTable({
   totalIncome,
   totalSpending,
-  bpiBalanceBeforeIncome,
+  primaryAccountBalanceBeforeIncome,
 }: MonthReportSummaryTableProps) {
   const values = {
     totalIncome,
     totalSpending,
-    bpiBalanceBeforeIncome,
+    primaryAccountBalanceBeforeIncome,
   };
 
   return (

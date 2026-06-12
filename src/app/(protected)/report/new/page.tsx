@@ -55,7 +55,7 @@ export default async function NewReportPage({
   const {
     categoryTotals,
     categories,
-    bpiBalanceBeforeIncome,
+    primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   } = await loadMonthReportData(validation.dateFrom, validation.dateTo);
 
@@ -68,7 +68,7 @@ export default async function NewReportPage({
         initialTitle={NEW_REPORT_TITLE}
         categoryTotals={categoryTotals}
         spendingCategoryAverages={spendingCategoryAverages}
-        bpiBalanceBeforeIncome={bpiBalanceBeforeIncome}
+        primaryAccountBalanceBeforeIncome={primaryAccountBalanceBeforeIncome}
         categories={categories}
       />
     </div>

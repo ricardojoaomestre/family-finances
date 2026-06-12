@@ -68,7 +68,7 @@ type MonthReportViewProps = {
   validationError?: string;
   categoryTotals?: MonthReportCategoryTotal[];
   spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
-  bpiBalanceBeforeIncome?: string | null;
+  primaryAccountBalanceBeforeIncome?: string | null;
   categories?: CategoryOption[];
 };
 
@@ -102,7 +102,7 @@ export function MonthReportView({
   validationError: serverValidationError,
   categoryTotals,
   spendingCategoryAverages = {},
-  bpiBalanceBeforeIncome = null,
+  primaryAccountBalanceBeforeIncome = null,
   categories = [],
 }: MonthReportViewProps) {
   const router = useRouter();
@@ -374,7 +374,7 @@ export function MonthReportView({
             <MonthReportSummaryTable
               totalIncome={summaryTotals.totalIncome}
               totalSpending={summaryTotals.totalSpending}
-              bpiBalanceBeforeIncome={bpiBalanceBeforeIncome}
+              primaryAccountBalanceBeforeIncome={primaryAccountBalanceBeforeIncome}
             />
           ) : null}
           <section className="flex flex-col gap-6">

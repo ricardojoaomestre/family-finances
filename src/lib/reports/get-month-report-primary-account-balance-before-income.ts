@@ -13,7 +13,7 @@ function transactionDateInRange(dateFrom: string, dateTo: string) {
   );
 }
 
-export async function getMonthReportBpiBalanceBeforeIncome(
+export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
   dateFrom: string,
   dateTo: string,
 ): Promise<string | null> {

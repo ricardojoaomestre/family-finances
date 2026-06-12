@@ -3,7 +3,7 @@ import {
   toCategoryOptions,
   type CategoryOption,
 } from '@/lib/categories/to-category-options';
-import { getMonthReportBpiBalanceBeforeIncome } from '@/lib/reports/get-month-report-bpi-balance-before-income';
+import { getMonthReportPrimaryAccountBalanceBeforeIncome } from '@/lib/reports/get-month-report-primary-account-balance-before-income';
 import {
   getMonthReportCategoryTotals,
   type MonthReportCategoryTotal,
@@ -16,7 +16,7 @@ import {
 export type MonthReportData = {
   categoryTotals: MonthReportCategoryTotal[];
   categories: CategoryOption[];
-  bpiBalanceBeforeIncome: string | null;
+  primaryAccountBalanceBeforeIncome: string | null;
   spendingCategoryAverages: Record<string, SpendingCategoryAverage>;
 };
 
@@ -27,19 +27,19 @@ export async function loadMonthReportData(
   const [
     categoryTotals,
     categoryRows,
-    bpiBalanceBeforeIncome,
+    primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   ] = await Promise.all([
     getMonthReportCategoryTotals(dateFrom, dateTo),
     getCategories(),
-    getMonthReportBpiBalanceBeforeIncome(dateFrom, dateTo),
+    getMonthReportPrimaryAccountBalanceBeforeIncome(dateFrom, dateTo),
     getSpendingCategoryMonthAverages(dateFrom),
   ]);
 
   return {
     categoryTotals,
     categories: toCategoryOptions(categoryRows),
-    bpiBalanceBeforeIncome,
+    primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   };
 }
