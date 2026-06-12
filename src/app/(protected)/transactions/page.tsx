@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { TransactionsTable } from '@/app/(protected)/transactions/components/transactions-table';
+import { hasActiveTransactionFilters } from '@/app/(protected)/transactions/lib/filter-transactions';
 import {
   Empty,
   EmptyDescription,
@@ -30,11 +31,17 @@ export default async function TransactionsPage({
   const resolvedSearchParams = await searchParams;
   const listParams = parseTransactionListSearchParams(resolvedSearchParams);
 
-  const [totalInDb, categoryRows, result] = await Promise.all([
-    getTransactionCount(),
+  const [categoryRows, result] = await Promise.all([
     getCategories(),
     getPaginatedTransactions(listParams),
   ]);
+
+  // When no filters are active the paginated count already covers every row,
+  // so we only need a separate unfiltered count to tell "empty database" apart
+  // from "filters matched nothing" when filters are in play.
+  const totalInDb = hasActiveTransactionFilters(listParams.filters)
+    ? await getTransactionCount()
+    : result.totalCount;
 
   if (result.page !== listParams.page) {
     redirect(
