@@ -55,8 +55,14 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    let cancelled = false;
+
     startTransition(async () => {
       const result = await getTransactionDetails(transactionId);
+
+      if (cancelled) {
+        return;
+      }
 
       if (!result.ok) {
         setDetails(null);
@@ -67,6 +73,10 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
       setDetails(result.data);
       setError(null);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [transactionId]);
 
   const valueColorClass = details

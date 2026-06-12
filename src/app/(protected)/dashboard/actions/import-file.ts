@@ -11,7 +11,10 @@ import {
   getActiveCategoriesForImport,
   type ImportCategoryOption,
 } from "@/lib/categories/get-active-categories-for-import";
-import { matchCategoryId } from "@/lib/categories/match-category";
+import {
+  compileCategoryRules,
+  matchCategoryIdWithCompiledRules,
+} from "@/lib/categories/match-category";
 import { getExistingDuplicateKeys } from "@/lib/file-import/get-existing-duplicate-keys";
 import { isMerchantSlug } from "@/lib/merchants";
 
@@ -103,9 +106,13 @@ async function matchImportRowsToCategories(
     ({ id, name, color, icon }) => ({ id, name, color, icon }),
   );
 
+  const compiledRules = compileCategoryRules(categoryRules);
   const data = rows.map((row) => ({
     ...row,
-    categoryId: matchCategoryId(row.description.trim(), categoryRules),
+    categoryId: matchCategoryIdWithCompiledRules(
+      row.description.trim(),
+      compiledRules,
+    ),
   }));
 
   return { data, categories };
