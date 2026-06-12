@@ -2,10 +2,7 @@ import {
   MonthReportView,
   NEW_REPORT_TITLE,
 } from '@/app/(protected)/reports/components/month-report-view';
-import { getCategories } from '@/lib/categories/get-categories';
-import { getSpendingCategoryMonthAverages } from '@/lib/reports/get-spending-category-month-averages';
-import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
-import { getMonthReportBpiBalanceBeforeIncome } from '@/lib/reports/get-month-report-bpi-balance-before-income';
+import { loadMonthReportData } from '@/lib/reports/load-month-report-data';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
 
@@ -55,26 +52,12 @@ export default async function NewReportPage({
     dateTo: validation.dateTo,
   };
 
-  const [categoryTotals, categoryRows, bpiBalanceBeforeIncome, spendingCategoryAverages] =
-    await Promise.all([
-      getMonthReportCategoryTotals(
-        validation.dateFrom,
-        validation.dateTo,
-      ),
-      getCategories(),
-      getMonthReportBpiBalanceBeforeIncome(
-        validation.dateFrom,
-        validation.dateTo,
-      ),
-      getSpendingCategoryMonthAverages(validation.dateFrom),
-    ]);
-
-  const categories = categoryRows.map(({ id, name, color, icon }) => ({
-    id,
-    name,
-    color,
-    icon,
-  }));
+  const {
+    categoryTotals,
+    categories,
+    bpiBalanceBeforeIncome,
+    spendingCategoryAverages,
+  } = await loadMonthReportData(validation.dateFrom, validation.dateTo);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">

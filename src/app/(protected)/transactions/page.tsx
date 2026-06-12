@@ -10,6 +10,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { getCategories } from '@/lib/categories/get-categories';
+import { toCategoryOptions } from '@/lib/categories/to-category-options';
 import {
   getPaginatedTransactions,
   getTransactionCount,
@@ -44,12 +45,7 @@ export default async function TransactionsPage({
     );
   }
 
-  const categoryOptions = categoryRows.map(({ id, name, color, icon }) => ({
-    id,
-    name,
-    color,
-    icon,
-  }));
+  const categoryOptions = toCategoryOptions(categoryRows);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">

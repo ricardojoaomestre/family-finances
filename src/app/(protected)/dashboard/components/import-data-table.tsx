@@ -94,11 +94,11 @@ export function ImportDataTable<TData, TValue>({
 
   const pagination = controlledPagination ?? internalPagination;
   const handlePaginationChange = onPaginationChange ?? setInternalPagination;
-  const usePagination = paginate;
-  const useRowSelection = enableRowSelection && getRowId != null;
+  const isPaginated = paginate;
+  const hasRowSelection = enableRowSelection && getRowId != null;
 
   const resolvedColumns = useMemo(() => {
-    if (!useRowSelection || !getRowId) {
+    if (!hasRowSelection || !getRowId) {
       return columns;
     }
 
@@ -172,7 +172,7 @@ export function ImportDataTable<TData, TValue>({
     getRowId,
     onSelectAllInDatasetChange,
     selectAllInDataset,
-    useRowSelection,
+    hasRowSelection,
   ]);
 
   const table = useReactTable({
@@ -180,17 +180,17 @@ export function ImportDataTable<TData, TValue>({
     columns: resolvedColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel:
-      usePagination && !manualPagination ? getPaginationRowModel() : undefined,
-    manualPagination: usePagination && manualPagination,
-    pageCount: usePagination ? pageCount : undefined,
-    rowCount: usePagination && manualPagination ? rowCount : undefined,
-    onPaginationChange: usePagination ? handlePaginationChange : undefined,
-    enableRowSelection: useRowSelection,
-    getRowId: useRowSelection ? (row) => getRowId!(row) : undefined,
-    onRowSelectionChange: useRowSelection ? onRowSelectionChange : undefined,
+      isPaginated && !manualPagination ? getPaginationRowModel() : undefined,
+    manualPagination: isPaginated && manualPagination,
+    pageCount: isPaginated ? pageCount : undefined,
+    rowCount: isPaginated && manualPagination ? rowCount : undefined,
+    onPaginationChange: isPaginated ? handlePaginationChange : undefined,
+    enableRowSelection: hasRowSelection,
+    getRowId: hasRowSelection ? (row) => getRowId!(row) : undefined,
+    onRowSelectionChange: hasRowSelection ? onRowSelectionChange : undefined,
     state: {
-      ...(usePagination ? { pagination } : {}),
-      ...(useRowSelection ? { rowSelection } : {}),
+      ...(isPaginated ? { pagination } : {}),
+      ...(hasRowSelection ? { rowSelection } : {}),
     },
   });
 
@@ -203,7 +203,7 @@ export function ImportDataTable<TData, TValue>({
   );
   const pageRowCount = table.getRowModel().rows.length;
   const showSelectAllBanner =
-    useRowSelection &&
+    hasRowSelection &&
     !selectAllInDataset &&
     pageRowCount > 0 &&
     table.getIsAllPageRowsSelected() &&
@@ -222,7 +222,7 @@ export function ImportDataTable<TData, TValue>({
       {table.getRowModel().rows.length ? (
         <ul className="divide-y">
           {table.getRowModel().rows.map((row) => {
-            const selectCell = useRowSelection
+            const selectCell = hasRowSelection
               ? row
                   .getAllCells()
                   .find((cell) => cell.column.id === 'select')
@@ -266,7 +266,7 @@ export function ImportDataTable<TData, TValue>({
           />
         </div>
       ) : null}
-      {usePagination ? (
+      {isPaginated ? (
         <DataTablePagination
           rowCount={resolvedRowCount}
           pageIndex={pagination.pageIndex}
@@ -366,7 +366,7 @@ export function ImportDataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-          {summaryFooter || usePagination ? (
+          {summaryFooter || isPaginated ? (
             <TableFooter className="bg-transparent">
               {summaryFooter ? (
                 <TableRow className="hover:bg-transparent">
@@ -384,7 +384,7 @@ export function ImportDataTable<TData, TValue>({
                   </TableCell>
                 </TableRow>
               ) : null}
-              {usePagination ? (
+              {isPaginated ? (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={resolvedColumns.length} className="p-0">
                     <DataTablePagination

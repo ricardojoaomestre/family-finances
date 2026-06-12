@@ -1,19 +1,10 @@
-import { asc, desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { SetPageTitle } from '@/app/(protected)/components/protected-page-context';
 import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/import-detail-tabs';
-import type { ImportSkippedRow } from '@/app/(protected)/imports/[id]/components/import-skipped-rows-table';
 import { Badge } from '@/components/ui/badge';
-import { db } from '@/db';
-import {
-  categories,
-  importSkippedRows,
-  imports,
-  transactions,
-  users,
-} from '@/db/schema';
+import { getImportDetail } from '@/lib/imports/get-import-detail';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
 import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
@@ -22,79 +13,20 @@ type ImportDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-function parseSkippedRowErrors(errors: string | null): string[] | null {
-  if (!errors) return null;
-
-  try {
-    const parsed: unknown = JSON.parse(errors);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === 'string')
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function ImportDetailPage({ params }: ImportDetailPageProps) {
   const { id } = await params;
 
-  const [importRecord] = await db
-    .select({
-      id: imports.id,
-      filename: imports.filename,
-      importedAt: imports.importedAt,
-      rowCount: imports.rowCount,
-      skippedCount: imports.skippedCount,
-      status: imports.status,
-      merchant: imports.merchant,
-      importerName: users.name,
-      importerEmail: users.email,
-    })
-    .from(imports)
-    .innerJoin(users, eq(imports.userId, users.id))
-    .where(eq(imports.id, id))
-    .limit(1);
+  const detail = await getImportDetail(id);
 
-  if (!importRecord) {
+  if (!detail) {
     notFound();
   }
 
-  const [importTransactions, skippedRowRecords] = await Promise.all([
-    db
-      .select({
-        id: transactions.id,
-        date: transactions.date,
-        description: transactions.description,
-        categoryName: categories.name,
-        categoryColor: categories.color,
-        categoryIcon: categories.icon,
-        value: transactions.value,
-        balance: transactions.balance,
-      })
-      .from(transactions)
-      .leftJoin(categories, eq(transactions.categoryId, categories.id))
-      .where(eq(transactions.importId, id))
-      .orderBy(desc(transactions.date)),
-    db
-      .select({
-        id: importSkippedRows.id,
-        rowIndex: importSkippedRows.rowIndex,
-        date: importSkippedRows.date,
-        description: importSkippedRows.description,
-        value: importSkippedRows.value,
-        balance: importSkippedRows.balance,
-        reason: importSkippedRows.reason,
-        errors: importSkippedRows.errors,
-      })
-      .from(importSkippedRows)
-      .where(eq(importSkippedRows.importId, id))
-      .orderBy(asc(importSkippedRows.rowIndex)),
-  ]);
-
-  const skippedRows: ImportSkippedRow[] = skippedRowRecords.map((row) => ({
-    ...row,
-    errors: parseSkippedRowErrors(row.errors),
-  }));
+  const {
+    record: importRecord,
+    transactions: importTransactions,
+    skippedRows,
+  } = detail;
 
   const importedBy =
     importRecord.importerName ?? importRecord.importerEmail ?? 'Unknown';
