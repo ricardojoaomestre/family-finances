@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local seed fixtures (personal transaction exports)
+scripts/fixtures/extrato.csv

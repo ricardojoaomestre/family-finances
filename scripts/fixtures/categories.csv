@@ -1,0 +1,37 @@
+name;regex;type;active;color;icon
+Combustível;(repsol|\bbp\b|\bgalp\b|\bprio\b|cepsa|est\s*servico|a\s*s\s*aveiras);spending;true;fuchsia-200;fuel
+Poupança Inês;(ines\s*maia\s*mestre);saving;true;cyan-300;piggy-bank
+Poupança Mariana;(mariana\s*maia\s*mestre);saving;true;lime-200;piggy-bank
+Convívio / Restaurantes;(uber\s*\*?\s*eats|glovo|mcdonald'?s|burger|bk\d*|\bh3\b|jeronymo|vitaminas|poke\s*house|pok[eé]house|padaria|p[aã]o|gaiapao|doce\s*rei|docerei|past\s*bolacheira|caf[eé]|cafeteria|\brest\b|restaura|take\s*away|quiosque|ola\s*arrabida|portugalia|italian\s*republic|casa\s*agricola|world\s*of\s*wine|tomatino|dicasa|my\s*place|slash\s*natural|hanami|brasao|capricciosa|hard\s*rock|boutique\s*do\s*presunto|pans|terrina|petiscos|taverna|taberna|bistro|guaka|mariani|apetitodromo|berlim|doughnuts|bread\s*and\s*friends|coffee\s*box|arrabida\s*sabores|shoarma|esplanada|green\s*diamond|sushi);spending;true;red-200;utensils
+Supermercado;(mercadona|continente|pingo\s*doce|auchan|intermarche|intermarch[eé]|aldi|lidl|celeiro|el\s*corte\s*ingles|froiz|minipre[cç]o);spending;true;orange-200;shopping-cart
+Presentes / Brinquedos / Jogos;(toys?\s*r\s*us|centroxogo|nintendo|peluches|hussel|tiger|nyx|aliexpress|paypal.*nintendo|amazon|fnac|steam|game|switch);spending;true;amber-200;gift
+Transportes / Portagens / Estacionamento;(viaverde|cp\s*comboios|uber\s*\*?\s*trip|parking|park|metro|tmp|tip\s*\d+|maksu|pq\s*peninsula|lionesa\s*services|bolt|free\s*now|taxi|uber\s*rides);spending;true;yellow-200;car
+Salário Ricardo;(vencimento|benefits\s*top\s*up|meal\s*top\s*up|coverflex|instituto\s*de\s*gest|remote.*tech.*unipessoal);income;true;indigo-300;wallet
+Roupa;(zara|zippy|parfois|women\s*secret|tezenis|skechers|\bmo\b|mango|about\s*you|aboutyou|springfield|lefties|primark|kiabi|mahalo|text[eé]is|hipay|shein);spending;true;green-200;shirt
+Despesas Médicas / Farmácia;(farm[aá]cia|hosp|hospital|hsp|h\s*luz|luz\s*arrabida|cuf|chu|c\s*h\s*u|medis|m[eé]dis|well'?s|clinic|cirurg|farmacia|ordem\s*terceira|plastic\s*surgery|centro\s*pos\s*cirurgico);spending;true;cyan-200;pill
+Comissões Bancárias;(comiss[aã]o|imposto\s*do\s*selo|manuten[cç][aã]o\s*de\s*conta|reembolso\s*123|bonif|juros.*emprestimo);spending;true;sky-200;car
+Assinaturas Mensais;(spotify|disney\s*plus|apple\.com|apple,com|itunes|uber\s*one|fnac|makergirlclub|aldeias\s*de\s*cri|netflix|youtube\s*premium|icloud);spending;true;blue-200;tag
+Escola;(note|staples|porto\s*editora|polegarzinha|passinhos\s*de\s*rei|inscri[cç][aã]o|sala\s*3\s*anos|1a|1\s*a|escola|ifmb|doroteia);spending;true;indigo-200;graduation-cap
+Cultura;(openai|kobo|porto\s*editora|uci|cinema|amazon.*book|portugal\s*pequenitos|livr|museu|ticketline|bilhete|theatre|teatro);spending;true;violet-200;tag
+Beleza / Cuidado Pessoal;(pluricosmetica|caretobeauty|perfumes?\s*companhia|primor|beauty|cosm[eé]tica|hp\s*active|sport\s*zone|lif[e]?club|rita\s*franco\s*unipessoal);spending;true;purple-200;tag
+Poupança Ricardo;(poupeup|mealheiro|republic\s*transfer|fundo\s*de\s*emergencia);saving;true;pink-200;piggy-bank
+Poupança Ana Catarina;(ana\s*catarina);saving;true;rose-200;piggy-bank
+Poupança Férias;(f[eé]rias|ferias|poupeup\s*-\s*ferias);saving;true;red-300;piggy-bank
+Poupança IMI;(poupeup\s*-\s*imi|imi);saving;true;orange-300;piggy-bank
+Fundo de Emergência;(fundo\s*de\s*emerg[eê]ncia|deposito\s*prazo|republic\s*transfer);saving;true;amber-300;tag
+Internet + Telemóvel;(\bmeo\b|vodafone|\bnos\b|\bwoo\b|lycamobile|loja\s*online);spending;true;green-300;smartphone
+Gatos;(4patas|tiendanimal|prettipaws|ornimundo|\bpet\b|animal|ração|racao);spending;true;teal-300;paw-print
+Seguros;(seguros?|generali|aegon|victoria|tranquilidade|april);spending;true;blue-300;shield
+Salário Joana;(ordenado|cofcointl|seguran[cç]a\s*social);income;true;violet-300;wallet
+Casa / Crédito Habitação / Condomínio;(cr[eé]dito\s*habita[cç][aã]o|olaia|fracc[aã]o|frac|condom[ií]nio|hab\s*302);spending;true;purple-300;house
+Manutenção / Decoração;(ikea|leroy|bricolage|worten|media\s*markt|homa|zarahome|casa\s*china|temu|amazon|oscar|brico|deco);spending;true;pink-300;paw-print
+Limpeza Casa;(manuel\s*claudino|limpeza|empregada);spending;true;rose-300;house
+Água;(aguas\s*de\s*gaia|[áa]gua);spending;true;sky-300;zap
+Eletricidade + Gás;(edp|energia|g[aá]s);spending;true;violet-300;zap
+Despesas Auto;(starwash|controlauto|auto\s*electrica|petrolima|revis[aã]o\s*carro|mobepne|oficina|carro);spending;true;green-300;tag
+Férias;(booking|ohai|hotel|hostel|monte\s*gordo|nazare|capricciosa|taverna\s*do\s*alho|mar\s*salgado);spending;true;orange-300;tag
+Tickets / Benefícios;(ticket|benefits|inf[aâ]ncia|bonus);spending;true;blue-300;tag
+Pagamentos ao Estado;(pag\s*estado);spending;true;yellow-200;tag
+IRS;(reembolsos?\s*irs|\birs\b);spending;true;violet-200;receipt
+N/A;;transfer;true;red-300;tag
+PPR Joana;save\s*and\s*grow\s*41121;saving;true;indigo-300;tag
