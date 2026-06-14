@@ -1,0 +1,27 @@
+---
+description: Avoid barrel-import compile/memory issues in Next.js (radix-ui, lucide-react)
+alwaysApply: true
+---
+
+# Next.js — barrel imports and compile memory
+
+Large **barrel packages** (one entry re-exporting hundreds of symbols) make the compiler enumerate huge export maps on every (re)compile. In long `next dev` sessions this can drive heap growth.
+
+## This project
+
+- **`radix-ui`** — unified barrel used by shadcn components under `src/components/ui/`. Keep `optimizePackageImports: ['radix-ui']` in `next.config.ts`. Do not remove it.
+- **`lucide-react`** — already in Next's default `optimizePackageImports` list. Import named icons only; never `import * as icons from 'lucide-react'`.
+
+## When adding dependencies or imports
+
+| Do | Don't |
+|-----|--------|
+| Import **named** exports from barrels (`import { Dialog } from 'radix-ui'`) | Wildcard or dynamic “import everything” from icon/UI barrels |
+| Add large barrel packages to `experimental.optimizePackageImports` in `next.config.ts` | Assume Next optimizes every barrel (only a fixed list + your additions) |
+| Prefer deep paths when a package documents them (`@radix-ui/react-dialog`) for **new** code outside existing shadcn files | Reinstall or overwrite shadcn UI files just to change import paths |
+
+## New shadcn components
+
+Continue using `npx shadcn@latest add <component>` (see shadcn-ui rule). Those files may import from `radix-ui`; that is fine as long as `next.config.ts` keeps the optimizer entry.
+
+If dev-server memory issues persist after other fixes, the next step is migrating `radix-ui` imports to individual `@radix-ui/react-*` packages — not disabling the optimizer.

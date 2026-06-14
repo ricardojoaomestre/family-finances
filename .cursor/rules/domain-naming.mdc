@@ -1,0 +1,37 @@
+---
+description: Name code by domain role, not by stored data values (merchant slugs, bank names)
+alwaysApply: true
+---
+
+# Domain naming — concepts, not data literals
+
+TypeScript **identifiers** (functions, props, files, variables) should describe **what something means in the app**, not a specific value stored in the database or import file.
+
+## Rule
+
+| OK in code | OK as data / UI |
+|------------|-----------------|
+| `primaryAccountBalanceBeforeIncome` | Merchant slug `'bpi'` in `MERCHANTS` |
+| `getMonthReportPrimaryAccountBalanceBeforeIncome` | User-facing label `"BPI balance before income"` |
+| `JOINT_ACCOUNT_MERCHANT` constant holding `'bpi'` | Import profile key `bpi:` in `merchant-profiles.ts` |
+
+```ts
+// ❌ Leaks a data value into the API surface
+bpiBalanceBeforeIncome: string | null;
+getMonthReportBpiBalanceBeforeIncome(...)
+
+// ✅ Domain role; implementation may still filter merchant === 'bpi'
+primaryAccountBalanceBeforeIncome: string | null;
+getMonthReportPrimaryAccountBalanceBeforeIncome(...)
+```
+
+## When renaming
+
+1. Rename **code** identifiers and filenames.
+2. **Keep** DB column values, merchant slugs, CSV keys, and user-visible labels unless the product explicitly changes them.
+3. Prefer one shared constant (e.g. `JOINT_ACCOUNT_MERCHANT`) over scattering `'bpi'` in query logic.
+
+## Smells to fix
+
+- Function or prop names that match a single merchant, bank, or file format (`bpiSomething`, `santanderExport`).
+- Filenames encoding vendor names instead of behavior (`get-month-report-bpi-balance.ts`).

@@ -1,0 +1,55 @@
+---
+description: React naming, async effects, and hot-loop performance patterns
+globs: "**/*.{tsx,ts}"
+alwaysApply: false
+---
+
+# React — naming and performance habits
+
+## Don't prefix non-hooks with `use`
+
+Locals and props named `usePagination` or `useRowSelection` look like Rules-of-Hooks violations.
+
+```tsx
+// ❌ Reads like a hook
+const usePagination = paginate;
+
+// ✅ Plain boolean
+const isPaginated = paginate;
+const hasRowSelection = enableRowSelection && getRowId != null;
+```
+
+Reserve the `use` prefix for **custom hooks** (`useImportPreviewState`) and React APIs only.
+
+## Async `useEffect` — guard against stale updates
+
+When an effect kicks off an async request, ignore the result if the effect cleaned up or inputs changed:
+
+```tsx
+useEffect(() => {
+  let cancelled = false;
+
+  startTransition(async () => {
+    const result = await fetchDetails(id);
+    if (cancelled) return;
+    setDetails(result);
+  });
+
+  return () => { cancelled = true; };
+}, [id]);
+```
+
+## Hot loops — compile once, match many
+
+If the same patterns run per row (regex, rules, parsers), **compile once** outside the row loop:
+
+```ts
+// ❌ new RegExp(pattern) for every row × every rule
+rows.map((row) => matchCategoryId(row.description, rules));
+
+// ✅ compile rules once, then match
+const compiled = compileCategoryRules(rules);
+rows.map((row) => matchCategoryIdWithCompiledRules(row.description, compiled));
+```
+
+Apply the same idea to any O(rows × rules) setup work — not just categories.

@@ -1,0 +1,39 @@
+---
+description: Keep DB access in lib/, dedupe loaders, avoid redundant queries
+globs: src/app/**/*.tsx,src/lib/**/*.ts
+alwaysApply: false
+---
+
+# Server data layer
+
+Page components orchestrate UI; **data fetching lives in `src/lib/`**.
+
+## Structure
+
+| Layer | Responsibility |
+|-------|----------------|
+| `src/app/**/page.tsx` | Parse params/searchParams, call lib loaders, render |
+| `src/lib/**/get-*.ts`, `load-*.ts` | Drizzle queries, mapping, shared `Promise.all` batches |
+| `src/app/**/actions/*.ts` | Mutations + `revalidatePath` |
+
+```tsx
+// ❌ Inline Drizzle in a page
+export default async function ImportDetailPage({ params }) {
+  const rows = await db.select().from(transactions).where(...);
+}
+
+// ✅ Page calls a lib helper
+const detail = await getImportDetail(id);
+```
+
+## Dedupe before copy-pasting
+
+If two routes need the same `Promise.all([...])` block, extract one loader (e.g. `loadMonthReportData()`). Reuse mappers like `toCategoryOptions()` instead of inline `.map(({ id, name, color, icon }) => ...)`.
+
+## Fewer DB round-trips
+
+- Reuse counts already returned by a paginated query when they answer the same question (e.g. unfiltered total when no filters are active).
+- Do not add a second `count()` query “just in case” — check whether the first query's `totalCount` is sufficient.
+- Batch independent reads with `Promise.all`; don't serialize queries that don't depend on each other.
+
+Behavior must stay the same: only skip a query when the remaining data **provably** covers the use case (empty-database vs filtered-empty are different).
