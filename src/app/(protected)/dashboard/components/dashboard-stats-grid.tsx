@@ -58,22 +58,25 @@ export function DashboardStatsGrid({
     return (
       <div
         className={cn(
-          'grid gap-4 sm:grid-cols-2 xl:grid-cols-3',
+          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3',
           className,
         )}
       >
         <TextStatWidget.Skeleton />
         <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton className="sm:col-span-2 xl:col-span-1" />
+        <TextStatWidget.Skeleton className="md:col-span-2 xl:col-span-1" />
       </div>
     );
   }
 
   return (
     <div
-      className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-3', className)}
+      className={cn(
+        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3',
+        className,
+      )}
     >
-      <TextStatWidget className={cn(widgetAnimationClasses[0])}>
+      <TextStatWidget label="Income" className={cn(widgetAnimationClasses[0])}>
         <TextStatWidget.Header>
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Income</TextStatWidget.Title>
@@ -92,7 +95,7 @@ export function DashboardStatsGrid({
         </TextStatWidget.Footer>
       </TextStatWidget>
 
-      <TextStatWidget className={cn(widgetAnimationClasses[1])}>
+      <TextStatWidget label="Expenses" className={cn(widgetAnimationClasses[1])}>
         <TextStatWidget.Header>
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Expenses</TextStatWidget.Title>
@@ -115,9 +118,10 @@ export function DashboardStatsGrid({
       </TextStatWidget>
 
       <TextStatWidget
+        label="Net worth"
         className={cn(
           widgetAnimationClasses[2],
-          'sm:col-span-2 xl:col-span-1',
+          'md:col-span-2 xl:col-span-1',
         )}
       >
         <TextStatWidget.Header>

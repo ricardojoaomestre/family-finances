@@ -19,19 +19,22 @@ const widgetIconClass =
   'bg-muted text-muted-foreground ring-border/60';
 
 type TextStatWidgetRootProps = {
+  label?: string;
   className?: string;
   children: ReactNode;
 };
 
 function TextStatWidgetRoot({
+  label,
   className,
   children,
 }: TextStatWidgetRootProps) {
   return (
     <article
       data-slot="text-stat-widget"
+      aria-label={label}
       className={cn(
-        'group/text-stat-widget flex flex-col gap-4 rounded-4xl border p-5 shadow-xs',
+        'group/text-stat-widget grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-4 md:p-5',
         widgetSurfaceClass,
         className,
       )}
@@ -53,7 +56,10 @@ function TextStatWidgetHeader({
   return (
     <div
       data-slot="text-stat-widget-header"
-      className={cn('flex items-start justify-between gap-3', className)}
+      className={cn(
+        'col-span-2 flex w-full items-start justify-between gap-3 md:col-span-1',
+        className,
+      )}
     >
       {children}
     </div>
@@ -107,7 +113,7 @@ function TextStatWidgetDescription({
   return (
     <p
       data-slot="text-stat-widget-description"
-      className={cn('text-xs text-muted-foreground', className)}
+      className={cn('hidden text-xs text-muted-foreground md:block', className)}
     >
       {children}
     </p>
@@ -127,7 +133,7 @@ function TextStatWidgetIcon({
     <div
       data-slot="text-stat-widget-icon"
       className={cn(
-        'flex size-10 shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset',
+        'hidden size-10 shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset md:flex',
         widgetIconClass,
         className,
       )}
@@ -146,7 +152,7 @@ function TextStatWidgetBody({ className, children }: TextStatWidgetBodyProps) {
   return (
     <div
       data-slot="text-stat-widget-body"
-      className={cn('flex flex-col gap-3', className)}
+      className={cn('min-w-0 flex-1 md:flex md:flex-col md:gap-3', className)}
     >
       {children}
     </div>
@@ -168,7 +174,7 @@ function TextStatWidgetValue({
     <p
       data-slot="text-stat-widget-value"
       className={cn(
-        'font-mono text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
+        'font-mono text-2xl font-semibold tracking-tight tabular-nums md:text-3xl lg:text-4xl',
         colorize ? getMoneyValueColorClass(value) : 'text-foreground',
         className,
       )}
@@ -191,7 +197,7 @@ function TextStatWidgetFooter({
     <div
       data-slot="text-stat-widget-footer"
       className={cn(
-        'mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/50 pt-3',
+        'flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 md:mt-auto md:w-full md:border-t md:border-border/50 md:pt-3',
         className,
       )}
     >
@@ -264,7 +270,7 @@ function TextStatWidgetComparisonLabel({
   return (
     <span
       data-slot="text-stat-widget-comparison-label"
-      className={cn('text-xs text-muted-foreground', className)}
+      className={cn('hidden text-xs text-muted-foreground md:inline', className)}
     >
       {children}
     </span>
@@ -280,24 +286,19 @@ function TextStatWidgetSkeleton({ className }: TextStatWidgetSkeletonProps) {
     <div
       aria-hidden
       className={cn(
-        'rounded-4xl border p-5 shadow-xs',
+        'grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-4 md:p-5',
         widgetSurfaceClass,
         className,
       )}
     >
-      <div className="relative flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-3 w-28" />
-          </div>
-          <Skeleton className="size-10 rounded-2xl" />
-        </div>
-        <Skeleton className="h-10 w-36" />
-        <div className="flex items-center gap-2 border-t border-border/50 pt-3">
-          <Skeleton className="h-5 w-14 rounded-full" />
-          <Skeleton className="h-3 w-24" />
-        </div>
+      <div className="col-span-2 flex w-full items-start justify-between gap-3 md:col-span-1">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="hidden size-10 rounded-2xl md:block" />
+      </div>
+      <Skeleton className="h-8 w-28 md:h-10 md:w-36" />
+      <div className="flex shrink-0 items-center gap-2 md:col-span-1 md:mt-auto md:w-full md:border-t md:border-border/50 md:pt-3">
+        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="hidden h-3 w-24 md:block" />
       </div>
     </div>
   );
