@@ -19,6 +19,7 @@ import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-d
 import { updateTransaction } from '@/app/(protected)/transactions/actions/update-transaction';
 import { TransactionDetailSheet } from '@/app/(protected)/transactions/components/transaction-detail-sheet';
 import { TransactionFormSheet } from '@/app/(protected)/transactions/components/transaction-form-sheet';
+import { TransactionsFilterExportButton } from '@/app/(protected)/transactions/components/transactions-filter-export-button';
 import { TransactionsFilterValueStat } from '@/app/(protected)/transactions/components/transactions-filter-value-stat';
 import { TransactionsTableFilters } from '@/app/(protected)/transactions/components/transactions-table-filters';
 import {
@@ -312,7 +313,10 @@ export function TransactionsTable({
         description="All transactions from every import"
         actions={
           hasActiveFilters ? (
-            <TransactionsFilterValueStat filters={filters} />
+            <div className="flex items-center gap-2">
+              <TransactionsFilterExportButton filters={filters} />
+              <TransactionsFilterValueStat filters={filters} />
+            </div>
           ) : undefined
         }
       />

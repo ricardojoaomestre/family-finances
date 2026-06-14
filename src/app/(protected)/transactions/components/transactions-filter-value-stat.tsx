@@ -105,13 +105,12 @@ export function TransactionsFilterValueStat({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="xs"
           className="max-w-44 font-normal sm:max-w-none"
           aria-label="Filtered transaction value statistics"
         >
           {isLoading ? (
             <>
-              <Loader2Icon className="size-3.5 animate-spin" />
+              <Loader2Icon className="animate-spin" />
               <span className="truncate">{METRIC_LABELS[metric]}</span>
             </>
           ) : (
@@ -129,7 +128,7 @@ export function TransactionsFilterValueStat({
               </span>
             </>
           )}
-          <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDownIcon className="shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
