@@ -71,6 +71,37 @@ export function formatPriorMonthLabels(monthIndexes: number[]): string {
   return sorted.map(formatMonth).join(', ');
 }
 
+export function getPreviousCalendarMonthRange(
+  reportDateFrom: string,
+): { dateFrom: string; dateTo: string } | null {
+  const parsed = parseCalendarDayKey(reportDateFrom);
+
+  if (!parsed) {
+    return null;
+  }
+
+  const previousMonth = new Date(
+    parsed.getFullYear(),
+    parsed.getMonth() - 1,
+    1,
+  );
+
+  return getReportMonthBounds(
+    previousMonth.getFullYear(),
+    previousMonth.getMonth() + 1,
+  );
+}
+
+export function formatPreviousCalendarMonth(reportDateFrom: string): string | null {
+  const range = getPreviousCalendarMonthRange(reportDateFrom);
+
+  if (!range) {
+    return null;
+  }
+
+  return formatReportMonth(range.dateFrom);
+}
+
 export function getPriorReportMonthRange(
   reportDateFrom: string,
 ): { dateFrom: string; dateTo: string } | null {

@@ -56,21 +56,23 @@ export default async function TransactionsPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <SetPageHeader description="All transactions from every import" />
       {totalInDb === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>No transactions yet</EmptyTitle>
-            <EmptyDescription>
-              <span className="hidden md:contents">
-                <Link href="/imports/new">Import a file</Link> to get started.
-              </span>
-              <span className="md:hidden">
-                Use a desktop browser to import your first transactions.
-              </span>
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <>
+          <SetPageHeader description="All transactions from every import" />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No transactions yet</EmptyTitle>
+              <EmptyDescription>
+                <span className="hidden md:contents">
+                  <Link href="/imports/new">Import a file</Link> to get started.
+                </span>
+                <span className="md:hidden">
+                  Use a desktop browser to import your first transactions.
+                </span>
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </>
       ) : (
         <TransactionsTable
           listParams={listParams}

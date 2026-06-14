@@ -14,10 +14,12 @@ import {
 } from 'react';
 import type { ColumnDef, PaginationState } from '@tanstack/react-table';
 
+import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import { updateTransaction } from '@/app/(protected)/transactions/actions/update-transaction';
 import { TransactionDetailSheet } from '@/app/(protected)/transactions/components/transaction-detail-sheet';
 import { TransactionFormSheet } from '@/app/(protected)/transactions/components/transaction-form-sheet';
+import { TransactionsFilterValueStat } from '@/app/(protected)/transactions/components/transactions-filter-value-stat';
 import { TransactionsTableFilters } from '@/app/(protected)/transactions/components/transactions-table-filters';
 import {
   DEFAULT_TRANSACTION_FILTERS,
@@ -302,14 +304,24 @@ export function TransactionsTable({
     [handleViewTransactionDetails, handleEditTransaction],
   );
 
+  const hasActiveFilters = hasActiveTransactionFilters(filters);
+
   return (
     <div className="flex flex-col gap-4">
+      <SetPageHeader
+        description="All transactions from every import"
+        actions={
+          hasActiveFilters ? (
+            <TransactionsFilterValueStat filters={filters} />
+          ) : undefined
+        }
+      />
       <TransactionsTableFilters
         filters={filters}
         categories={categories}
         onFiltersChange={handleFiltersChange}
         onClear={handleClearFilters}
-        hasActiveFilters={hasActiveTransactionFilters(filters)}
+        hasActiveFilters={hasActiveFilters}
       />
       <ImportDataTable
         columns={columns}
