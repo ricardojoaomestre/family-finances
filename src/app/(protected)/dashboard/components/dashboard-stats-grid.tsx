@@ -4,8 +4,10 @@ import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
   ScaleIcon,
+  TagIcon,
 } from 'lucide-react';
 
+import { CategoryPill } from '@/components/categories/category-pill';
 import { TextStatWidget } from '@/components/text-stat-widget/text-stat-widget';
 import { computeMonthOverMonthTrend } from '@/lib/dashboard/compute-month-over-month-trend';
 import { formatDashboardExpenseTotal } from '@/lib/dashboard/compute-dashboard-net-worth';
@@ -24,6 +26,7 @@ const widgetAnimationClasses = [
   'animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-700',
   '[animation-delay:100ms]',
   '[animation-delay:200ms]',
+  '[animation-delay:300ms]',
 ] as const;
 
 export function DashboardStatsGrid({
@@ -53,18 +56,23 @@ export function DashboardStatsGrid({
     stats.netWorth,
     stats.previousMonth?.netWorth,
   );
+  const topSpending = stats.topSpendingCategory;
+  const topSpendingLabel = topSpending
+    ? `Top spending: ${topSpending.categoryName}`
+    : 'Top spending';
 
   if (isLoading) {
     return (
       <div
         className={cn(
-          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3',
+          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4',
           className,
         )}
       >
         <TextStatWidget.Skeleton />
         <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton className="md:col-span-2 xl:col-span-1" />
+        <TextStatWidget.Skeleton />
+        <TextStatWidget.Skeleton />
       </div>
     );
   }
@@ -72,7 +80,7 @@ export function DashboardStatsGrid({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3',
+        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4',
         className,
       )}
     >
@@ -119,10 +127,7 @@ export function DashboardStatsGrid({
 
       <TextStatWidget
         label="Net worth"
-        className={cn(
-          widgetAnimationClasses[2],
-          'md:col-span-2 xl:col-span-1',
-        )}
+        className={cn(widgetAnimationClasses[2])}
       >
         <TextStatWidget.Header>
           <TextStatWidget.Heading>
@@ -140,6 +145,35 @@ export function DashboardStatsGrid({
             {comparisonSuffix}
           </TextStatWidget.ComparisonLabel>
         </TextStatWidget.Footer>
+      </TextStatWidget>
+
+      <TextStatWidget
+        label={topSpendingLabel}
+        className={cn(widgetAnimationClasses[3])}
+      >
+        <TextStatWidget.Header>
+          <TextStatWidget.Heading>
+            <TextStatWidget.Title>Top spending</TextStatWidget.Title>
+            {topSpending ? (
+              <CategoryPill
+                name={topSpending.categoryName}
+                color={topSpending.categoryColor ?? 'amber-200'}
+                icon={topSpending.categoryIcon ?? 'tag'}
+                className="mt-1 max-w-full"
+              />
+            ) : null}
+            <TextStatWidget.Description>
+              Highest spending category
+            </TextStatWidget.Description>
+          </TextStatWidget.Heading>
+          <TextStatWidget.Icon icon={TagIcon} />
+        </TextStatWidget.Header>
+        <TextStatWidget.Body>
+          <TextStatWidget.Value
+            value={topSpending?.total ?? null}
+            className="text-destructive"
+          />
+        </TextStatWidget.Body>
       </TextStatWidget>
     </div>
   );
