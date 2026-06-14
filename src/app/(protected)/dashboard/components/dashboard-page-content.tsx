@@ -1,16 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
-import { DashboardDateRangeSelector } from '@/app/(protected)/dashboard/components/dashboard-date-range-selector';
+import { DashboardMonthPicker } from '@/app/(protected)/dashboard/components/dashboard-month-picker';
 import {
-  DEFAULT_DASHBOARD_DATE_RANGE_PRESET,
-  type DashboardDateRangePreset,
-  getDashboardDateRange,
-  getDashboardDateRangePresetLabel,
+  getDefaultDashboardMonthRange,
+  type DashboardMonthRange,
 } from '@/lib/dashboard/dashboard-date-range';
 import { formatDisplayDate } from '@/lib/formatters';
+import { formatReportMonth } from '@/lib/reports/report-month';
 
 type DashboardPageContentProps = {
   welcomeMessage: string;
@@ -19,28 +18,26 @@ type DashboardPageContentProps = {
 export function DashboardPageContent({
   welcomeMessage,
 }: DashboardPageContentProps) {
-  const [preset, setPreset] = useState<DashboardDateRangePreset>(
-    DEFAULT_DASHBOARD_DATE_RANGE_PRESET,
+  const [monthRange, setMonthRange] = useState<DashboardMonthRange>(() =>
+    getDefaultDashboardMonthRange(),
   );
-
-  const dateRange = useMemo(() => getDashboardDateRange(preset), [preset]);
 
   return (
     <>
       <SetPageHeader
         description={welcomeMessage}
         actions={
-          <DashboardDateRangeSelector
-            value={preset}
-            onValueChange={setPreset}
+          <DashboardMonthPicker
+            value={monthRange}
+            onValueChange={setMonthRange}
           />
         }
       />
       <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
         <p className="text-sm text-muted-foreground">
-          Date range filter: {getDashboardDateRangePresetLabel(preset)} (
-          {formatDisplayDate(dateRange.dateFrom)} –{' '}
-          {formatDisplayDate(dateRange.dateTo)})
+          Month: {formatReportMonth(monthRange.dateFrom)} (
+          {formatDisplayDate(monthRange.dateFrom)} –{' '}
+          {formatDisplayDate(monthRange.dateTo)})
         </p>
       </div>
     </>
