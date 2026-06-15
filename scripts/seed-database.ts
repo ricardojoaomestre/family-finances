@@ -225,13 +225,11 @@ async function resolveCategoryId(
 function parseExtratoRows(content: string): {
   rows: ParsedExtratoRow[];
   skippedBlankConta: number;
-  skippedTicket: number;
   skippedInvalid: number;
 } {
   const rawRows = parseCommaCsv(content);
   const rows: ParsedExtratoRow[] = [];
   let skippedBlankConta = 0;
-  let skippedTicket = 0;
   let skippedInvalid = 0;
 
   for (const rawRow of rawRows) {
@@ -239,11 +237,6 @@ function parseExtratoRows(content: string): {
 
     if (!conta.trim()) {
       skippedBlankConta += 1;
-      continue;
-    }
-
-    if (conta.trim() === 'Ticket') {
-      skippedTicket += 1;
       continue;
     }
 
@@ -290,7 +283,6 @@ function parseExtratoRows(content: string): {
   return {
     rows,
     skippedBlankConta,
-    skippedTicket,
     skippedInvalid,
   };
 }
@@ -300,12 +292,9 @@ async function seedTransactions(
   userId: string,
   extratoPath: string,
 ) {
-  const {
-    rows,
-    skippedBlankConta,
-    skippedTicket,
-    skippedInvalid,
-  } = parseExtratoRows(readFixture(extratoPath));
+  const { rows, skippedBlankConta, skippedInvalid } = parseExtratoRows(
+    readFixture(extratoPath),
+  );
 
   const categoryRecords = await loadCategoryRecords(db);
   const categoryByNameKey = new Map(
@@ -381,7 +370,6 @@ async function seedTransactions(
     totalTransactions,
     perMerchantCounts,
     skippedBlankConta,
-    skippedTicket,
     skippedInvalid,
     createdCategoryNames,
     merchantImportCount: rowsByMerchant.size,
@@ -434,7 +422,6 @@ async function seedDatabase() {
   console.log(`Transactions inserted: ${result.totalTransactions}`);
   console.log('Skipped rows:');
   console.log(`  blank Conta: ${result.skippedBlankConta}`);
-  console.log(`  Ticket: ${result.skippedTicket}`);
   console.log(`  invalid/unmapped: ${result.skippedInvalid}`);
   console.log('Transactions per merchant:');
 

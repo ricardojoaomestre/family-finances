@@ -7,6 +7,7 @@ export const MERCHANTS = {
   'santander-credito': 'Santander - crédito',
   'santander-debito': 'Santander - débito',
   'santander-refeicao': 'Santander - cartão refeição',
+  ticket: 'Ticket',
 } as const;
 
 export type MerchantSlug = keyof typeof MERCHANTS;

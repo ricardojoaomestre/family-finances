@@ -8,12 +8,13 @@ const CONTA_TO_MERCHANT: Record<string, MerchantSlug> = {
   Crédito: 'santander-credito',
   Refeição: 'coverflex',
   BPI: 'bpi',
+  Ticket: 'ticket',
 };
 
 export function mapContaToMerchant(conta: string): MerchantSlug | null {
   const trimmed = conta.trim();
 
-  if (!trimmed || trimmed === 'Ticket') {
+  if (!trimmed) {
     return null;
   }
 
