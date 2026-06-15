@@ -1,5 +1,6 @@
 import { computeDashboardNetWorth } from '@/lib/dashboard/compute-dashboard-net-worth';
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
+import { findSpendingCategoryDeltas } from '@/lib/dashboard/find-spending-category-deltas';
 import { findTopSpendingCategory } from '@/lib/dashboard/find-top-spending-category';
 import { groupMonthReportCategoryTotals } from '@/lib/reports/group-month-report-category-totals';
 import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
@@ -30,6 +31,12 @@ export async function getDashboardMonthStats(
     ? groupMonthReportCategoryTotals(previousTotals)
     : null;
   const topSpendingCategory = findTopSpendingCategory(currentGrouped.spending);
+  const spendingCategoryDeltas = previousGrouped
+    ? findSpendingCategoryDeltas(
+        currentGrouped.spending,
+        previousGrouped.spending,
+      )
+    : null;
 
   if (!previousRange || !previousGrouped) {
     return {
@@ -37,6 +44,7 @@ export async function getDashboardMonthStats(
       expenses,
       netWorth,
       topSpendingCategory,
+      spendingCategoryDeltas,
       previousMonth: null,
     };
   }
@@ -49,6 +57,7 @@ export async function getDashboardMonthStats(
     expenses,
     netWorth,
     topSpendingCategory,
+    spendingCategoryDeltas,
     previousMonth: {
       income: previousIncome,
       expenses: previousExpenses,

@@ -10,7 +10,7 @@ import { CategoryIcon } from '@/components/categories/category-icon';
 import { TextStatWidget } from '@/components/text-stat-widget/text-stat-widget';
 import { computeMonthOverMonthTrend } from '@/lib/dashboard/compute-month-over-month-trend';
 import { formatDashboardExpenseTotal } from '@/lib/dashboard/compute-dashboard-net-worth';
-import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
+import type { DashboardMonthStats, DashboardSpendingCategoryDelta } from '@/lib/dashboard/dashboard-month-stats';
 import { formatPreviousCalendarMonth } from '@/lib/reports/report-month';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +26,56 @@ const widgetAnimationClasses = [
   '[animation-delay:100ms]',
   '[animation-delay:200ms]',
   '[animation-delay:300ms]',
+  '[animation-delay:400ms]',
 ] as const;
+
+type SpendingCategoryDeltaRowProps = {
+  label: string;
+  delta: DashboardSpendingCategoryDelta | null;
+};
+
+function SpendingCategoryDeltaRow({
+  label,
+  delta,
+}: SpendingCategoryDeltaRowProps) {
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        {delta ? (
+          <>
+            <CategoryIcon
+              icon={delta.categoryIcon ?? 'tag'}
+              color={delta.categoryColor ?? 'amber-200'}
+              className="size-9 shrink-0 rounded-xl [&_svg]:size-4"
+            />
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                {label}
+              </p>
+              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                {delta.categoryName}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {label}
+            </p>
+            <p className="text-sm font-medium text-muted-foreground">—</p>
+          </div>
+        )}
+      </div>
+      {delta ? (
+        <TextStatWidget.Trend
+          trend={delta.trend}
+          invertColors
+          className="shrink-0"
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export function DashboardStatsGrid({
   stats,
@@ -59,15 +108,32 @@ export function DashboardStatsGrid({
   const topSpendingLabel = topSpending
     ? `Top spending category: ${topSpending.categoryName}`
     : 'Top spending category';
+  const spendingDeltas = stats.spendingCategoryDeltas;
+  const hasSpendingDeltas =
+    spendingDeltas !== null &&
+    (spendingDeltas.increase !== null || spendingDeltas.decrease !== null);
+  const spendingChangesLabel = hasSpendingDeltas
+    ? [
+        spendingDeltas?.increase
+          ? `Biggest increase: ${spendingDeltas.increase.categoryName}`
+          : null,
+        spendingDeltas?.decrease
+          ? `Biggest decrease: ${spendingDeltas.decrease.categoryName}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : 'Spending changes';
 
   if (isLoading) {
     return (
       <div
         className={cn(
-          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4',
+          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5',
           className,
         )}
       >
+        <TextStatWidget.Skeleton />
         <TextStatWidget.Skeleton />
         <TextStatWidget.Skeleton />
         <TextStatWidget.Skeleton />
@@ -79,7 +145,7 @@ export function DashboardStatsGrid({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4',
+        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5',
         className,
       )}
     >
@@ -177,6 +243,40 @@ export function DashboardStatsGrid({
             size="sm"
             className="text-destructive"
           />
+        </TextStatWidget.Footer>
+      </TextStatWidget>
+
+      <TextStatWidget
+        label={spendingChangesLabel}
+        className={cn(widgetAnimationClasses[4])}
+      >
+        <TextStatWidget.Header>
+          <TextStatWidget.Heading>
+            <TextStatWidget.Title>Spending changes</TextStatWidget.Title>
+          </TextStatWidget.Heading>
+        </TextStatWidget.Header>
+        <TextStatWidget.Body>
+          {hasSpendingDeltas ? (
+            <div className="flex flex-col gap-3 md:gap-0 md:divide-y md:divide-border/60">
+              <SpendingCategoryDeltaRow
+                label="Biggest increase"
+                delta={spendingDeltas.increase}
+              />
+              <div className="md:pt-3">
+                <SpendingCategoryDeltaRow
+                  label="Biggest decrease"
+                  delta={spendingDeltas.decrease}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-lg font-medium text-muted-foreground">—</p>
+          )}
+        </TextStatWidget.Body>
+        <TextStatWidget.Footer>
+          <TextStatWidget.ComparisonLabel>
+            {comparisonSuffix}
+          </TextStatWidget.ComparisonLabel>
         </TextStatWidget.Footer>
       </TextStatWidget>
     </div>

@@ -8,8 +8,14 @@ export type DashboardMonthRange = {
 export function getDefaultDashboardMonthRange(
   referenceDate: Date = new Date(),
 ): DashboardMonthRange {
-  return getReportMonthBounds(
+  const previousMonth = new Date(
     referenceDate.getFullYear(),
-    referenceDate.getMonth() + 1,
+    referenceDate.getMonth() - 1,
+    1,
+  );
+
+  return getReportMonthBounds(
+    previousMonth.getFullYear(),
+    previousMonth.getMonth() + 1,
   );
 }
