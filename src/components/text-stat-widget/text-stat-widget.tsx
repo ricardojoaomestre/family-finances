@@ -15,8 +15,6 @@ import { formatDisplayMoney } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
 const widgetSurfaceClass = 'border-border bg-card';
-const widgetIconClass =
-  'bg-muted text-muted-foreground ring-border/60';
 
 type TextStatWidgetRootProps = {
   label?: string;
@@ -57,7 +55,7 @@ function TextStatWidgetHeader({
     <div
       data-slot="text-stat-widget-header"
       className={cn(
-        'col-span-2 flex w-full items-start justify-between gap-3 md:col-span-1',
+        'col-span-2 flex w-full items-start gap-2.5 md:col-span-1',
         className,
       )}
     >
@@ -92,7 +90,7 @@ function TextStatWidgetTitle({ className, children }: TextStatWidgetTitleProps) 
     <p
       data-slot="text-stat-widget-title"
       className={cn(
-        'text-sm font-medium tracking-tight text-foreground/90',
+        'text-sm font-semibold tracking-tight text-foreground/90',
         className,
       )}
     >
@@ -130,16 +128,14 @@ function TextStatWidgetIcon({
   className,
 }: TextStatWidgetIconProps) {
   return (
-    <div
+    <Icon
       data-slot="text-stat-widget-icon"
       className={cn(
-        'hidden size-10 shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset md:flex',
-        widgetIconClass,
+        'mt-0.5 size-3.5 shrink-0 text-muted-foreground md:size-4',
         className,
       )}
-    >
-      <Icon className="size-4.5" aria-hidden />
-    </div>
+      aria-hidden
+    />
   );
 }
 
@@ -163,18 +159,23 @@ type TextStatWidgetValueProps = {
   value: string | number | null | undefined;
   className?: string;
   colorize?: boolean;
+  size?: 'default' | 'sm';
 };
 
 function TextStatWidgetValue({
   value,
   className,
   colorize = false,
+  size = 'default',
 }: TextStatWidgetValueProps) {
   return (
     <p
       data-slot="text-stat-widget-value"
       className={cn(
-        'font-mono text-2xl font-semibold tracking-tight tabular-nums md:text-3xl lg:text-4xl',
+        'font-mono tracking-tight tabular-nums',
+        size === 'default'
+          ? 'text-2xl font-semibold md:text-3xl lg:text-4xl'
+          : 'text-base font-medium',
         colorize ? getMoneyValueColorClass(value) : 'text-foreground',
         className,
       )}
@@ -291,9 +292,9 @@ function TextStatWidgetSkeleton({ className }: TextStatWidgetSkeletonProps) {
         className,
       )}
     >
-      <div className="col-span-2 flex w-full items-start justify-between gap-3 md:col-span-1">
+      <div className="col-span-2 flex w-full items-start gap-2.5 md:col-span-1">
+        <Skeleton className="mt-0.5 size-3.5 shrink-0 md:size-4" />
         <Skeleton className="h-4 w-20" />
-        <Skeleton className="hidden size-10 rounded-2xl md:block" />
       </div>
       <Skeleton className="h-8 w-28 md:h-10 md:w-36" />
       <div className="flex shrink-0 items-center gap-2 md:col-span-1 md:mt-auto md:w-full md:border-t md:border-border/50 md:pt-3">

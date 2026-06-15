@@ -4,10 +4,9 @@ import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
   ScaleIcon,
-  TagIcon,
 } from 'lucide-react';
 
-import { CategoryPill } from '@/components/categories/category-pill';
+import { CategoryIcon } from '@/components/categories/category-icon';
 import { TextStatWidget } from '@/components/text-stat-widget/text-stat-widget';
 import { computeMonthOverMonthTrend } from '@/lib/dashboard/compute-month-over-month-trend';
 import { formatDashboardExpenseTotal } from '@/lib/dashboard/compute-dashboard-net-worth';
@@ -58,8 +57,8 @@ export function DashboardStatsGrid({
   );
   const topSpending = stats.topSpendingCategory;
   const topSpendingLabel = topSpending
-    ? `Top spending: ${topSpending.categoryName}`
-    : 'Top spending';
+    ? `Top spending category: ${topSpending.categoryName}`
+    : 'Top spending category';
 
   if (isLoading) {
     return (
@@ -86,11 +85,11 @@ export function DashboardStatsGrid({
     >
       <TextStatWidget label="Income" className={cn(widgetAnimationClasses[0])}>
         <TextStatWidget.Header>
+          <TextStatWidget.Icon icon={ArrowUpRightIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Income</TextStatWidget.Title>
             <TextStatWidget.Description>Money in this month</TextStatWidget.Description>
           </TextStatWidget.Heading>
-          <TextStatWidget.Icon icon={ArrowUpRightIcon} />
         </TextStatWidget.Header>
         <TextStatWidget.Body>
           <TextStatWidget.Value value={stats.income} colorize />
@@ -105,11 +104,11 @@ export function DashboardStatsGrid({
 
       <TextStatWidget label="Expenses" className={cn(widgetAnimationClasses[1])}>
         <TextStatWidget.Header>
+          <TextStatWidget.Icon icon={ArrowDownLeftIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Expenses</TextStatWidget.Title>
             <TextStatWidget.Description>Spending this month</TextStatWidget.Description>
           </TextStatWidget.Heading>
-          <TextStatWidget.Icon icon={ArrowDownLeftIcon} />
         </TextStatWidget.Header>
         <TextStatWidget.Body>
           <TextStatWidget.Value
@@ -130,11 +129,11 @@ export function DashboardStatsGrid({
         className={cn(widgetAnimationClasses[2])}
       >
         <TextStatWidget.Header>
+          <TextStatWidget.Icon icon={ScaleIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Net worth</TextStatWidget.Title>
             <TextStatWidget.Description>Income minus expenses</TextStatWidget.Description>
           </TextStatWidget.Heading>
-          <TextStatWidget.Icon icon={ScaleIcon} />
         </TextStatWidget.Header>
         <TextStatWidget.Body>
           <TextStatWidget.Value value={stats.netWorth} colorize />
@@ -153,27 +152,32 @@ export function DashboardStatsGrid({
       >
         <TextStatWidget.Header>
           <TextStatWidget.Heading>
-            <TextStatWidget.Title>Top spending</TextStatWidget.Title>
-            {topSpending ? (
-              <CategoryPill
-                name={topSpending.categoryName}
-                color={topSpending.categoryColor ?? 'amber-200'}
-                icon={topSpending.categoryIcon ?? 'tag'}
-                className="mt-1 max-w-full"
-              />
-            ) : null}
-            <TextStatWidget.Description>
-              Highest spending category
-            </TextStatWidget.Description>
+            <TextStatWidget.Title>Top spending category</TextStatWidget.Title>
           </TextStatWidget.Heading>
-          <TextStatWidget.Icon icon={TagIcon} />
         </TextStatWidget.Header>
         <TextStatWidget.Body>
+          {topSpending ? (
+            <div className="flex items-center gap-3">
+              <CategoryIcon
+                icon={topSpending.categoryIcon ?? 'tag'}
+                color={topSpending.categoryColor ?? 'amber-200'}
+                className="size-12 rounded-2xl [&_svg]:size-6"
+              />
+              <p className="min-w-0 truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                {topSpending.categoryName}
+              </p>
+            </div>
+          ) : (
+            <p className="text-lg font-medium text-muted-foreground">—</p>
+          )}
+        </TextStatWidget.Body>
+        <TextStatWidget.Footer>
           <TextStatWidget.Value
             value={topSpending?.total ?? null}
+            size="sm"
             className="text-destructive"
           />
-        </TextStatWidget.Body>
+        </TextStatWidget.Footer>
       </TextStatWidget>
     </div>
   );
