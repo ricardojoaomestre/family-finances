@@ -1,9 +1,11 @@
 'use client';
 
 import {
-  ArrowDownLeftIcon,
-  ArrowUpRightIcon,
-  ScaleIcon,
+  BadgeEuroIcon,
+  BanknoteArrowDownIcon,
+  BanknoteArrowUpIcon,
+  DollarSignIcon,
+  TrendingUpDownIcon,
 } from 'lucide-react';
 
 import { CategoryIcon } from '@/components/categories/category-icon';
@@ -29,50 +31,40 @@ const widgetAnimationClasses = [
   '[animation-delay:400ms]',
 ] as const;
 
+const statsGridClassName =
+  'grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-6';
+
+const incomeWidgetClassName = 'order-2 lg:order-1 lg:col-span-2';
+const expensesWidgetClassName = 'order-3 lg:order-2 lg:col-span-2';
+const netWorthWidgetClassName = 'order-1 col-span-2 lg:order-3 lg:col-span-2';
+const topSpendingWidgetClassName = 'order-4 col-span-2 lg:col-span-3';
+const spendingChangesWidgetClassName = 'order-5 col-span-2 lg:col-span-3';
+
 type SpendingCategoryDeltaRowProps = {
-  label: string;
   delta: DashboardSpendingCategoryDelta | null;
 };
 
-function SpendingCategoryDeltaRow({
-  label,
-  delta,
-}: SpendingCategoryDeltaRowProps) {
+function SpendingCategoryDeltaRow({ delta }: SpendingCategoryDeltaRowProps) {
+  if (!delta) {
+    return <p className="text-sm font-medium text-muted-foreground">—</p>;
+  }
+
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        {delta ? (
-          <>
-            <CategoryIcon
-              icon={delta.categoryIcon ?? 'tag'}
-              color={delta.categoryColor ?? 'amber-200'}
-              className="size-9 shrink-0 rounded-xl [&_svg]:size-4"
-            />
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">
-                {label}
-              </p>
-              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
-                {delta.categoryName}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              {label}
-            </p>
-            <p className="text-sm font-medium text-muted-foreground">—</p>
-          </div>
-        )}
-      </div>
-      {delta ? (
-        <TextStatWidget.Trend
-          trend={delta.trend}
-          invertColors
-          className="shrink-0"
-        />
-      ) : null}
+      <CategoryIcon
+        icon={delta.categoryIcon ?? 'tag'}
+        color={delta.categoryColor ?? 'amber-200'}
+        className="size-9 shrink-0 rounded-xl [&_svg]:size-4"
+      />
+      <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground">
+        {delta.categoryName}
+      </p>
+      <TextStatWidget.Trend
+        trend={delta.trend}
+        invertColors
+        placement="inline"
+        className="shrink-0"
+      />
     </div>
   );
 }
@@ -112,46 +104,30 @@ export function DashboardStatsGrid({
   const hasSpendingDeltas =
     spendingDeltas !== null &&
     (spendingDeltas.increase !== null || spendingDeltas.decrease !== null);
-  const spendingChangesLabel = hasSpendingDeltas
-    ? [
-        spendingDeltas?.increase
-          ? `Biggest increase: ${spendingDeltas.increase.categoryName}`
-          : null,
-        spendingDeltas?.decrease
-          ? `Biggest decrease: ${spendingDeltas.decrease.categoryName}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : 'Spending changes';
+  const spendingChangesSubtitle = previousMonthLabel
+    ? `Biggest differences vs ${previousMonthLabel}`
+    : 'Biggest differences vs previous month';
 
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5',
-          className,
-        )}
-      >
-        <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton />
-        <TextStatWidget.Skeleton />
+      <div className={cn(statsGridClassName, className)}>
+        <TextStatWidget.Skeleton className={netWorthWidgetClassName} />
+        <TextStatWidget.Skeleton className={incomeWidgetClassName} />
+        <TextStatWidget.Skeleton className={expensesWidgetClassName} />
+        <TextStatWidget.Skeleton className={topSpendingWidgetClassName} />
+        <TextStatWidget.Skeleton className={spendingChangesWidgetClassName} />
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        'grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5',
-        className,
-      )}
-    >
-      <TextStatWidget label="Income" className={cn(widgetAnimationClasses[0])}>
+    <div className={cn(statsGridClassName, className)}>
+      <TextStatWidget
+        label="Income"
+        className={cn(widgetAnimationClasses[0], incomeWidgetClassName)}
+      >
         <TextStatWidget.Header>
-          <TextStatWidget.Icon icon={ArrowUpRightIcon} />
+          <TextStatWidget.Icon icon={BanknoteArrowUpIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Income</TextStatWidget.Title>
             <TextStatWidget.Description>Money in this month</TextStatWidget.Description>
@@ -168,9 +144,12 @@ export function DashboardStatsGrid({
         </TextStatWidget.Footer>
       </TextStatWidget>
 
-      <TextStatWidget label="Expenses" className={cn(widgetAnimationClasses[1])}>
+      <TextStatWidget
+        label="Expenses"
+        className={cn(widgetAnimationClasses[1], expensesWidgetClassName)}
+      >
         <TextStatWidget.Header>
-          <TextStatWidget.Icon icon={ArrowDownLeftIcon} />
+          <TextStatWidget.Icon icon={BanknoteArrowDownIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Expenses</TextStatWidget.Title>
             <TextStatWidget.Description>Spending this month</TextStatWidget.Description>
@@ -192,10 +171,10 @@ export function DashboardStatsGrid({
 
       <TextStatWidget
         label="Net worth"
-        className={cn(widgetAnimationClasses[2])}
+        className={cn(widgetAnimationClasses[2], netWorthWidgetClassName)}
       >
         <TextStatWidget.Header>
-          <TextStatWidget.Icon icon={ScaleIcon} />
+          <TextStatWidget.Icon icon={BadgeEuroIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Net worth</TextStatWidget.Title>
             <TextStatWidget.Description>Income minus expenses</TextStatWidget.Description>
@@ -214,70 +193,62 @@ export function DashboardStatsGrid({
 
       <TextStatWidget
         label={topSpendingLabel}
-        className={cn(widgetAnimationClasses[3])}
+        className={cn(widgetAnimationClasses[3], topSpendingWidgetClassName)}
       >
         <TextStatWidget.Header>
+          <TextStatWidget.Icon icon={DollarSignIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Top spending category</TextStatWidget.Title>
           </TextStatWidget.Heading>
         </TextStatWidget.Header>
         <TextStatWidget.Body>
           {topSpending ? (
-            <div className="flex items-center gap-3">
-              <CategoryIcon
-                icon={topSpending.categoryIcon ?? 'tag'}
-                color={topSpending.categoryColor ?? 'amber-200'}
-                className="size-12 rounded-2xl [&_svg]:size-6"
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5 md:gap-3">
+                <CategoryIcon
+                  icon={topSpending.categoryIcon ?? 'tag'}
+                  color={topSpending.categoryColor ?? 'amber-200'}
+                  className="size-9 shrink-0 rounded-xl [&_svg]:size-4 md:size-12 md:rounded-2xl md:[&_svg]:size-6"
+                />
+                <p className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground md:text-lg lg:text-xl">
+                  {topSpending.categoryName}
+                </p>
+              </div>
+              <TextStatWidget.Value
+                value={topSpending.total}
+                size="sm"
+                className="shrink-0 text-destructive"
               />
-              <p className="min-w-0 truncate text-lg font-semibold tracking-tight text-foreground md:text-xl">
-                {topSpending.categoryName}
-              </p>
             </div>
           ) : (
-            <p className="text-lg font-medium text-muted-foreground">—</p>
+            <p className="text-sm font-medium text-muted-foreground md:text-lg">—</p>
           )}
         </TextStatWidget.Body>
-        <TextStatWidget.Footer>
-          <TextStatWidget.Value
-            value={topSpending?.total ?? null}
-            size="sm"
-            className="text-destructive"
-          />
-        </TextStatWidget.Footer>
       </TextStatWidget>
 
       <TextStatWidget
-        label={spendingChangesLabel}
-        className={cn(widgetAnimationClasses[4])}
+        label="Spending changes"
+        className={cn(widgetAnimationClasses[4], spendingChangesWidgetClassName)}
       >
         <TextStatWidget.Header>
+          <TextStatWidget.Icon icon={TrendingUpDownIcon} />
           <TextStatWidget.Heading>
             <TextStatWidget.Title>Spending changes</TextStatWidget.Title>
+            <TextStatWidget.Description className="block">
+              {spendingChangesSubtitle}
+            </TextStatWidget.Description>
           </TextStatWidget.Heading>
         </TextStatWidget.Header>
         <TextStatWidget.Body>
           {hasSpendingDeltas ? (
-            <div className="flex flex-col gap-3 md:gap-0 md:divide-y md:divide-border/60">
-              <SpendingCategoryDeltaRow
-                label="Biggest increase"
-                delta={spendingDeltas.increase}
-              />
-              <div className="md:pt-3">
-                <SpendingCategoryDeltaRow
-                  label="Biggest decrease"
-                  delta={spendingDeltas.decrease}
-                />
-              </div>
+            <div className="flex flex-col gap-4">
+              <SpendingCategoryDeltaRow delta={spendingDeltas.increase} />
+              <SpendingCategoryDeltaRow delta={spendingDeltas.decrease} />
             </div>
           ) : (
             <p className="text-lg font-medium text-muted-foreground">—</p>
           )}
         </TextStatWidget.Body>
-        <TextStatWidget.Footer>
-          <TextStatWidget.ComparisonLabel>
-            {comparisonSuffix}
-          </TextStatWidget.ComparisonLabel>
-        </TextStatWidget.Footer>
       </TextStatWidget>
     </div>
   );

@@ -32,7 +32,7 @@ function TextStatWidgetRoot({
       data-slot="text-stat-widget"
       aria-label={label}
       className={cn(
-        'group/text-stat-widget grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-4 md:p-5',
+        'group/text-stat-widget grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-5 md:p-5',
         widgetSurfaceClass,
         className,
       )}
@@ -55,7 +55,7 @@ function TextStatWidgetHeader({
     <div
       data-slot="text-stat-widget-header"
       className={cn(
-        'col-span-2 flex w-full items-start gap-2.5 md:col-span-1',
+        'col-start-1 row-start-1 flex w-full min-w-0 items-start gap-2.5 md:col-auto md:row-auto',
         className,
       )}
     >
@@ -74,7 +74,10 @@ function TextStatWidgetHeading({
   children,
 }: TextStatWidgetHeadingProps) {
   return (
-    <div data-slot="text-stat-widget-heading" className={cn('min-w-0', className)}>
+    <div
+      data-slot="text-stat-widget-heading"
+      className={cn('min-w-0 flex-1', className)}
+    >
       {children}
     </div>
   );
@@ -101,20 +104,26 @@ function TextStatWidgetTitle({ className, children }: TextStatWidgetTitleProps) 
 
 type TextStatWidgetDescriptionProps = {
   className?: string;
+  showOnMobile?: boolean;
   children: ReactNode;
 };
 
 function TextStatWidgetDescription({
   className,
+  showOnMobile = false,
   children,
 }: TextStatWidgetDescriptionProps) {
   return (
-    <p
+    <div
       data-slot="text-stat-widget-description"
-      className={cn('hidden text-xs text-muted-foreground md:block', className)}
+      className={cn(
+        'text-xs text-muted-foreground',
+        showOnMobile ? 'block md:hidden' : 'hidden md:block',
+        className,
+      )}
     >
       {children}
-    </p>
+    </div>
   );
 }
 
@@ -148,7 +157,10 @@ function TextStatWidgetBody({ className, children }: TextStatWidgetBodyProps) {
   return (
     <div
       data-slot="text-stat-widget-body"
-      className={cn('min-w-0 flex-1 md:flex md:flex-col md:gap-3', className)}
+      className={cn(
+        'col-span-2 row-start-2 min-w-0 md:col-auto md:row-auto md:flex md:flex-1 md:flex-col md:gap-3',
+        className,
+      )}
     >
       {children}
     </div>
@@ -160,6 +172,7 @@ type TextStatWidgetValueProps = {
   className?: string;
   colorize?: boolean;
   size?: 'default' | 'sm';
+  placement?: 'body' | 'footer';
 };
 
 function TextStatWidgetValue({
@@ -167,6 +180,7 @@ function TextStatWidgetValue({
   className,
   colorize = false,
   size = 'default',
+  placement = 'body',
 }: TextStatWidgetValueProps) {
   return (
     <p
@@ -177,6 +191,8 @@ function TextStatWidgetValue({
           ? 'text-2xl font-semibold md:text-3xl lg:text-4xl'
           : 'text-base font-medium',
         colorize ? getMoneyValueColorClass(value) : 'text-foreground',
+        placement === 'footer' &&
+          'col-start-2 row-start-2 shrink-0 self-center md:col-auto md:row-auto md:self-auto',
         className,
       )}
     >
@@ -198,7 +214,7 @@ function TextStatWidgetFooter({
     <div
       data-slot="text-stat-widget-footer"
       className={cn(
-        'flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 md:mt-auto md:w-full md:border-t md:border-border/50 md:pt-3',
+        'contents md:mt-auto md:flex md:w-full md:flex-wrap md:items-center md:gap-x-2 md:gap-y-1 md:border-t md:border-border/50 md:pt-3',
         className,
       )}
     >
@@ -210,17 +226,24 @@ function TextStatWidgetFooter({
 type TextStatWidgetTrendProps = {
   trend: MonthOverMonthTrend;
   invertColors?: boolean;
+  placement?: 'footer' | 'inline';
   className?: string;
 };
 
 function TextStatWidgetTrend({
   trend,
   invertColors = false,
+  placement = 'footer',
   className,
 }: TextStatWidgetTrendProps) {
   if (trend.kind === 'hidden') {
     return null;
   }
+
+  const mobileHeaderPlacementClass =
+    placement === 'footer'
+      ? 'col-start-2 row-start-1 shrink-0 self-center md:col-auto md:row-auto md:self-auto'
+      : null;
 
   if (trend.kind === 'flat') {
     return (
@@ -228,6 +251,7 @@ function TextStatWidgetTrend({
         data-slot="text-stat-widget-trend"
         className={cn(
           'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium text-muted-foreground',
+          mobileHeaderPlacementClass,
           className,
         )}
       >
@@ -246,6 +270,7 @@ function TextStatWidgetTrend({
       className={cn(
         'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-semibold tabular-nums',
         isPositiveColor ? 'text-success' : 'text-destructive',
+        mobileHeaderPlacementClass,
         className,
       )}
     >
@@ -287,18 +312,18 @@ function TextStatWidgetSkeleton({ className }: TextStatWidgetSkeletonProps) {
     <div
       aria-hidden
       className={cn(
-        'grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-4 md:p-5',
+        'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 rounded-4xl border p-3 shadow-xs md:flex md:flex-col md:items-stretch md:gap-5 md:p-5',
         widgetSurfaceClass,
         className,
       )}
     >
-      <div className="col-span-2 flex w-full items-start gap-2.5 md:col-span-1">
+      <div className="col-start-1 row-start-1 flex w-full min-w-0 items-start gap-2.5 md:col-auto md:row-auto">
         <Skeleton className="mt-0.5 size-3.5 shrink-0 md:size-4" />
         <Skeleton className="h-4 w-20" />
       </div>
-      <Skeleton className="h-8 w-28 md:h-10 md:w-36" />
-      <div className="flex shrink-0 items-center gap-2 md:col-span-1 md:mt-auto md:w-full md:border-t md:border-border/50 md:pt-3">
-        <Skeleton className="h-5 w-14 rounded-full" />
+      <Skeleton className="col-span-2 row-start-2 h-8 w-28 md:col-auto md:row-auto md:h-10 md:w-36" />
+      <div className="contents md:mt-auto md:flex md:w-full md:items-center md:gap-2 md:border-t md:border-border/50 md:pt-3">
+        <Skeleton className="col-start-2 row-start-1 h-5 w-14 shrink-0 self-center rounded-full md:col-auto md:row-auto md:self-auto" />
         <Skeleton className="hidden h-3 w-24 md:block" />
       </div>
     </div>

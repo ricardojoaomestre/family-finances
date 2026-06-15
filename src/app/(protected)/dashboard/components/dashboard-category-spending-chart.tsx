@@ -117,6 +117,19 @@ export function DashboardCategorySpendingChart({
     );
   }, [categories, selectedCategoryId]);
 
+  const categoryFilter = (className: string) => (
+    <CategoryCombobox
+      value={selectedCategoryId}
+      onValueChange={setSelectedCategoryId}
+      categories={categories}
+      noneValue={UNCATEGORIZED_CATEGORY_VALUE}
+      noneLabel="Uncategorized"
+      placeholder="Select category"
+      className={className}
+      aria-label="Category"
+    />
+  );
+
   if (isLoading) {
     return (
       <Card
@@ -127,9 +140,13 @@ export function DashboardCategorySpendingChart({
       >
         <CardHeader>
           <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-10 w-full min-w-64 rounded-3xl" />
+          <Skeleton className="h-4 w-24" />
+          <CardAction className="hidden w-full md:block md:min-w-64 md:max-w-md">
+            <Skeleton className="h-10 w-full rounded-3xl" />
+          </CardAction>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4 md:block">
+          <Skeleton className="h-10 w-full rounded-3xl md:hidden" />
           <Skeleton className="h-[280px] w-full rounded-2xl" />
         </CardContent>
       </Card>
@@ -146,20 +163,12 @@ export function DashboardCategorySpendingChart({
       <CardHeader>
         <CardTitle>Category spending</CardTitle>
         <CardDescription>Monthly totals</CardDescription>
-        <CardAction className="w-full sm:min-w-64 sm:max-w-md">
-          <CategoryCombobox
-            value={selectedCategoryId}
-            onValueChange={setSelectedCategoryId}
-            categories={categories}
-            noneValue={UNCATEGORIZED_CATEGORY_VALUE}
-            noneLabel="Uncategorized"
-            placeholder="Select category"
-            className="w-full min-w-64"
-            aria-label="Category"
-          />
+        <CardAction className="hidden w-full md:block md:min-w-64 md:max-w-md">
+          {categoryFilter('w-full min-w-64')}
         </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4 md:block">
+        <div className="w-full md:hidden">{categoryFilter('w-full')}</div>
         {hasSpendingData ? (
           <ChartContainer
             config={chartConfig}
