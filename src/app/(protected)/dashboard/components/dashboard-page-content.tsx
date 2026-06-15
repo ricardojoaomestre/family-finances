@@ -4,24 +4,31 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
+import { DashboardCategorySpendingChart } from '@/app/(protected)/dashboard/components/dashboard-category-spending-chart';
 import { DashboardMonthPicker } from '@/app/(protected)/dashboard/components/dashboard-month-picker';
 import { DashboardStatsGrid } from '@/app/(protected)/dashboard/components/dashboard-stats-grid';
 import {
   type DashboardMonthRange,
 } from '@/lib/dashboard/dashboard-date-range';
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
+import type { CategoryMonthlySpendingRow } from '@/lib/dashboard/dashboard-category-chart-months';
+import type { CategoryOption } from '@/lib/categories/to-category-options';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 
 type DashboardPageContentProps = {
   welcomeMessage: string;
   monthRange: DashboardMonthRange;
   stats: DashboardMonthStats;
+  spendingCategories: CategoryOption[];
+  categoryMonthlySpending: CategoryMonthlySpendingRow[];
 };
 
 export function DashboardPageContent({
   welcomeMessage,
   monthRange,
   stats,
+  spendingCategories,
+  categoryMonthlySpending,
 }: DashboardPageContentProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,6 +60,14 @@ export function DashboardPageContent({
           key={`${monthRange.dateFrom}-${monthRange.dateTo}`}
           stats={stats}
           monthDateFrom={monthRange.dateFrom}
+          isLoading={isPending}
+        />
+        <DashboardCategorySpendingChart
+          key={`${monthRange.dateFrom}-${monthRange.dateTo}-chart`}
+          monthDateFrom={monthRange.dateFrom}
+          categories={spendingCategories}
+          monthlySpending={categoryMonthlySpending}
+          topSpendingCategory={stats.topSpendingCategory}
           isLoading={isPending}
         />
       </div>

@@ -1,6 +1,10 @@
 import { DashboardPageContent } from '@/app/(protected)/dashboard/components/dashboard-page-content';
 import { auth } from '@/auth';
+import { getCategories } from '@/lib/categories/get-categories';
+import { isSpendingCategoryType } from '@/lib/categories/category-type';
+import { toCategoryOptions } from '@/lib/categories/to-category-options';
 import { getDefaultDashboardMonthRange } from '@/lib/dashboard/dashboard-date-range';
+import { getCategoryMonthlySpending } from '@/lib/dashboard/get-category-monthly-spending';
 import { getDashboardMonthStats } from '@/lib/dashboard/get-dashboard-month-stats';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
@@ -34,9 +38,14 @@ export default async function DashboardPage({
     }
   }
 
-  const stats = await getDashboardMonthStats(
-    monthRange.dateFrom,
-    monthRange.dateTo,
+  const [stats, categoryRows, categoryMonthlySpending] = await Promise.all([
+    getDashboardMonthStats(monthRange.dateFrom, monthRange.dateTo),
+    getCategories(),
+    getCategoryMonthlySpending(monthRange.dateFrom),
+  ]);
+
+  const spendingCategories = toCategoryOptions(
+    categoryRows.filter((category) => isSpendingCategoryType(category.type)),
   );
 
   return (
@@ -44,6 +53,8 @@ export default async function DashboardPage({
       welcomeMessage={`Welcome, ${session?.user?.name ?? session?.user?.email}`}
       monthRange={monthRange}
       stats={stats}
+      spendingCategories={spendingCategories}
+      categoryMonthlySpending={categoryMonthlySpending}
     />
   );
 }
