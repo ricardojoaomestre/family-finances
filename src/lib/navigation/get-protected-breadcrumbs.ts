@@ -30,6 +30,10 @@ export function getProtectedBreadcrumbs(
     return [{ label: 'Transactions' }];
   }
 
+  if (pathname === '/notes') {
+    return [{ label: 'Notes' }];
+  }
+
   if (pathname === '/reports') {
     return [{ label: 'Reports' }];
   }

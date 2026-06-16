@@ -24,6 +24,16 @@ import {
   type CategoryFormInput,
 } from '@/app/(protected)/settings/categories/actions/category-actions';
 import { CategoryFormSheet } from '@/app/(protected)/settings/categories/components/category-form-sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -33,6 +43,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useImportPreviewState } from '@/hooks/use-import-preview-state';
 import { useSpreadsheetFile } from '@/hooks/use-spreadsheet-file';
 import { escapeRegexLiteral } from '@/lib/categories/escape-regex-literal';
+import { countUnconfirmedNoteMatches } from '@/lib/notes/resolve-import-row-category';
 import {
   isMerchantSlug,
   MERCHANTS_SORTED_BY_LABEL,
@@ -60,6 +71,8 @@ export function FileImport() {
   const [createCategoryPattern, setCreateCategoryPattern] = useState<
     string | null
   >(null);
+  const [unconfirmedNotesDialogOpen, setUnconfirmedNotesDialogOpen] =
+    useState(false);
 
   const previewRows: PreviewRow[] | null = useMemo(() => {
     if (!parsedData || !rowValidations) return null;
@@ -84,6 +97,13 @@ export function FileImport() {
     [dispatch],
   );
 
+  const handleConfirmNoteMatch = useCallback(
+    (rowIndex: number) => {
+      dispatch({ type: 'confirm-note-match', rowIndex });
+    },
+    [dispatch],
+  );
+
   const handleOpenCreateCategory = useCallback((description: string) => {
     setCreateCategoryPattern(escapeRegexLiteral(description.trim()));
     setCreateCategoryOpen(true);
@@ -101,12 +121,12 @@ export function FileImport() {
     async (input: CategoryFormInput) => {
       const result = await createCategory(input);
 
-      if (result.ok && parsedData) {
+      if (result.ok && parsedData && merchant) {
         setCreateCategoryOpen(false);
         setCreateCategoryPattern(null);
 
         startRematchTransition(async () => {
-          const rematched = await rematchImportCategories(parsedData);
+          const rematched = await rematchImportCategories(parsedData, merchant);
 
           dispatch({
             type: 'categories-rematched',
@@ -118,8 +138,46 @@ export function FileImport() {
 
       return result;
     },
-    [dispatch, parsedData],
+    [dispatch, merchant, parsedData],
   );
+
+  const unconfirmedNoteMatchCount = useMemo(
+    () => (parsedData ? countUnconfirmedNoteMatches(parsedData) : 0),
+    [parsedData],
+  );
+
+  const runConfirmImport = useCallback(() => {
+    if (!filename || !merchant || !parsedData) {
+      return;
+    }
+
+    startConfirmTransition(async () => {
+      const result = await confirmImport({
+        filename,
+        merchant,
+        rows: parsedData,
+      });
+
+      if (!result.ok) {
+        dispatch({
+          type: 'confirm-failed',
+          error: result.error,
+        });
+        return;
+      }
+
+      router.push('/imports');
+    });
+  }, [dispatch, filename, merchant, parsedData, router]);
+
+  const handleConfirmImportClick = useCallback(() => {
+    if (unconfirmedNoteMatchCount > 0) {
+      setUnconfirmedNotesDialogOpen(true);
+      return;
+    }
+
+    runConfirmImport();
+  }, [runConfirmImport, unconfirmedNoteMatchCount]);
 
   const columns = useMemo(() => {
     if (!categories) return [];
@@ -130,6 +188,7 @@ export function FileImport() {
       handleCategoryChange,
       handleOpenCreateCategory,
       handleOverrideDuplicate,
+      handleConfirmNoteMatch,
     );
   }, [
     includeBalanceColumn,
@@ -137,6 +196,7 @@ export function FileImport() {
     handleCategoryChange,
     handleOpenCreateCategory,
     handleOverrideDuplicate,
+    handleConfirmNoteMatch,
   ]);
 
   const importableCount =
@@ -173,6 +233,9 @@ export function FileImport() {
           ? `${duplicateCount} duplicate${duplicateCount === 1 ? '' : 's'}`
           : null,
         invalidCount > 0 ? `${invalidCount} invalid` : null,
+        unconfirmedNoteMatchCount > 0
+          ? `${unconfirmedNoteMatchCount} unconfirmed note match${unconfirmedNoteMatchCount === 1 ? '' : 'es'}`
+          : null,
       ].filter(Boolean)
     : [];
 
@@ -298,31 +361,41 @@ export function FileImport() {
               <Button
                 type="button"
                 disabled={isConfirming || isRematching}
-                onClick={() => {
-                  startConfirmTransition(async () => {
-                    const result = await confirmImport({
-                      filename,
-                      merchant,
-                      rows: parsedData!,
-                    });
-
-                    if (!result.ok) {
-                      dispatch({
-                        type: 'confirm-failed',
-                        error: result.error,
-                      });
-                      return;
-                    }
-
-                    router.push('/imports');
-                  });
-                }}
+                onClick={handleConfirmImportClick}
               >
                 {isConfirming ? 'Confirming…' : 'Confirm import'}
               </Button>
             </div>
           </div>
         )}
+
+        <AlertDialog
+          open={unconfirmedNotesDialogOpen}
+          onOpenChange={setUnconfirmedNotesDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Unconfirmed note matches</AlertDialogTitle>
+              <AlertDialogDescription>
+                {unconfirmedNoteMatchCount} transaction
+                {unconfirmedNoteMatchCount === 1 ? ' was' : 's were'} categorized
+                from notes but not confirmed. Confirm them in the table to keep
+                those categories; otherwise they will import as uncategorized.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Go back</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setUnconfirmedNotesDialogOpen(false);
+                  runConfirmImport();
+                }}
+              >
+                Import anyway
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <CategoryFormSheet
           open={createCategoryOpen}

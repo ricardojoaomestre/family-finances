@@ -1,4 +1,5 @@
 import { relations } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   integer,
@@ -8,6 +9,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import type { CategoryIconName } from '@/lib/categories/category-icon-names';
 import type { CategoryType } from '@/lib/categories/category-type';
@@ -179,6 +181,34 @@ export const reports = pgTable('report', {
     .defaultNow(),
 });
 
+export const notes = pgTable(
+  'note',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    merchant: text('merchant').notNull(),
+    date: timestamp('date', { mode: 'date' }).notNull(),
+    value: numeric('value', { precision: 14, scale: 2 }).notNull(),
+    categoryId: text('categoryId')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
+    context: text('context'),
+    archivedAt: timestamp('archivedAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('note_active_merchant_date_value_idx')
+      .on(table.merchant, table.date, table.value)
+      .where(sql`${table.archivedAt} is null`),
+  ],
+);
+
 export const transactions = pgTable('transaction', {
   id: text('id')
     .primaryKey()
@@ -219,6 +249,14 @@ export const importSkippedRowsRelations = relations(
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   transactions: many(transactions),
+  notes: many(notes),
+}));
+
+export const notesRelations = relations(notes, ({ one }) => ({
+  category: one(categories, {
+    fields: [notes.categoryId],
+    references: [categories.id],
+  }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({

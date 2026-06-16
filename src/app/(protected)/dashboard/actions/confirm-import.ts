@@ -1,12 +1,19 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { importSkippedRows, imports, type ImportStatus, transactions } from '@/db/schema';
+import {
+  importSkippedRows,
+  imports,
+  notes,
+  type ImportStatus,
+  transactions,
+} from '@/db/schema';
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
+import { matchImportRowsForConfirm } from '@/app/(protected)/dashboard/actions/match-import-rows-for-confirm';
 import { getActiveCategoriesForImport } from '@/lib/categories/get-active-categories-for-import';
 import { formatDbError } from '@/lib/db/format-db-error';
 import {
@@ -16,6 +23,7 @@ import {
   isImportableWithOverride,
 } from '@/lib/file-import';
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
+import { resolveImportRowCategory } from '@/lib/notes/resolve-import-row-category';
 import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 
 export type ConfirmImportInput = {
@@ -58,11 +66,13 @@ export async function confirmImport(
 
   const merchant = input.merchant;
   const existingKeys = await getExistingDuplicateKeys(merchant);
+  const serverRows = await matchImportRowsForConfirm(input.rows, merchant);
   const classifiedRows = classifyImportRows(input.rows, existingKeys, merchant);
   const importableRows = classifiedRows
     .map((classified, index) => ({
       classified,
       clientRow: input.rows[index]!,
+      serverRow: serverRows[index]!,
     }))
     .filter(({ classified, clientRow }) =>
       isImportableWithOverride(classified, clientRow.duplicate),
@@ -85,8 +95,29 @@ export async function confirmImport(
   const importId = crypto.randomUUID();
   const activeCategories = await getActiveCategoriesForImport();
   const activeCategoryIds = new Set(activeCategories.map((category) => category.id));
+  const noteIdsToArchive = new Set<string>();
 
-  for (const { classified } of importableRows) {
+  const resolvedImportableRows = importableRows.map(
+    ({ classified, clientRow, serverRow }) => {
+      const resolved = resolveImportRowCategory(clientRow, serverRow);
+
+      if (resolved.archiveNoteId) {
+        noteIdsToArchive.add(resolved.archiveNoteId);
+      }
+
+      return {
+        classified: {
+          ...classified,
+          row: {
+            ...classified.row,
+            categoryId: resolved.categoryId,
+          },
+        },
+      };
+    },
+  );
+
+  for (const { classified } of resolvedImportableRows) {
     const { row } = classified;
     if (row.categoryId !== null && !activeCategoryIds.has(row.categoryId)) {
       return {
@@ -101,16 +132,16 @@ export async function confirmImport(
     await db.insert(imports).values({
       id: importId,
       filename,
-      rowCount: importableRows.length,
+      rowCount: resolvedImportableRows.length,
       skippedCount,
       userId: session.user.id,
       status,
       merchant,
     });
 
-    if (importableRows.length > 0) {
+    if (resolvedImportableRows.length > 0) {
       await db.insert(transactions).values(
-        importableRows.map(({ classified }) => {
+        resolvedImportableRows.map(({ classified }) => {
           const { row } = classified;
           const description = row.description.trim();
 
@@ -157,6 +188,19 @@ export async function confirmImport(
         }),
       );
     }
+
+    if (noteIdsToArchive.size > 0) {
+      const now = new Date();
+      await db
+        .update(notes)
+        .set({ archivedAt: now, updatedAt: now })
+        .where(
+          and(
+            inArray(notes.id, [...noteIdsToArchive]),
+            isNull(notes.archivedAt),
+          ),
+        );
+    }
   } catch (error) {
     try {
       await db.delete(imports).where(eq(imports.id, importId));
@@ -175,12 +219,13 @@ export async function confirmImport(
   revalidatePath('/imports');
   revalidatePath('/report/new');
   revalidatePath('/reports');
+  revalidatePath('/notes');
 
   return {
     ok: true,
     importId,
     status,
-    importedCount: importableRows.length,
+    importedCount: resolvedImportableRows.length,
     skippedCount,
   };
 }

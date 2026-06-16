@@ -3,6 +3,7 @@ import {
   ArrowLeftRightIcon,
   FileTextIcon,
   LayoutDashboardIcon,
+  NotebookPenIcon,
   TagsIcon,
   UploadIcon,
 } from 'lucide-react';
@@ -29,6 +30,11 @@ export const protectedMainNavItems: ProtectedNavItem[] = [
     href: '/transactions',
     label: 'Transactions',
     icon: ArrowLeftRightIcon,
+  },
+  {
+    href: '/notes',
+    label: 'Notes',
+    icon: NotebookPenIcon,
   },
   {
     href: '/reports',

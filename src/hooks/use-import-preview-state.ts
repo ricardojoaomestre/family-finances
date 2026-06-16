@@ -47,6 +47,7 @@ export type ImportPreviewAction =
       categoryId: string | null;
     }
   | { type: 'override-duplicate'; rowIndex: number }
+  | { type: 'confirm-note-match'; rowIndex: number }
   | {
       type: 'categories-rematched';
       data: ParsedImportRow[];
@@ -124,7 +125,11 @@ function importPreviewReducer(
         ...state,
         parsedData: state.parsedData.map((row, index) =>
           index === action.rowIndex
-            ? { ...row, categoryId: action.categoryId }
+            ? {
+                ...row,
+                categoryId: action.categoryId,
+                noteMatch: null,
+              }
             : row,
         ),
       };
@@ -138,6 +143,25 @@ function importPreviewReducer(
         parsedData: state.parsedData.map((row, index) =>
           index === action.rowIndex
             ? { ...row, duplicate: createDuplicateOverrideStatus() }
+            : row,
+        ),
+      };
+    case 'confirm-note-match':
+      if (!state.parsedData) {
+        return state;
+      }
+
+      return {
+        ...state,
+        parsedData: state.parsedData.map((row, index) =>
+          index === action.rowIndex && row.noteMatch
+            ? {
+                ...row,
+                noteMatch: {
+                  ...row.noteMatch,
+                  confirmed: true,
+                },
+              }
             : row,
         ),
       };

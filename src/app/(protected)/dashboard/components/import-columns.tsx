@@ -7,6 +7,7 @@ import { Check, Plus } from "lucide-react";
 import type { ImportedSpreadsheetRow, RowDuplicateStatus, RowValidation } from "@/lib/file-import";
 import { getDuplicateTooltipMessage } from "@/lib/file-import";
 import type { ImportCategoryOption } from "@/lib/categories/get-active-categories-for-import";
+import type { RowNoteMatch } from "@/lib/notes/types";
 
 import { CategoryCombobox } from "@/components/categories/category-combobox";
 import {
@@ -37,6 +38,7 @@ import { UNCATEGORIZED_CATEGORY_VALUE } from "@/lib/transactions/validate-transa
 export type PreviewRow = ImportedSpreadsheetRow & {
   validation: RowValidation;
   duplicate: RowDuplicateStatus;
+  noteMatch: RowNoteMatch | null;
 };
 
 type ImportPreviewCategoryCellProps = {
@@ -161,8 +163,75 @@ function DuplicateValidationCell({
   );
 }
 
+function NoteMatchValidationCell({
+  noteMatch,
+  onConfirmNoteMatch,
+}: {
+  noteMatch: RowNoteMatch;
+  onConfirmNoteMatch: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const tooltipContent = noteMatch.context?.trim()
+    ? noteMatch.context.trim()
+    : 'Category matched from an active note.';
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="cursor-default">
+              Note match
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{tooltipContent}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setOpen(true)}
+              aria-label="Confirm note match"
+            >
+              <Check />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Confirm note match</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm note match?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This row was categorized from an active note. Confirming keeps
+              the category on import and archives the note.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onConfirmNoteMatch();
+                setOpen(false);
+              }}
+            >
+              Confirm match
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 function createValidationColumn(
   onOverrideDuplicate: (rowIndex: number) => void,
+  onConfirmNoteMatch: (rowIndex: number) => void,
 ): ColumnDef<PreviewRow> {
   return {
     id: "validation",
@@ -200,6 +269,17 @@ function createValidationColumn(
         );
       }
 
+      const noteMatch = row.original.noteMatch;
+
+      if (noteMatch && !noteMatch.confirmed) {
+        return (
+          <NoteMatchValidationCell
+            noteMatch={noteMatch}
+            onConfirmNoteMatch={() => onConfirmNoteMatch(row.index)}
+          />
+        );
+      }
+
       return <Badge variant="success">Valid</Badge>;
     },
   };
@@ -231,9 +311,10 @@ function getBaseColumns(
   onCategoryChange: (rowIndex: number, categoryId: string | null) => void,
   onCreateCategory: (description: string) => void,
   onOverrideDuplicate: (rowIndex: number) => void,
+  onConfirmNoteMatch: (rowIndex: number) => void,
 ): ColumnDef<PreviewRow>[] {
   return [
-    createValidationColumn(onOverrideDuplicate),
+    createValidationColumn(onOverrideDuplicate, onConfirmNoteMatch),
     {
       accessorKey: "date",
       header: "Date",
@@ -273,12 +354,14 @@ export function getPreviewColumns(
   onCategoryChange: (rowIndex: number, categoryId: string | null) => void,
   onCreateCategory: (description: string) => void,
   onOverrideDuplicate: (rowIndex: number) => void,
+  onConfirmNoteMatch: (rowIndex: number) => void,
 ): ColumnDef<PreviewRow>[] {
   const columns = getBaseColumns(
     categories,
     onCategoryChange,
     onCreateCategory,
     onOverrideDuplicate,
+    onConfirmNoteMatch,
   );
 
   if (includeBalance) {

@@ -23,6 +23,7 @@ type CategoryComboboxProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  includeNoneOption?: boolean;
   'aria-invalid'?: boolean;
 };
 
@@ -36,10 +37,11 @@ export function CategoryCombobox({
   placeholder = 'None',
   disabled = false,
   className,
+  includeNoneOption = true,
   'aria-invalid': ariaInvalid,
 }: CategoryComboboxProps) {
   const options = [
-    { value: noneValue, label: noneLabel },
+    ...(includeNoneOption ? [{ value: noneValue, label: noneLabel }] : []),
     ...categories.map((category) => ({
       value: category.id,
       label: category.name,
