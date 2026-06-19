@@ -9,8 +9,9 @@ import { transactions } from '@/db/schema';
 
 export function buildTransactionWhere(
   filters: TransactionFilters,
+  householdId: string,
 ): SQL | undefined {
-  const conditions: SQL[] = [];
+  const conditions: SQL[] = [eq(transactions.householdId, householdId)];
   const descriptionQuery = filters.description.trim();
 
   if (descriptionQuery) {

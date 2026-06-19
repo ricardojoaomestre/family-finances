@@ -23,7 +23,83 @@ export const users = pgTable('user', {
   email: text('email').unique(),
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
+  activeHouseholdId: text('activeHouseholdId').references(
+    (): typeof households.id => households.id,
+    { onDelete: 'set null' },
+  ),
 });
+
+export const households = pgTable('household', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export const householdMemberRoleEnum = ['owner', 'member'] as const;
+export type HouseholdMemberRole = (typeof householdMemberRoleEnum)[number];
+
+export const householdMembers = pgTable(
+  'household_member',
+  {
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role')
+      .$type<HouseholdMemberRole>()
+      .notNull()
+      .default('member'),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.householdId, table.userId] }),
+  ],
+);
+
+export const householdInviteStatusEnum = [
+  'pending',
+  'accepted',
+  'revoked',
+] as const;
+export type HouseholdInviteStatus =
+  (typeof householdInviteStatusEnum)[number];
+
+export const householdInvites = pgTable(
+  'household_invite',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    role: text('role')
+      .$type<HouseholdMemberRole>()
+      .notNull()
+      .default('member'),
+    token: text('token').notNull().unique(),
+    status: text('status')
+      .$type<HouseholdInviteStatus>()
+      .notNull()
+      .default('pending'),
+    invitedByUserId: text('invitedByUserId').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    expiresAt: timestamp('expiresAt', { mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('household_invite_pending_email_idx')
+      .on(table.householdId, table.email)
+      .where(sql`${table.status} = 'pending'`),
+  ],
+);
 
 export const accounts = pgTable(
   'account',
@@ -95,30 +171,46 @@ export const authenticators = pgTable(
 export const importStatusEnum = ['completed', 'partial', 'failed'] as const;
 export type ImportStatus = (typeof importStatusEnum)[number];
 
-export const categories = pgTable('category', {
+export const categories = pgTable(
+  'category',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    color: text('color').notNull(),
+    icon: text('icon').$type<CategoryIconName>().notNull().default('tag'),
+    pattern: text('pattern'),
+    priority: integer('priority').notNull(),
+    active: boolean('active').notNull().default(true),
+    type: text('type').$type<CategoryType>().notNull().default('spending'),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('category_household_name_idx').on(
+      table.householdId,
+      table.name,
+    ),
+  ],
+);
+
+export const categoryImportSnapshots = pgTable('category_import_snapshot', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text('name').notNull().unique(),
-  description: text('description'),
-  color: text('color').notNull(),
-  icon: text('icon').$type<CategoryIconName>().notNull().default('tag'),
-  pattern: text('pattern'),
-  priority: integer('priority').notNull(),
-  active: boolean('active').notNull().default(true),
-  type: text('type').$type<CategoryType>().notNull().default('spending'),
-  createdAt: timestamp('createdAt', { mode: 'date' })
+  householdId: text('householdId')
     .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updatedAt', { mode: 'date' })
-    .notNull()
-    .defaultNow(),
-});
-
-export const CATEGORY_IMPORT_SNAPSHOT_ID = 'latest' as const;
-
-export const categoryImportSnapshots = pgTable('category_import_snapshot', {
-  id: text('id').primaryKey(),
+    .unique()
+    .references(() => households.id, { onDelete: 'cascade' }),
   payload: jsonb('payload').$type<CategorySnapshotRow[]>().notNull(),
   createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()
@@ -137,6 +229,9 @@ export const imports = pgTable('import', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  householdId: text('householdId')
+    .notNull()
+    .references(() => households.id, { onDelete: 'cascade' }),
   filename: text('filename').notNull(),
   importedAt: timestamp('importedAt', { mode: 'date' })
     .notNull()
@@ -170,6 +265,9 @@ export const reports = pgTable('report', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  householdId: text('householdId')
+    .notNull()
+    .references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   dateFrom: text('dateFrom').notNull(),
   dateTo: text('dateTo').notNull(),
@@ -187,6 +285,9 @@ export const notes = pgTable(
     id: text('id')
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
     merchant: text('merchant').notNull(),
     date: timestamp('date', { mode: 'date' }).notNull(),
     value: numeric('value', { precision: 14, scale: 2 }).notNull(),
@@ -204,7 +305,7 @@ export const notes = pgTable(
   },
   (table) => [
     uniqueIndex('note_active_merchant_date_value_idx')
-      .on(table.merchant, table.date, table.value)
+      .on(table.householdId, table.merchant, table.date, table.value)
       .where(sql`${table.archivedAt} is null`),
   ],
 );
@@ -213,6 +314,9 @@ export const transactions = pgTable('transaction', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
+  householdId: text('householdId')
+    .notNull()
+    .references(() => households.id, { onDelete: 'cascade' }),
   importId: text('importId')
     .notNull()
     .references(() => imports.id, { onDelete: 'cascade' }),
@@ -228,10 +332,52 @@ export const transactions = pgTable('transaction', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow(),
 });
 
+export const householdsRelations = relations(households, ({ many }) => ({
+  members: many(householdMembers),
+  invites: many(householdInvites),
+  categories: many(categories),
+  imports: many(imports),
+  notes: many(notes),
+  reports: many(reports),
+  transactions: many(transactions),
+}));
+
+export const householdMembersRelations = relations(
+  householdMembers,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [householdMembers.householdId],
+      references: [households.id],
+    }),
+    user: one(users, {
+      fields: [householdMembers.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const householdInvitesRelations = relations(
+  householdInvites,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [householdInvites.householdId],
+      references: [households.id],
+    }),
+    invitedBy: one(users, {
+      fields: [householdInvites.invitedByUserId],
+      references: [users.id],
+    }),
+  }),
+);
+
 export const importsRelations = relations(imports, ({ one, many }) => ({
   user: one(users, {
     fields: [imports.userId],
     references: [users.id],
+  }),
+  household: one(households, {
+    fields: [imports.householdId],
+    references: [households.id],
   }),
   transactions: many(transactions),
   skippedRows: many(importSkippedRows),

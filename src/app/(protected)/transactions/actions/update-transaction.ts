@@ -1,11 +1,12 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatTransactionValueForKey } from '@/lib/file-import/duplicate-key';
 import { formatDbError } from '@/lib/db/format-db-error';
 import {
@@ -34,6 +35,12 @@ export async function updateTransaction(
     return { ok: false, error: 'You must be signed in.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   if (!isTransactionId(input.id)) {
     return { ok: false, error: 'Transaction not found.' };
   }
@@ -57,7 +64,12 @@ export async function updateTransaction(
   const [existing] = await db
     .select({ id: transactions.id })
     .from(transactions)
-    .where(eq(transactions.id, input.id));
+    .where(
+      and(
+        eq(transactions.id, input.id),
+        eq(transactions.householdId, householdId),
+      ),
+    );
 
   if (!existing) {
     return { ok: false, error: 'Transaction not found.' };
@@ -67,7 +79,12 @@ export async function updateTransaction(
     const [category] = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(eq(categories.id, parsed.categoryId));
+      .where(
+        and(
+          eq(categories.id, parsed.categoryId),
+          eq(categories.householdId, householdId),
+        ),
+      );
 
     if (!category) {
       return {
@@ -88,7 +105,12 @@ export async function updateTransaction(
         categoryId: parsed.categoryId,
         merchant: parsed.merchant,
       })
-      .where(eq(transactions.id, input.id))
+      .where(
+        and(
+          eq(transactions.id, input.id),
+          eq(transactions.householdId, householdId),
+        ),
+      )
       .returning({ id: transactions.id });
 
     if (!updated) {

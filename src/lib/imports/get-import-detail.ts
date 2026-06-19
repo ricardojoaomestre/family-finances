@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
@@ -10,6 +10,7 @@ import {
   transactions,
   users,
 } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 export type ImportDetailRecord = {
   id: string;
@@ -65,6 +66,7 @@ function parseSkippedRowErrors(errors: string | null): string[] | null {
 }
 
 export async function getImportDetail(id: string): Promise<ImportDetail | null> {
+  const householdId = await requireActiveHouseholdId();
   const [record] = await db
     .select({
       id: imports.id,
@@ -79,7 +81,7 @@ export async function getImportDetail(id: string): Promise<ImportDetail | null> 
     })
     .from(imports)
     .innerJoin(users, eq(imports.userId, users.id))
-    .where(eq(imports.id, id))
+    .where(and(eq(imports.id, id), eq(imports.householdId, householdId)))
     .limit(1);
 
   if (!record) {

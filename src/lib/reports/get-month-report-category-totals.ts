@@ -7,6 +7,7 @@ import {
   resolveCategoryType,
   type CategoryType,
 } from '@/lib/categories/category-type';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import { buildTransactionWhere } from '@/lib/transactions/build-transaction-where';
 
 export type MonthReportCategoryTotal = {
@@ -22,11 +23,15 @@ export async function getMonthReportCategoryTotals(
   dateFrom: string,
   dateTo: string,
 ): Promise<MonthReportCategoryTotal[]> {
-  const where = buildTransactionWhere({
-    ...DEFAULT_TRANSACTION_FILTERS,
-    dateFrom,
-    dateTo,
-  });
+  const householdId = await requireActiveHouseholdId();
+  const where = buildTransactionWhere(
+    {
+      ...DEFAULT_TRANSACTION_FILTERS,
+      dateFrom,
+      dateTo,
+    },
+    householdId,
+  );
 
   const rows = await db
     .select({

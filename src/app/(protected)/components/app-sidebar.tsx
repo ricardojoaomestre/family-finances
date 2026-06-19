@@ -20,16 +20,26 @@ import {
   protectedMainNavItems,
   protectedSettingsNavItems,
 } from '@/lib/navigation/protected-nav-config';
+import type { UserHousehold } from '@/lib/household/get-households-for-user';
 
 import { AppSidebarFooter } from './app-sidebar-footer';
+import { HouseholdSwitcher } from './household-switcher';
 
 type AppSidebarProps = {
   userName: string | null | undefined;
   userEmail: string | null | undefined;
   userImage: string | null | undefined;
+  households: UserHousehold[];
+  activeHouseholdId: string;
 };
 
-export function AppSidebar({ userName, userEmail, userImage }: AppSidebarProps) {
+export function AppSidebar({
+  userName,
+  userEmail,
+  userImage,
+  households,
+  activeHouseholdId,
+}: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -52,6 +62,14 @@ export function AppSidebar({ userName, userEmail, userImage }: AppSidebarProps) 
         </div>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <HouseholdSwitcher
+              households={households}
+              activeHouseholdId={activeHouseholdId}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>

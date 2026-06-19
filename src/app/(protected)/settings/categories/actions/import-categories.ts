@@ -1,11 +1,12 @@
 'use server';
 
-import { eq, inArray, max } from 'drizzle-orm';
+import { and, eq, inArray, max } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import {
   isCategoryColorToken,
   type CategoryColorToken,
@@ -57,10 +58,11 @@ function revalidateCategoryPaths() {
   revalidatePath('/dashboard');
 }
 
-async function getNextPriority(): Promise<number> {
+async function getNextPriority(householdId: string): Promise<number> {
   const [result] = await db
     .select({ value: max(categories.priority) })
-    .from(categories);
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
 
   return (result?.value ?? 0) + 1;
 }
@@ -72,6 +74,12 @@ export async function importCategories(
 
   if (!session?.user?.id) {
     return { ok: false, error: 'You must be signed in.' };
+  }
+
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
   }
 
   if (!Array.isArray(input.rows) || input.rows.length === 0) {
@@ -87,7 +95,8 @@ export async function importCategories(
       active: categories.active,
       color: categories.color,
     })
-    .from(categories);
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
 
   const plan = buildCategoryImportPlan(existing, input.rows, input.columns);
 
@@ -95,13 +104,13 @@ export async function importCategories(
     return { ok: false, error: plan.error };
   }
 
-  const snapshot = await loadCategoryTableSnapshot();
+  const snapshot = await loadCategoryTableSnapshot(householdId);
   const inactiveUpdated: { id: string; name: string }[] = [];
 
   try {
-    await saveCategoryImportSnapshot(snapshot);
+    await saveCategoryImportSnapshot(householdId, snapshot);
 
-    let nextPriority = await getNextPriority();
+    let nextPriority = await getNextPriority(householdId);
     const usedByActive = new Set(
       existing.filter((row) => row.active).map((row) => row.color),
     );
@@ -140,7 +149,12 @@ export async function importCategories(
         await db
           .update(categories)
           .set(updateSet)
-          .where(eq(categories.id, row.targetCategoryId));
+          .where(
+            and(
+              eq(categories.id, row.targetCategoryId),
+              eq(categories.householdId, householdId),
+            ),
+          );
 
         const target = existing.find(
           (category) => category.id === row.targetCategoryId,
@@ -174,6 +188,7 @@ export async function importCategories(
 
       await db.insert(categories).values({
         id: crypto.randomUUID(),
+        householdId,
         name: row.csvName.trim(),
         description: null,
         color: isCategoryColorToken(color) ? color : 'blue-200',
@@ -222,6 +237,12 @@ export async function activateImportedCategories(
     return { ok: false, error: 'You must be signed in.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   const ids = [...new Set(input.categoryIds.filter(Boolean))];
 
   if (ids.length === 0) {
@@ -232,7 +253,12 @@ export async function activateImportedCategories(
     await db
       .update(categories)
       .set({ active: true, updatedAt: new Date() })
-      .where(inArray(categories.id, ids));
+      .where(
+        and(
+          eq(categories.householdId, householdId),
+          inArray(categories.id, ids),
+        ),
+      );
   } catch (error) {
     console.error('[activateImportedCategories]', error);
 
@@ -255,14 +281,23 @@ export async function undoCategoryImport(): Promise<
     return { ok: false, error: 'You must be signed in.' };
   }
 
-  const snapshot = await loadSavedCategoryImportSnapshot();
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
+  const snapshot = await loadSavedCategoryImportSnapshot(householdId);
 
   if (!snapshot) {
     return { ok: false, error: 'Nothing to undo.' };
   }
 
   const snapshotIds = new Set(snapshot.map((row) => row.id));
-  const live = await db.select({ id: categories.id }).from(categories);
+  const live = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
   const toDelete = live
     .filter((row) => !snapshotIds.has(row.id))
     .map((row) => row.id);
@@ -295,7 +330,14 @@ export async function undoCategoryImport(): Promise<
 
   try {
     if (toDelete.length > 0) {
-      await db.delete(categories).where(inArray(categories.id, toDelete));
+      await db
+        .delete(categories)
+        .where(
+          and(
+            eq(categories.householdId, householdId),
+            inArray(categories.id, toDelete),
+          ),
+        );
     }
 
     for (const row of snapshot) {
@@ -303,6 +345,7 @@ export async function undoCategoryImport(): Promise<
         .insert(categories)
         .values({
           id: row.id,
+          householdId,
           name: row.name,
           description: row.description,
           color: row.color,
@@ -333,7 +376,7 @@ export async function undoCategoryImport(): Promise<
         });
     }
 
-    await clearCategoryImportSnapshot();
+    await clearCategoryImportSnapshot(householdId);
   } catch (error) {
     console.error('[undoCategoryImport]', error);
 

@@ -1,11 +1,12 @@
 'use server';
 
-import { eq, inArray, max, sql } from 'drizzle-orm';
+import { and, eq, inArray, max, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import type { CategoryIconName } from '@/lib/categories/category-icons';
 import type { CategoryType } from '@/lib/categories/category-type';
@@ -93,15 +94,21 @@ function getFieldErrors(
   return fieldErrors;
 }
 
-async function requireSessionUserId(): Promise<string | null> {
+async function requireHouseholdId(): Promise<string | null> {
   const session = await auth();
-  return session?.user?.id ?? null;
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  return getActiveHouseholdId();
 }
 
-async function getNextPriority(): Promise<number> {
+async function getNextPriority(householdId: string): Promise<number> {
   const [result] = await db
     .select({ value: max(categories.priority) })
-    .from(categories);
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
 
   return (result?.value ?? 0) + 1;
 }
@@ -141,9 +148,9 @@ function formatUniqueNameError(error: unknown): ActionResult | null {
 export async function createCategory(
   input: CategoryFormInput,
 ): Promise<ActionResult> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
@@ -164,6 +171,7 @@ export async function createCategory(
   try {
     await db.insert(categories).values({
       id,
+      householdId,
       name: input.name.trim(),
       description,
       color: input.color,
@@ -171,7 +179,7 @@ export async function createCategory(
       pattern: input.pattern.trim() || null,
       active: input.active,
       type: input.type,
-      priority: await getNextPriority(),
+      priority: await getNextPriority(householdId),
       updatedAt: new Date(),
     });
   } catch (error) {
@@ -197,16 +205,16 @@ export async function updateCategory(
   id: string,
   input: CategoryFormInput,
 ): Promise<ActionResult> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
   const [existing] = await db
     .select({ name: categories.name })
     .from(categories)
-    .where(eq(categories.id, id));
+    .where(and(eq(categories.id, id), eq(categories.householdId, householdId)));
 
   if (!existing) {
     return { ok: false, error: 'Category not found.' };
@@ -237,7 +245,7 @@ export async function updateCategory(
         type: input.type,
         updatedAt: new Date(),
       })
-      .where(eq(categories.id, id))
+      .where(and(eq(categories.id, id), eq(categories.householdId, householdId)))
       .returning({ id: categories.id });
 
     if (!updated) {
@@ -269,9 +277,9 @@ export async function setCategoryActive(
   id: string,
   active: boolean,
 ): Promise<ActionResult> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
@@ -279,7 +287,7 @@ export async function setCategoryActive(
     const [updated] = await db
       .update(categories)
       .set({ active, updatedAt: new Date() })
-      .where(eq(categories.id, id))
+      .where(and(eq(categories.id, id), eq(categories.householdId, householdId)))
       .returning({ id: categories.id });
 
     if (!updated) {
@@ -301,9 +309,9 @@ export async function setCategoryActive(
 export async function reorderCategories(
   orderedIds: string[],
 ): Promise<ActionResult> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
@@ -320,7 +328,8 @@ export async function reorderCategories(
   try {
     const existing = await db
       .select({ id: categories.id })
-      .from(categories);
+      .from(categories)
+      .where(eq(categories.householdId, householdId));
 
     if (existing.length !== orderedIds.length) {
       return {
@@ -346,7 +355,12 @@ export async function reorderCategories(
         priority: sql`(case ${categories.id} ${sql.join(whenClauses, sql` `)} end)::integer`,
         updatedAt: now,
       })
-      .where(inArray(categories.id, orderedIds));
+      .where(
+        and(
+          eq(categories.householdId, householdId),
+          inArray(categories.id, orderedIds),
+        ),
+      );
   } catch (error) {
     console.error('[reorderCategories]', error);
 

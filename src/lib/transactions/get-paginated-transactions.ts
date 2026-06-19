@@ -3,6 +3,7 @@ import { count, desc, eq } from 'drizzle-orm';
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 import { buildTransactionWhere } from './build-transaction-where';
 import type { TransactionListSearchParams } from './transaction-search-params';
@@ -18,7 +19,8 @@ export type PaginatedTransactionsResult = {
 export async function getPaginatedTransactions(
   params: TransactionListSearchParams,
 ): Promise<PaginatedTransactionsResult> {
-  const where = buildTransactionWhere(params.filters);
+  const householdId = await requireActiveHouseholdId();
+  const where = buildTransactionWhere(params.filters, householdId);
   const [{ total }] = await db
     .select({ total: count() })
     .from(transactions)
@@ -62,6 +64,10 @@ export async function getPaginatedTransactions(
 }
 
 export async function getTransactionCount(): Promise<number> {
-  const [{ total }] = await db.select({ total: count() }).from(transactions);
+  const householdId = await requireActiveHouseholdId();
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(transactions)
+    .where(eq(transactions.householdId, householdId));
   return Number(total);
 }

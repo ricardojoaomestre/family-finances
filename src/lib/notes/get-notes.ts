@@ -1,7 +1,8 @@
-import { asc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { categories, notes } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import {
   getDefaultCategoryColor,
   isCategoryColorToken,
@@ -61,6 +62,7 @@ function mapNoteRow(row: {
 }
 
 async function queryNotes(archived: boolean): Promise<NoteRow[]> {
+  const householdId = await requireActiveHouseholdId();
   const rows = await db
     .select({
       id: notes.id,
@@ -80,7 +82,12 @@ async function queryNotes(archived: boolean): Promise<NoteRow[]> {
     })
     .from(notes)
     .innerJoin(categories, eq(notes.categoryId, categories.id))
-    .where(archived ? isNotNull(notes.archivedAt) : isNull(notes.archivedAt))
+    .where(
+      and(
+        eq(notes.householdId, householdId),
+        archived ? isNotNull(notes.archivedAt) : isNull(notes.archivedAt),
+      ),
+    )
     .orderBy(asc(notes.date), asc(notes.createdAt));
 
   return rows
@@ -97,6 +104,7 @@ export async function getArchivedNotes(): Promise<NoteRow[]> {
 }
 
 export async function getNoteEligibleCategories(): Promise<NoteCategoryOption[]> {
+  const householdId = await requireActiveHouseholdId();
   const rows = await db
     .select({
       id: categories.id,
@@ -107,6 +115,7 @@ export async function getNoteEligibleCategories(): Promise<NoteCategoryOption[]>
       active: categories.active,
     })
     .from(categories)
+    .where(eq(categories.householdId, householdId))
     .orderBy(asc(categories.priority));
 
   return rows
@@ -131,6 +140,7 @@ export async function getNoteEligibleCategories(): Promise<NoteCategoryOption[]>
 }
 
 export async function getNoteById(id: string): Promise<NoteRow | null> {
+  const householdId = await requireActiveHouseholdId();
   const rows = await db
     .select({
       id: notes.id,
@@ -150,7 +160,7 @@ export async function getNoteById(id: string): Promise<NoteRow | null> {
     })
     .from(notes)
     .innerJoin(categories, eq(notes.categoryId, categories.id))
-    .where(eq(notes.id, id))
+    .where(and(eq(notes.householdId, householdId), eq(notes.id, id)))
     .limit(1);
 
   const row = rows[0];

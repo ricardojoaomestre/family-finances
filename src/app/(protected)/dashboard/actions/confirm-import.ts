@@ -23,6 +23,7 @@ import {
   isImportableWithOverride,
 } from '@/lib/file-import';
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { resolveImportRowCategory } from '@/lib/notes/resolve-import-row-category';
 import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 
@@ -49,6 +50,12 @@ export async function confirmImport(
 
   if (!session?.user?.id) {
     return { ok: false, error: 'You must be signed in to import data.' };
+  }
+
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
   }
 
   const filename = input.filename?.trim();
@@ -131,6 +138,7 @@ export async function confirmImport(
   try {
     await db.insert(imports).values({
       id: importId,
+      householdId,
       filename,
       rowCount: resolvedImportableRows.length,
       skippedCount,
@@ -146,6 +154,7 @@ export async function confirmImport(
           const description = row.description.trim();
 
           return {
+            householdId,
             date: new Date(row.date!),
             description,
             categoryId: row.categoryId,
@@ -196,6 +205,7 @@ export async function confirmImport(
         .set({ archivedAt: now, updatedAt: now })
         .where(
           and(
+            eq(notes.householdId, householdId),
             inArray(notes.id, [...noteIdsToArchive]),
             isNull(notes.archivedAt),
           ),

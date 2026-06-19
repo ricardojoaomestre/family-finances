@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories, notes } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatDbError } from '@/lib/db/format-db-error';
 import { formatTransactionValueForKey } from '@/lib/file-import/duplicate-key';
 import { getNoteById } from '@/lib/notes/get-notes';
@@ -39,11 +40,17 @@ function revalidateNotePaths() {
 
 async function getCategoryTypeForNote(
   categoryId: string,
+  householdId: string,
 ): Promise<'spending' | 'income' | null> {
   const rows = await db
     .select({ type: categories.type, active: categories.active })
     .from(categories)
-    .where(eq(categories.id, categoryId))
+    .where(
+      and(
+        eq(categories.id, categoryId),
+        eq(categories.householdId, householdId),
+      ),
+    )
     .limit(1);
 
   const row = rows[0];
@@ -58,6 +65,7 @@ async function getCategoryTypeForNote(
 }
 
 async function hasActiveNoteKeyConflict(
+  householdId: string,
   merchant: string,
   date: Date,
   value: number,
@@ -65,6 +73,7 @@ async function hasActiveNoteKeyConflict(
 ): Promise<boolean> {
   const formattedValue = formatTransactionValueForKey(value);
   const conditions = [
+    eq(notes.householdId, householdId),
     eq(notes.merchant, merchant),
     eq(notes.date, date),
     eq(notes.value, formattedValue),
@@ -103,7 +112,16 @@ export async function createNote(input: NoteFormInput): Promise<ActionResult> {
     return { ok: false, error: 'You must be signed in to create notes.' };
   }
 
-  const categoryType = await getCategoryTypeForNote(input.categoryId);
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
+  const categoryType = await getCategoryTypeForNote(
+    input.categoryId,
+    householdId,
+  );
   const fieldErrors = validateNoteForm(input, { categoryType });
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -126,6 +144,7 @@ export async function createNote(input: NoteFormInput): Promise<ActionResult> {
 
   if (
     await hasActiveNoteKeyConflict(
+      householdId,
       parsed.merchant,
       parsed.date,
       parsed.value,
@@ -136,6 +155,7 @@ export async function createNote(input: NoteFormInput): Promise<ActionResult> {
 
   try {
     await db.insert(notes).values({
+      householdId,
       merchant: parsed.merchant,
       date: parsed.date,
       value: formatTransactionValueForKey(parsed.value),
@@ -161,6 +181,12 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
     return { ok: false, error: 'You must be signed in to update notes.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   const noteId = input.id?.trim();
 
   if (!noteId || !isUuid(noteId)) {
@@ -173,7 +199,10 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
     return { ok: false, error: 'Only active notes can be edited.' };
   }
 
-  const categoryType = await getCategoryTypeForNote(input.categoryId);
+  const categoryType = await getCategoryTypeForNote(
+    input.categoryId,
+    householdId,
+  );
   const fieldErrors = validateNoteForm(input, { categoryType });
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -196,6 +225,7 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
 
   if (
     await hasActiveNoteKeyConflict(
+      householdId,
       parsed.merchant,
       parsed.date,
       parsed.value,
@@ -216,7 +246,13 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
         context: parsed.context,
         updatedAt: new Date(),
       })
-      .where(and(eq(notes.id, noteId), isNull(notes.archivedAt)));
+      .where(
+        and(
+          eq(notes.householdId, householdId),
+          eq(notes.id, noteId),
+          isNull(notes.archivedAt),
+        ),
+      );
   } catch (error) {
     console.error('[updateNote]', error);
     return {
@@ -236,6 +272,12 @@ export async function archiveNote(noteId: string): Promise<ActionResult> {
     return { ok: false, error: 'You must be signed in to archive notes.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   if (!isUuid(noteId)) {
     return { ok: false, error: 'Note not found.' };
   }
@@ -246,7 +288,13 @@ export async function archiveNote(noteId: string): Promise<ActionResult> {
     const updated = await db
       .update(notes)
       .set({ archivedAt: now, updatedAt: now })
-      .where(and(eq(notes.id, noteId), isNull(notes.archivedAt)))
+      .where(
+        and(
+          eq(notes.householdId, householdId),
+          eq(notes.id, noteId),
+          isNull(notes.archivedAt),
+        ),
+      )
       .returning({ id: notes.id });
 
     if (updated.length === 0) {
@@ -271,6 +319,12 @@ export async function unarchiveNote(noteId: string): Promise<ActionResult> {
     return { ok: false, error: 'You must be signed in to unarchive notes.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   if (!isUuid(noteId)) {
     return { ok: false, error: 'Note not found.' };
   }
@@ -283,6 +337,7 @@ export async function unarchiveNote(noteId: string): Promise<ActionResult> {
 
   if (
     await hasActiveNoteKeyConflict(
+      householdId,
       existing.merchant,
       existing.date,
       Number(existing.value),
@@ -295,7 +350,7 @@ export async function unarchiveNote(noteId: string): Promise<ActionResult> {
     await db
       .update(notes)
       .set({ archivedAt: null, updatedAt: new Date() })
-      .where(eq(notes.id, noteId));
+      .where(and(eq(notes.householdId, householdId), eq(notes.id, noteId)));
   } catch (error) {
     console.error('[unarchiveNote]', error);
     return {
@@ -315,6 +370,12 @@ export async function deleteArchivedNote(noteId: string): Promise<ActionResult> 
     return { ok: false, error: 'You must be signed in to delete notes.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   if (!isUuid(noteId)) {
     return { ok: false, error: 'Note not found.' };
   }
@@ -322,7 +383,13 @@ export async function deleteArchivedNote(noteId: string): Promise<ActionResult> 
   try {
     const deleted = await db
       .delete(notes)
-      .where(and(eq(notes.id, noteId), isNotNull(notes.archivedAt)))
+      .where(
+        and(
+          eq(notes.householdId, householdId),
+          eq(notes.id, noteId),
+          isNotNull(notes.archivedAt),
+        ),
+      )
       .returning({ id: notes.id });
 
     if (deleted.length === 0) {

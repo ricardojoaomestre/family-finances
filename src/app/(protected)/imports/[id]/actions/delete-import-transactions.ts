@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { imports, type ImportStatus, transactions } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatDbError } from '@/lib/db/format-db-error';
 import { isMerchantSlug } from '@/lib/merchants';
 
@@ -28,6 +29,12 @@ export async function deleteImportTransactions(input: {
     return { ok: false, error: 'You must be signed in.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   const uniqueIds = [...new Set(input.transactionIds)];
 
   if (uniqueIds.length === 0) {
@@ -42,7 +49,7 @@ export async function deleteImportTransactions(input: {
       skippedCount: imports.skippedCount,
     })
     .from(imports)
-    .where(eq(imports.id, input.importId))
+    .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)))
     .limit(1);
 
   if (!importRecord || !isMerchantSlug(importRecord.merchant)) {
@@ -54,6 +61,7 @@ export async function deleteImportTransactions(input: {
       .delete(transactions)
       .where(
         and(
+          eq(transactions.householdId, householdId),
           eq(transactions.importId, input.importId),
           inArray(transactions.id, uniqueIds),
         ),
@@ -72,7 +80,7 @@ export async function deleteImportTransactions(input: {
         rowCount: nextRowCount,
         status: nextStatus,
       })
-      .where(eq(imports.id, input.importId));
+      .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)));
 
     revalidatePath(`/imports/${input.importId}`);
     revalidatePath('/transactions');

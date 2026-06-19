@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { importSkippedRows, imports } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatDbError } from '@/lib/db/format-db-error';
 import { formatTransactionValueForKey } from '@/lib/file-import';
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
@@ -60,6 +61,12 @@ export async function updateSkippedImportRow(
     return { ok: false, error: 'You must be signed in.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   const fieldErrors = validateSkippedImportRowForm(input);
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -82,7 +89,7 @@ export async function updateSkippedImportRow(
       merchant: imports.merchant,
     })
     .from(imports)
-    .where(eq(imports.id, input.importId))
+    .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)))
     .limit(1);
 
   if (!importRecord || !isMerchantSlug(importRecord.merchant)) {

@@ -4,6 +4,7 @@ import { DEFAULT_TRANSACTION_FILTERS } from '@/app/(protected)/transactions/lib/
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
 import { parseCalendarDayKey } from '@/lib/dates/calendar-day-key';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import {
   formatPriorMonthLabels,
   getPriorReportMonthRange,
@@ -24,12 +25,16 @@ export async function getSpendingCategoryMonthAverages(
     return {};
   }
 
+  const householdId = await requireActiveHouseholdId();
   const where = and(
-    buildTransactionWhere({
-      ...DEFAULT_TRANSACTION_FILTERS,
-      dateFrom: priorRange.dateFrom,
-      dateTo: priorRange.dateTo,
-    }),
+    buildTransactionWhere(
+      {
+        ...DEFAULT_TRANSACTION_FILTERS,
+        dateFrom: priorRange.dateFrom,
+        dateTo: priorRange.dateTo,
+      },
+      householdId,
+    ),
     isNotNull(transactions.categoryId),
     eq(categories.type, 'spending'),
   );

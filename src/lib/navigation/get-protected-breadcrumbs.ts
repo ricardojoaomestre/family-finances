@@ -59,6 +59,12 @@ export function getProtectedBreadcrumbs(
         { label: 'Categories' },
       ];
     }
+    if (pathname === '/settings/household') {
+      return [
+        { label: 'Settings' },
+        { label: 'Household' },
+      ];
+    }
     return [{ label: 'Settings' }];
   }
 

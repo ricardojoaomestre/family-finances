@@ -1,10 +1,11 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { categories, imports, transactions } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import {
   getDefaultCategoryColor,
   isCategoryColorToken,
@@ -34,6 +35,12 @@ export async function getTransactionDetails(
     return { ok: false, error: 'You must be signed in.' };
   }
 
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
   if (!isTransactionId(id)) {
     return { ok: false, error: 'Transaction not found.' };
   }
@@ -60,7 +67,12 @@ export async function getTransactionDetails(
     .from(transactions)
     .innerJoin(imports, eq(transactions.importId, imports.id))
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .where(eq(transactions.id, id))
+    .where(
+      and(
+        eq(transactions.id, id),
+        eq(transactions.householdId, householdId),
+      ),
+    )
     .limit(1);
 
   if (!row) {

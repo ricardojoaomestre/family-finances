@@ -2,6 +2,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
 
 const JOINT_ACCOUNT_MERCHANT = 'bpi';
@@ -17,6 +18,7 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
   dateFrom: string,
   dateTo: string,
 ): Promise<string | null> {
+  const householdId = await requireActiveHouseholdId();
   const [anchor] = await db
     .select({
       date: transactions.date,
@@ -25,6 +27,7 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
     .innerJoin(categories, eq(transactions.categoryId, categories.id))
     .where(
       and(
+        eq(transactions.householdId, householdId),
         eq(transactions.merchant, JOINT_ACCOUNT_MERCHANT),
         eq(categories.type, 'income'),
         transactionDateInRange(dateFrom, dateTo),
@@ -46,6 +49,7 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
     .from(transactions)
     .where(
       and(
+        eq(transactions.householdId, householdId),
         eq(transactions.merchant, JOINT_ACCOUNT_MERCHANT),
         sql`to_char(${transactions.date} AT TIME ZONE 'UTC', 'YYYY-MM-DD') < ${anchorDate}`,
       ),

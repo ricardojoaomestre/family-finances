@@ -113,6 +113,13 @@
       "when": 1780240000000,
       "tag": "0015_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1780250000000,
+      "tag": "0016_household_multi_tenant",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { eq, max } from 'drizzle-orm';
+import { and, eq, max } from 'drizzle-orm';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import fs from 'node:fs';
@@ -7,8 +7,13 @@ import path from 'node:path';
 
 import {
   categories,
+  categoryImportSnapshots,
+  householdInvites,
+  householdMembers,
+  households,
   importSkippedRows,
   imports,
+  notes,
   transactions,
   users,
 } from '@/db/schema';
@@ -95,11 +100,44 @@ async function wipeSeedTables(db: ReturnType<typeof drizzle>) {
   await db.delete(transactions);
   await db.delete(importSkippedRows);
   await db.delete(imports);
+  await db.delete(notes);
+  await db.delete(categoryImportSnapshots);
   await db.delete(categories);
+  await db.delete(householdInvites);
+  await db.delete(householdMembers);
+  await db.delete(households);
+}
+
+async function seedHousehold(
+  db: ReturnType<typeof drizzle>,
+  userId: string,
+  userEmail: string | null,
+): Promise<string> {
+  const owner = userEmail?.split('@')[0] ?? 'My';
+  const [household] = await db
+    .insert(households)
+    .values({ name: `${owner}'s household` })
+    .returning({ id: households.id });
+
+  const householdId = household!.id;
+
+  await db.insert(householdMembers).values({
+    householdId,
+    userId,
+    role: 'owner',
+  });
+
+  await db
+    .update(users)
+    .set({ activeHouseholdId: householdId })
+    .where(eq(users.id, userId));
+
+  return householdId;
 }
 
 async function seedCategoriesFromFixture(
   db: ReturnType<typeof drizzle>,
+  householdId: string,
   fixturePath: string,
 ): Promise<number> {
   const parsed = parseCategoryCsvRows(readFixture(fixturePath));
@@ -128,6 +166,7 @@ async function seedCategoriesFromFixture(
 
     await db.insert(categories).values({
       id: crypto.randomUUID(),
+      householdId,
       name,
       description: null,
       color: isCategoryColorToken(color) ? color : 'blue-200',
@@ -148,24 +187,29 @@ async function seedCategoriesFromFixture(
 
 async function loadCategoryRecords(
   db: ReturnType<typeof drizzle>,
+  householdId: string,
 ): Promise<CategoryRecord[]> {
   return db
     .select({ id: categories.id, name: categories.name })
-    .from(categories);
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
 }
 
 async function getNextCategoryPriority(
   db: ReturnType<typeof drizzle>,
+  householdId: string,
 ): Promise<number> {
   const [result] = await db
     .select({ value: max(categories.priority) })
-    .from(categories);
+    .from(categories)
+    .where(eq(categories.householdId, householdId));
 
   return (result?.value ?? 0) + 1;
 }
 
 async function resolveCategoryId(
   db: ReturnType<typeof drizzle>,
+  householdId: string,
   label: string,
   categoryByNameKey: Map<string, CategoryRecord>,
   usedColors: Set<string>,
@@ -203,6 +247,7 @@ async function resolveCategoryId(
 
   await db.insert(categories).values({
     id,
+    householdId,
     name: trimmedLabel,
     description: null,
     color: isCategoryColorToken(color) ? color : 'blue-200',
@@ -290,13 +335,14 @@ function parseExtratoRows(content: string): {
 async function seedTransactions(
   db: ReturnType<typeof drizzle>,
   userId: string,
+  householdId: string,
   extratoPath: string,
 ) {
   const { rows, skippedBlankConta, skippedInvalid } = parseExtratoRows(
     readFixture(extratoPath),
   );
 
-  const categoryRecords = await loadCategoryRecords(db);
+  const categoryRecords = await loadCategoryRecords(db, householdId);
   const categoryByNameKey = new Map(
     categoryRecords.map((record) => [categoryNameKey(record.name), record]),
   );
@@ -305,10 +351,15 @@ async function seedTransactions(
       await db
         .select({ color: categories.color })
         .from(categories)
-        .where(eq(categories.active, true))
+        .where(
+          and(
+            eq(categories.householdId, householdId),
+            eq(categories.active, true),
+          ),
+        )
     ).map((row) => row.color),
   );
-  const nextPriorityRef = { value: await getNextCategoryPriority(db) };
+  const nextPriorityRef = { value: await getNextCategoryPriority(db, householdId) };
   const createdCategoryNames: string[] = [];
 
   const rowsByMerchant = new Map<MerchantSlug, ParsedExtratoRow[]>();
@@ -327,6 +378,7 @@ async function seedTransactions(
 
     await db.insert(imports).values({
       id: importId,
+      householdId,
       filename: SEED_IMPORT_FILENAME,
       rowCount: merchantRows.length,
       skippedCount: 0,
@@ -340,6 +392,7 @@ async function seedTransactions(
     for (const row of merchantRows) {
       const categoryId = await resolveCategoryId(
         db,
+        householdId,
         row.categoryLabel,
         categoryByNameKey,
         usedColors,
@@ -348,6 +401,7 @@ async function seedTransactions(
       );
 
       transactionValues.push({
+        householdId,
         date: row.date,
         description: row.description,
         categoryId,
@@ -397,12 +451,19 @@ async function seedDatabase() {
   console.log('Wiping seed tables...');
   await wipeSeedTables(db);
 
+  console.log('Creating household...');
+  const householdId = await seedHousehold(db, user.id, user.email);
+
   console.log(`Loading categories from ${categoriesPath}...`);
-  const categoryCount = await seedCategoriesFromFixture(db, categoriesPath);
+  const categoryCount = await seedCategoriesFromFixture(
+    db,
+    householdId,
+    categoriesPath,
+  );
   console.log(`Inserted ${categoryCount} categories.`);
 
   console.log(`Loading transactions from ${extratoPath}...`);
-  const result = await seedTransactions(db, user.id, extratoPath);
+  const result = await seedTransactions(db, user.id, householdId, extratoPath);
 
   console.log('');
   console.log('Seed complete.');

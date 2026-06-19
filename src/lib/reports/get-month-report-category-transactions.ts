@@ -6,6 +6,7 @@ import {
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import type { MonthReportCategoryTransactionRow } from '@/lib/reports/month-report-category-transaction-row';
 import { buildTransactionWhere } from '@/lib/transactions/build-transaction-where';
 
@@ -14,14 +15,18 @@ export async function getMonthReportCategoryTransactions(
   dateTo: string,
   categoryId: string | null,
 ): Promise<MonthReportCategoryTransactionRow[]> {
-  const where = buildTransactionWhere({
-    description: '',
-    merchant: ALL_FILTER_VALUE,
-    dateFrom,
-    dateTo,
-    categoryId:
-      categoryId === null ? UNCATEGORIZED_FILTER_VALUE : categoryId,
-  });
+  const householdId = await requireActiveHouseholdId();
+  const where = buildTransactionWhere(
+    {
+      description: '',
+      merchant: ALL_FILTER_VALUE,
+      dateFrom,
+      dateTo,
+      categoryId:
+        categoryId === null ? UNCATEGORIZED_FILTER_VALUE : categoryId,
+    },
+    householdId,
+  );
 
   const rows = await db
     .select({

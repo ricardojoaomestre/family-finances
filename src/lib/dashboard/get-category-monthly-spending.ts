@@ -7,6 +7,7 @@ import {
   type CategoryMonthlySpendingRow,
   getDashboardCategoryChartMonthRanges,
 } from '@/lib/dashboard/dashboard-category-chart-months';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import { buildTransactionWhere } from '@/lib/transactions/build-transaction-where';
 
 export async function getCategoryMonthlySpending(
@@ -20,12 +21,16 @@ export async function getCategoryMonthlySpending(
 
   const dateFrom = monthRanges[0].dateFrom;
   const dateTo = monthRanges[monthRanges.length - 1].dateTo;
+  const householdId = await requireActiveHouseholdId();
   const monthKey = sql<string>`to_char(${transactions.date} AT TIME ZONE 'UTC', 'YYYY-MM')`;
-  const where = buildTransactionWhere({
-    ...DEFAULT_TRANSACTION_FILTERS,
-    dateFrom,
-    dateTo,
-  });
+  const where = buildTransactionWhere(
+    {
+      ...DEFAULT_TRANSACTION_FILTERS,
+      dateFrom,
+      dateTo,
+    },
+    householdId,
+  );
 
   const rows = await db
     .select({

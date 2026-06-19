@@ -1,11 +1,12 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { reports } from '@/db/schema';
+import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { validateReportName } from '@/lib/reports/validate-report-name';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
 import { formatDbError } from '@/lib/db/format-db-error';
@@ -21,9 +22,14 @@ export type SaveReportInput = {
   dateTo: string;
 };
 
-async function requireSessionUserId(): Promise<string | null> {
+async function requireHouseholdId(): Promise<string | null> {
   const session = await auth();
-  return session?.user?.id ?? null;
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  return getActiveHouseholdId();
 }
 
 function validateSaveInput(input: SaveReportInput): ActionFailure | null {
@@ -45,9 +51,9 @@ function validateSaveInput(input: SaveReportInput): ActionFailure | null {
 export async function createReport(
   input: SaveReportInput,
 ): Promise<ActionSuccess | ActionFailure> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
@@ -69,6 +75,7 @@ export async function createReport(
     const [created] = await db
       .insert(reports)
       .values({
+        householdId,
         name: input.name.trim(),
         dateFrom: dateValidation.dateFrom,
         dateTo: dateValidation.dateTo,
@@ -97,9 +104,9 @@ export async function updateReport(
   id: string,
   input: SaveReportInput,
 ): Promise<ActionSuccess | ActionFailure> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
@@ -126,7 +133,7 @@ export async function updateReport(
         dateTo: dateValidation.dateTo,
         updatedAt: now,
       })
-      .where(eq(reports.id, id))
+      .where(and(eq(reports.id, id), eq(reports.householdId, householdId)))
       .returning({ id: reports.id });
 
     if (!updated) {
@@ -150,16 +157,16 @@ export async function updateReport(
 export async function deleteReport(
   id: string,
 ): Promise<DeleteSuccess | DeleteFailure> {
-  const userId = await requireSessionUserId();
+  const householdId = await requireHouseholdId();
 
-  if (!userId) {
+  if (!householdId) {
     return { ok: false, error: 'You must be signed in.' };
   }
 
   try {
     const [deleted] = await db
       .delete(reports)
-      .where(eq(reports.id, id))
+      .where(and(eq(reports.id, id), eq(reports.householdId, householdId)))
       .returning({ id: reports.id });
 
     if (!deleted) {

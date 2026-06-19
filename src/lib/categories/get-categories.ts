@@ -1,7 +1,8 @@
-import { asc } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { categories } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import {
   getDefaultCategoryColor,
   isCategoryColorToken,
@@ -29,6 +30,7 @@ export type CategoryRow = {
 };
 
 export async function getCategories(): Promise<CategoryRow[]> {
+  const householdId = await requireActiveHouseholdId();
   return db
     .select({
       id: categories.id,
@@ -42,6 +44,7 @@ export async function getCategories(): Promise<CategoryRow[]> {
       type: categories.type,
     })
     .from(categories)
+    .where(eq(categories.householdId, householdId))
     .orderBy(asc(categories.priority))
     .then((rows) =>
       rows.map((row) => ({

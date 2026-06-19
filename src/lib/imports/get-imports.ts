@@ -1,7 +1,8 @@
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { imports, type ImportStatus } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 export type ImportJobRow = {
   id: string;
@@ -13,6 +14,7 @@ export type ImportJobRow = {
 };
 
 export async function getImports(limit?: number): Promise<ImportJobRow[]> {
+  const householdId = await requireActiveHouseholdId();
   const query = db
     .select({
       id: imports.id,
@@ -23,6 +25,7 @@ export async function getImports(limit?: number): Promise<ImportJobRow[]> {
       merchant: imports.merchant,
     })
     .from(imports)
+    .where(eq(imports.householdId, householdId))
     .orderBy(desc(imports.importedAt));
 
   if (limit !== undefined) {

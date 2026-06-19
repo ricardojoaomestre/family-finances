@@ -7,12 +7,15 @@ import {
 } from '@/app/(protected)/components/protected-page-context';
 import { ProtectedTopBar } from '@/app/(protected)/components/protected-top-bar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import type { UserHousehold } from '@/lib/household/get-households-for-user';
 
 type ProtectedShellProps = {
   children: React.ReactNode;
   userName: string | null | undefined;
   userEmail: string | null | undefined;
   userImage: string | null | undefined;
+  households: UserHousehold[];
+  activeHouseholdId: string;
 };
 
 export function ProtectedShell({
@@ -20,6 +23,8 @@ export function ProtectedShell({
   userName,
   userEmail,
   userImage,
+  households,
+  activeHouseholdId,
 }: ProtectedShellProps) {
   return (
     <ProtectedPageProvider>
@@ -28,6 +33,8 @@ export function ProtectedShell({
           userName={userName}
           userEmail={userEmail}
           userImage={userImage}
+          households={households}
+          activeHouseholdId={activeHouseholdId}
         />
         <SidebarInset>
           <ProtectedTopBar />

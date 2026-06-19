@@ -6,6 +6,7 @@ import {
   NotebookPenIcon,
   TagsIcon,
   UploadIcon,
+  UsersIcon,
 } from 'lucide-react';
 
 export type ProtectedNavItem = {
@@ -55,6 +56,14 @@ export const protectedSettingsNavItems: ProtectedNavItem[] = [
     match: (pathname) =>
       pathname === '/settings/categories' ||
       pathname.startsWith('/settings/categories/'),
+  },
+  {
+    href: '/settings/household',
+    label: 'Household',
+    icon: UsersIcon,
+    match: (pathname) =>
+      pathname === '/settings/household' ||
+      pathname.startsWith('/settings/household/'),
   },
 ];
 

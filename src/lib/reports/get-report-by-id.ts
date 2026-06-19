@@ -1,7 +1,8 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { reports } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 export type ReportRow = {
   id: string;
@@ -13,6 +14,7 @@ export type ReportRow = {
 };
 
 export async function getReportById(id: string): Promise<ReportRow | null> {
+  const householdId = await requireActiveHouseholdId();
   const [row] = await db
     .select({
       id: reports.id,
@@ -23,7 +25,7 @@ export async function getReportById(id: string): Promise<ReportRow | null> {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(eq(reports.id, id))
+    .where(and(eq(reports.id, id), eq(reports.householdId, householdId)))
     .limit(1);
 
   return row ?? null;

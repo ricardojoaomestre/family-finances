@@ -3,6 +3,7 @@ import { count, sql } from 'drizzle-orm';
 import type { TransactionFilters } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { db } from '@/db';
 import { transactions } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 import { buildTransactionWhere } from './build-transaction-where';
 
@@ -17,7 +18,8 @@ export type FilteredTransactionValueStats = {
 export async function getFilteredTransactionValueStats(
   filters: TransactionFilters,
 ): Promise<FilteredTransactionValueStats> {
-  const where = buildTransactionWhere(filters);
+  const householdId = await requireActiveHouseholdId();
+  const where = buildTransactionWhere(filters, householdId);
 
   const [row] = await db
     .select({

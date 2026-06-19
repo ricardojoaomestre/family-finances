@@ -1,10 +1,8 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import {
-  CATEGORY_IMPORT_SNAPSHOT_ID,
-  categoryImportSnapshots,
-} from '@/db/schema';
+import { categoryImportSnapshots } from '@/db/schema';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import { isMissingRelationError } from '@/lib/db/format-db-error';
 
 export type CategoryImportSnapshotMeta = {
@@ -14,10 +12,11 @@ export type CategoryImportSnapshotMeta = {
 
 export async function getCategoryImportSnapshotMeta(): Promise<CategoryImportSnapshotMeta> {
   try {
+    const householdId = await requireActiveHouseholdId();
     const [row] = await db
       .select({ createdAt: categoryImportSnapshots.createdAt })
       .from(categoryImportSnapshots)
-      .where(eq(categoryImportSnapshots.id, CATEGORY_IMPORT_SNAPSHOT_ID))
+      .where(eq(categoryImportSnapshots.householdId, householdId))
       .limit(1);
 
     if (!row) {
