@@ -116,7 +116,10 @@ async function seedHousehold(
   const owner = userEmail?.split('@')[0] ?? 'My';
   const [household] = await db
     .insert(households)
-    .values({ name: `${owner}'s household` })
+    .values({
+      name: `${owner}'s household`,
+      primaryAccountMerchant: 'bpi',
+    })
     .returning({ id: households.id });
 
   const householdId = household!.id;

@@ -15,6 +15,7 @@ import {
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { seedDefaultCategoriesForHousehold } from '@/lib/household/default-categories';
 import { formatDbError } from '@/lib/db/format-db-error';
+import { isMerchantSlug } from '@/lib/merchants';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -294,6 +295,96 @@ export async function removeMember(targetUserId: string): Promise<ActionResult> 
   } catch (error) {
     console.error('[removeMember]', error);
     return { ok: false, error: formatDbError(error, 'Could not remove member') };
+  }
+}
+
+export async function setPrimaryAccountMerchant(
+  merchant: string | null,
+): Promise<ActionResult> {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return { ok: false, error: 'You must be signed in.' };
+  }
+
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
+  if ((await getMemberRole(userId, householdId)) !== 'owner') {
+    return {
+      ok: false,
+      error: 'Only the household owner can change the primary account.',
+    };
+  }
+
+  const normalized = merchant?.trim() ?? '';
+
+  if (normalized && !isMerchantSlug(normalized)) {
+    return { ok: false, error: 'Select a valid account.' };
+  }
+
+  try {
+    await db
+      .update(households)
+      .set({
+        primaryAccountMerchant: normalized || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(households.id, householdId));
+
+    revalidateHousehold();
+    revalidatePath('/report/new');
+    revalidatePath('/reports');
+    return { ok: true };
+  } catch (error) {
+    console.error('[setPrimaryAccountMerchant]', error);
+    return {
+      ok: false,
+      error: formatDbError(error, 'Could not update primary account'),
+    };
+  }
+}
+
+export async function deleteHousehold(): Promise<ActionResult> {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return { ok: false, error: 'You must be signed in.' };
+  }
+
+  const householdId = await getActiveHouseholdId();
+
+  if (!householdId) {
+    return { ok: false, error: 'No active household selected.' };
+  }
+
+  if ((await getMemberRole(userId, householdId)) !== 'owner') {
+    return { ok: false, error: 'Only the household owner can delete it.' };
+  }
+
+  const members = await db
+    .select({ userId: householdMembers.userId })
+    .from(householdMembers)
+    .where(eq(householdMembers.householdId, householdId));
+
+  if (members.length !== 1) {
+    return {
+      ok: false,
+      error: 'Remove all other members before deleting the household.',
+    };
+  }
+
+  try {
+    await db.delete(households).where(eq(households.id, householdId));
+
+    revalidateHousehold();
+    return { ok: true };
+  } catch (error) {
+    console.error('[deleteHousehold]', error);
+    return { ok: false, error: formatDbError(error, 'Could not delete household') };
   }
 }
 

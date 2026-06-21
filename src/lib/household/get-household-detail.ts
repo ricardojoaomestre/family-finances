@@ -29,6 +29,7 @@ export type HouseholdInviteRow = {
 export type HouseholdDetail = {
   id: string;
   name: string;
+  primaryAccountMerchant: string | null;
   currentUserRole: HouseholdMemberRole;
   members: HouseholdMemberRow[];
   pendingInvites: HouseholdInviteRow[];
@@ -39,7 +40,11 @@ export async function getHouseholdDetail(
   currentUserId: string,
 ): Promise<HouseholdDetail | null> {
   const [household] = await db
-    .select({ id: households.id, name: households.name })
+    .select({
+      id: households.id,
+      name: households.name,
+      primaryAccountMerchant: households.primaryAccountMerchant,
+    })
     .from(households)
     .where(eq(households.id, householdId))
     .limit(1);
@@ -92,6 +97,7 @@ export async function getHouseholdDetail(
   return {
     id: household.id,
     name: household.name,
+    primaryAccountMerchant: household.primaryAccountMerchant,
     currentUserRole: currentMember.role,
     members: memberRows.map((member) => ({
       userId: member.userId,

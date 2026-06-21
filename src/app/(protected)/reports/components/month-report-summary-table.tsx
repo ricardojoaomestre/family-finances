@@ -18,7 +18,7 @@ const summaryRows = [
   },
   {
     key: 'balance',
-    label: 'BPI balance before income',
+    label: 'Primary account balance before income',
     valueKey: 'primaryAccountBalanceBeforeIncome' as const,
   },
 ] as const;

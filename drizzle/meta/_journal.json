@@ -120,6 +120,13 @@
       "when": 1780250000000,
       "tag": "0016_household_multi_tenant",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1780260000000,
+      "tag": "0017_household_primary_account",
+      "breakpoints": true
     }
   ]
 }

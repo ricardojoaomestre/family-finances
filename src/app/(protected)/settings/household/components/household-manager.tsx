@@ -6,11 +6,13 @@ import { CheckIcon, CopyIcon, Loader2Icon } from 'lucide-react';
 
 import {
   createHousehold,
+  deleteHousehold,
   inviteMember,
   leaveHousehold,
   removeMember,
   renameHousehold,
   revokeInvite,
+  setPrimaryAccountMerchant,
 } from '@/app/(protected)/settings/household/actions/household-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +24,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Combobox } from '@/components/ui/combobox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { HouseholdDetail } from '@/lib/household/get-household-detail';
+import { MERCHANTS_SORTED_BY_LABEL } from '@/lib/merchants';
 
 type HouseholdManagerProps = {
   detail: HouseholdDetail;
@@ -49,6 +53,9 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [primaryAccount, setPrimaryAccount] = useState(
+    detail.primaryAccountMerchant ?? '',
+  );
   const [copied, setCopied] = useState(false);
 
   const isOwner = detail.currentUserRole === 'owner';
@@ -113,19 +120,63 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <Label htmlFor="household-name">Name</Label>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="household-name">Name</FieldLabel>
               <Input
                 id="household-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 disabled={!isOwner || isPending}
               />
-            </div>
+            </Field>
             {isOwner ? (
               <Button
                 onClick={() => run(() => renameHousehold(name))}
                 disabled={isPending || name.trim() === detail.name}
+              >
+                Save
+              </Button>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Primary account</CardTitle>
+          <CardDescription>
+            Used for the &ldquo;balance before income&rdquo; metric on monthly
+            reports. Until bank accounts are configurable, pick from the
+            built-in account list.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <Field className="flex-1">
+              <FieldLabel htmlFor="primary-account">Account</FieldLabel>
+              <Combobox
+                id="primary-account"
+                className="w-full"
+                value={primaryAccount}
+                onValueChange={setPrimaryAccount}
+                placeholder="Select primary account"
+                searchPlaceholder="Search accounts…"
+                disabled={!isOwner || isPending}
+                options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
+                  value: slug,
+                  label,
+                }))}
+              />
+            </Field>
+            {isOwner ? (
+              <Button
+                onClick={() =>
+                  run(() => setPrimaryAccountMerchant(primaryAccount || null))
+                }
+                disabled={
+                  isPending ||
+                  primaryAccount === (detail.primaryAccountMerchant ?? '')
+                }
               >
                 Save
               </Button>
@@ -199,8 +250,8 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <div className="flex-1">
-                <Label htmlFor="invite-email">Email</Label>
+              <Field className="flex-1">
+                <FieldLabel htmlFor="invite-email">Email</FieldLabel>
                 <Input
                   id="invite-email"
                   type="email"
@@ -209,7 +260,7 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
                   onChange={(event) => setInviteEmail(event.target.value)}
                   disabled={isPending}
                 />
-              </div>
+              </Field>
               <Button onClick={handleInvite} disabled={isPending}>
                 {isPending ? (
                   <Loader2Icon className="size-4 animate-spin" />
@@ -276,8 +327,8 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <Label htmlFor="new-household">Create a new household</Label>
+            <Field className="flex-1">
+              <FieldLabel htmlFor="new-household">Create a new household</FieldLabel>
               <Input
                 id="new-household"
                 placeholder="Household name"
@@ -285,7 +336,7 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
                 onChange={(event) => setNewHouseholdName(event.target.value)}
                 disabled={isPending}
               />
-            </div>
+            </Field>
             <Button
               variant="outline"
               disabled={isPending || !newHouseholdName.trim()}
@@ -298,21 +349,39 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
             </Button>
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 p-3">
-            <div>
-              <p className="text-sm font-medium">Leave household</p>
-              <p className="text-xs text-muted-foreground">
-                You will lose access to this household&apos;s data.
-              </p>
+          {detail.members.length === 1 && isOwner ? (
+            <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 p-3">
+              <div>
+                <p className="text-sm font-medium">Delete household</p>
+                <p className="text-xs text-muted-foreground">
+                  Permanently delete this household and all its data.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                disabled={isPending}
+                onClick={() => run(() => deleteHousehold())}
+              >
+                Delete
+              </Button>
             </div>
-            <Button
-              variant="destructive"
-              disabled={isPending}
-              onClick={() => run(() => leaveHousehold())}
-            >
-              Leave
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 p-3">
+              <div>
+                <p className="text-sm font-medium">Leave household</p>
+                <p className="text-xs text-muted-foreground">
+                  You will lose access to this household&apos;s data.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                disabled={isPending}
+                onClick={() => run(() => leaveHousehold())}
+              >
+                Leave
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
