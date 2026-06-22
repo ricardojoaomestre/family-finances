@@ -1,54 +1,73 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { CategoryIcon } from '@/components/categories/category-icon';
 import { Combobox } from '@/components/ui/combobox';
-import type { CategoryIconName } from '@/lib/categories/category-icons';
-import type { CategoryColorToken } from '@/lib/categories/category-colors';
+import {
+  filterCategorySelectorItems,
+  type CategorySelectorFilter,
+  type CategorySelectorItem,
+} from '@/lib/categories/filter-category-selector-items';
+import type { CategoryOption } from '@/lib/categories/to-category-options';
 import { cn } from '@/lib/utils';
 
-type CategoryComboboxOption = {
-  id: string;
-  name: string;
-  color: CategoryColorToken;
-  icon: CategoryIconName;
-};
+export type { CategoryOption, CategorySelectorFilter, CategorySelectorItem };
 
 type CategoryComboboxProps = {
   id?: string;
   value: string;
   onValueChange: (value: string) => void;
-  categories: CategoryComboboxOption[];
-  noneValue: string;
+  categories: readonly CategorySelectorItem[];
+  filter?: CategorySelectorFilter;
+  includeAllOption?: boolean;
+  allValue?: string;
+  allLabel?: string;
+  includeNoneOption?: boolean;
+  noneValue?: string;
   noneLabel?: string;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  includeNoneOption?: boolean;
+  'aria-label'?: string;
   'aria-invalid'?: boolean;
 };
+
+function toComboboxOptions(categories: readonly CategoryOption[]) {
+  return categories.map((category) => ({
+    value: category.id,
+    label: category.name,
+    leading: <CategoryIcon icon={category.icon} color={category.color} />,
+  }));
+}
 
 export function CategoryCombobox({
   id,
   value,
   onValueChange,
   categories,
-  noneValue,
+  filter,
+  includeAllOption = false,
+  allValue = '',
+  allLabel = 'All categories',
+  includeNoneOption = true,
+  noneValue = '',
   noneLabel = 'None',
-  placeholder = 'None',
+  placeholder = 'Select category',
   disabled = false,
   className,
-  includeNoneOption = true,
+  'aria-label': ariaLabel,
   'aria-invalid': ariaInvalid,
 }: CategoryComboboxProps) {
+  const visibleCategories = useMemo(
+    () => filterCategorySelectorItems(categories, filter),
+    [categories, filter],
+  );
+
   const options = [
+    ...(includeAllOption ? [{ value: allValue, label: allLabel }] : []),
     ...(includeNoneOption ? [{ value: noneValue, label: noneLabel }] : []),
-    ...categories.map((category) => ({
-      value: category.id,
-      label: category.name,
-      leading: (
-        <CategoryIcon icon={category.icon} color={category.color} />
-      ),
-    })),
+    ...toComboboxOptions(visibleCategories),
   ];
 
   return (
@@ -62,6 +81,7 @@ export function CategoryCombobox({
       emptyMessage="No category found."
       disabled={disabled}
       className={cn('w-full', className)}
+      aria-label={ariaLabel}
       aria-invalid={ariaInvalid}
     />
   );

@@ -5,22 +5,24 @@ import {
   type TransactionFilters,
   UNCATEGORIZED_FILTER_VALUE,
 } from '@/app/(protected)/transactions/lib/filter-transactions';
+import { CategoryCombobox } from '@/components/categories/category-combobox';
 import { TableFiltersCollapsible } from '@/components/data-table/table-filters-collapsible';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
-import { MERCHANTS_SORTED_BY_LABEL } from '@/lib/merchants';
+import type { CategoryOption } from '@/lib/categories/to-category-options';
 
-type CategoryFilterOption = {
+type BankAccountFilterOption = {
   id: string;
-  name: string;
+  label: string;
 };
 
 type TransactionsTableFiltersProps = {
   filters: TransactionFilters;
-  categories: CategoryFilterOption[];
+  categories: CategoryOption[];
+  bankAccounts: BankAccountFilterOption[];
   onFiltersChange: (filters: TransactionFilters) => void;
   onClear: () => void;
   hasActiveFilters: boolean;
@@ -29,6 +31,7 @@ type TransactionsTableFiltersProps = {
 export function TransactionsTableFilters({
   filters,
   categories,
+  bankAccounts,
   onFiltersChange,
   onClear,
   hasActiveFilters,
@@ -58,40 +61,36 @@ export function TransactionsTableFilters({
           <FieldLabel htmlFor="transaction-category-filter">
             Category
           </FieldLabel>
-          <Combobox
+          <CategoryCombobox
             id="transaction-category-filter"
             className="w-full sm:w-44"
             value={filters.categoryId}
             onValueChange={(categoryId) => updateFilters({ categoryId })}
+            categories={categories}
+            includeAllOption
+            allValue={ALL_FILTER_VALUE}
+            allLabel="All categories"
+            includeNoneOption
+            noneValue={UNCATEGORIZED_FILTER_VALUE}
+            noneLabel="Uncategorized"
             placeholder="All categories"
-            searchPlaceholder="Search categories…"
-            options={[
-              { value: ALL_FILTER_VALUE, label: 'All categories' },
-              { value: UNCATEGORIZED_FILTER_VALUE, label: 'Uncategorized' },
-              ...categories.map((category) => ({
-                value: category.id,
-                label: category.name,
-              })),
-            ]}
           />
         </Field>
 
         <Field className="w-full sm:w-auto">
-          <FieldLabel htmlFor="transaction-merchant-filter">
-            Merchant
-          </FieldLabel>
+          <FieldLabel htmlFor="transaction-account-filter">Account</FieldLabel>
           <Combobox
-            id="transaction-merchant-filter"
+            id="transaction-account-filter"
             className="w-full sm:w-52"
-            value={filters.merchant}
-            onValueChange={(merchant) => updateFilters({ merchant })}
-            placeholder="All merchants"
-            searchPlaceholder="Search merchants…"
+            value={filters.bankAccountId}
+            onValueChange={(bankAccountId) => updateFilters({ bankAccountId })}
+            placeholder="All accounts"
+            searchPlaceholder="Search accounts…"
             options={[
-              { value: ALL_FILTER_VALUE, label: 'All merchants' },
-              ...MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
-                value: slug,
-                label,
+              { value: ALL_FILTER_VALUE, label: 'All accounts' },
+              ...bankAccounts.map((account) => ({
+                value: account.id,
+                label: account.label,
               })),
             ]}
           />

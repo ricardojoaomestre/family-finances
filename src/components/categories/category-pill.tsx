@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { CategoryIcon } from '@/components/categories/category-icon';
-import type { CategoryIconName } from '@/lib/categories/category-icon-names';
-import { cn } from '@/lib/utils';
+import { CategoryIcon } from "@/components/categories/category-icon";
+import type { CategoryIconName } from "@/lib/categories/category-icon-names";
+import { cn } from "@/lib/utils";
 
 type CategoryPillProps = {
   name: string;
@@ -11,11 +11,16 @@ type CategoryPillProps = {
   className?: string;
 };
 
-export function CategoryPill({ name, color, icon, className }: CategoryPillProps) {
+export function CategoryPill({
+  name,
+  color,
+  icon,
+  className,
+}: CategoryPillProps) {
   return (
     <span
       className={cn(
-        'inline-flex max-w-[12rem] items-center gap-1.5 text-sm',
+        "inline-flex max-w-48 items-center gap-1.5 text-sm",
         className,
       )}
       title={name}
