@@ -1,6 +1,4 @@
-import type { MerchantSlug } from '@/lib/merchants';
-
-const CONTA_TO_MERCHANT: Record<string, MerchantSlug> = {
+const CONTA_TO_ACCOUNT_SLUG: Record<string, string> = {
   'Débito - Joana': 'activo-debito-joana',
   'Débito - Ricardo': 'activo-debito-ricardo',
   'Crédito - Ricardo': 'activo-credito-ricardo',
@@ -11,12 +9,12 @@ const CONTA_TO_MERCHANT: Record<string, MerchantSlug> = {
   Ticket: 'ticket',
 };
 
-export function mapContaToMerchant(conta: string): MerchantSlug | null {
+export function mapContaToAccountSlug(conta: string): string | null {
   const trimmed = conta.trim();
 
   if (!trimmed) {
     return null;
   }
 
-  return CONTA_TO_MERCHANT[trimmed] ?? null;
+  return CONTA_TO_ACCOUNT_SLUG[trimmed] ?? null;
 }

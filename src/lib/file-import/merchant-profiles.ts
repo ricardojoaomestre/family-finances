@@ -4,23 +4,9 @@ import {
   type ImportDateFormat,
   type ImportSignRule,
 } from '@/lib/bank-accounts/import-profile';
-import {
-  getDefaultImportProfileForSlug,
-} from '@/lib/bank-accounts/default-bank-accounts';
-import {
-  resolveBankAccountImportProfile,
-  type BankAccountImportProfileResult,
-} from '@/lib/bank-accounts/resolve-import-profile';
+import type { BankAccountImportProfileResult } from '@/lib/bank-accounts/resolve-import-profile';
 
 export type MerchantImportProfile = BankAccountImportProfile;
 export type { ImportDateFormat, ImportSignRule };
 export { GENERIC_IMPORT_PROFILE };
 export type MerchantProfileResult = BankAccountImportProfileResult;
-
-export function getMerchantImportProfile(
-  merchant: string,
-): MerchantProfileResult {
-  return resolveBankAccountImportProfile(
-    getDefaultImportProfileForSlug(merchant),
-  );
-}

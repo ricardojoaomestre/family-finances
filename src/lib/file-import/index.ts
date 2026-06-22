@@ -32,7 +32,6 @@ export { mapRawRowsToImportRows } from './map-raw-rows-to-import-rows';
 export { parseBankSpreadsheet } from './parse-bank-spreadsheet';
 export {
   GENERIC_IMPORT_PROFILE,
-  getMerchantImportProfile,
   type ImportDateFormat,
   type ImportSignRule,
   type MerchantImportProfile,

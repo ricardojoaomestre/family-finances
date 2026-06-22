@@ -44,7 +44,7 @@ import { seedDefaultBankAccountsForHousehold } from '@/lib/bank-accounts/seed-de
 
 import { EXTRATO_CATEGORY_ALIASES } from './seed/extrato-category-aliases';
 import { inferSeedCategoryType } from './seed/infer-seed-category-type';
-import { mapContaToMerchant } from './seed/map-conta-to-merchant';
+import { mapContaToAccountSlug } from './seed/map-conta-to-account-slug';
 import { parseCommaCsv } from './seed/parse-comma-csv';
 
 const FIXTURES_DIR = path.resolve(process.cwd(), 'scripts/fixtures');
@@ -336,7 +336,7 @@ function parseExtratoRows(content: string): {
       continue;
     }
 
-    const accountSlug = mapContaToMerchant(conta);
+    const accountSlug = mapContaToAccountSlug(conta);
 
     if (!accountSlug) {
       skippedInvalid += 1;

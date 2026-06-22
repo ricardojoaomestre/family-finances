@@ -1,10 +1,11 @@
 import { cache } from 'react';
-import { and, asc, eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { householdMembers, users } from '@/db/schema';
 import { ensureActiveHousehold } from '@/lib/household/ensure-active-household';
+import { pickActiveHouseholdId } from '@/lib/household/pick-active-household-id';
 
 /**
  * Resolves the household the signed-in user is currently acting within.
@@ -26,31 +27,16 @@ export const getActiveHouseholdId = cache(async (): Promise<string | null> => {
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (user?.activeHouseholdId) {
-    const [membership] = await db
-      .select({ householdId: householdMembers.householdId })
-      .from(householdMembers)
-      .where(
-        and(
-          eq(householdMembers.userId, userId),
-          eq(householdMembers.householdId, user.activeHouseholdId),
-        ),
-      )
-      .limit(1);
-
-    if (membership) {
-      return membership.householdId;
-    }
-  }
-
-  const [fallback] = await db
+  const memberships = await db
     .select({ householdId: householdMembers.householdId })
     .from(householdMembers)
     .where(eq(householdMembers.userId, userId))
-    .orderBy(asc(householdMembers.createdAt))
-    .limit(1);
+    .orderBy(asc(householdMembers.createdAt));
 
-  return fallback?.householdId ?? null;
+  return pickActiveHouseholdId(
+    user?.activeHouseholdId,
+    memberships.map((row) => row.householdId),
+  );
 });
 
 /**

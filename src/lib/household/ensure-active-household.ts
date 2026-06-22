@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { householdMembers, households, users } from '@/db/schema';
 import { seedDefaultBankAccountsForHousehold } from '@/lib/bank-accounts/seed-default-bank-accounts';
 import { seedDefaultCategoriesForHousehold } from '@/lib/household/default-categories';
+import { pickActiveHouseholdId } from '@/lib/household/pick-active-household-id';
 
 function buildPersonalHouseholdName(
   name: string | null,
@@ -64,18 +65,17 @@ export async function ensureActiveHousehold(userId: string): Promise<string> {
     return householdId;
   }
 
-  const membershipIds = new Set(memberships.map((row) => row.householdId));
+  const resolvedHouseholdId = pickActiveHouseholdId(
+    user.activeHouseholdId,
+    memberships.map((row) => row.householdId),
+  )!;
 
-  if (user.activeHouseholdId && membershipIds.has(user.activeHouseholdId)) {
-    return user.activeHouseholdId;
+  if (resolvedHouseholdId !== user.activeHouseholdId) {
+    await db
+      .update(users)
+      .set({ activeHouseholdId: resolvedHouseholdId })
+      .where(eq(users.id, userId));
   }
 
-  const fallbackId = memberships[0]!.householdId;
-
-  await db
-    .update(users)
-    .set({ activeHouseholdId: fallbackId })
-    .where(eq(users.id, userId));
-
-  return fallbackId;
+  return resolvedHouseholdId;
 }
