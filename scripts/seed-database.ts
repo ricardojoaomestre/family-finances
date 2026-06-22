@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
+  budgets,
   categories,
   categoryImportSnapshots,
   householdInvites,
@@ -49,6 +50,14 @@ const FIXTURES_DIR = path.resolve(process.cwd(), 'scripts/fixtures');
 const DEFAULT_CATEGORIES_PATH = path.join(FIXTURES_DIR, 'categories.csv');
 const DEFAULT_EXTRATO_PATH = path.join(FIXTURES_DIR, 'extrato.csv');
 const SEED_IMPORT_FILENAME = 'extrato.csv';
+
+const SEED_BUDGETS_BY_CATEGORY: Record<string, string> = {
+  Supermercado: '800.00',
+  'Convívio / Restaurantes': '400.00',
+  'Transportes / Portagens / Estacionamento': '150.00',
+  Combustível: '200.00',
+  'Internet + Telemóvel': '120.00',
+};
 
 type CategoryRecord = {
   id: string;
@@ -100,6 +109,7 @@ async function wipeSeedTables(db: ReturnType<typeof drizzle>) {
   await db.delete(transactions);
   await db.delete(importSkippedRows);
   await db.delete(imports);
+  await db.delete(budgets);
   await db.delete(notes);
   await db.delete(categoryImportSnapshots);
   await db.delete(categories);
@@ -186,6 +196,41 @@ async function seedCategoriesFromFixture(
   }
 
   return parsed.rows.length;
+}
+
+async function seedBudgets(
+  db: ReturnType<typeof drizzle>,
+  householdId: string,
+): Promise<number> {
+  const categoryRecords = await loadCategoryRecords(db, householdId);
+  const categoryByName = new Map(
+    categoryRecords.map((record) => [record.name, record.id]),
+  );
+  const now = new Date();
+  let inserted = 0;
+
+  for (const [categoryName, amount] of Object.entries(SEED_BUDGETS_BY_CATEGORY)) {
+    const categoryId = categoryByName.get(categoryName);
+
+    if (!categoryId) {
+      console.warn(`Skipping budget for unknown category "${categoryName}".`);
+      continue;
+    }
+
+    await db.insert(budgets).values({
+      id: crypto.randomUUID(),
+      householdId,
+      categoryId,
+      amount,
+      period: 'monthly',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    inserted += 1;
+  }
+
+  return inserted;
 }
 
 async function loadCategoryRecords(
@@ -469,6 +514,10 @@ async function seedDatabase() {
   const result = await seedTransactions(db, user.id, householdId, extratoPath);
 
   console.log('');
+  console.log('Creating demo budgets...');
+  const budgetCount = await seedBudgets(db, householdId);
+  console.log(`Inserted ${budgetCount} budgets.`);
+
   console.log('Seed complete.');
   console.log(`User: ${user.email ?? user.id}`);
   console.log(`Categories from fixture: ${categoryCount}`);

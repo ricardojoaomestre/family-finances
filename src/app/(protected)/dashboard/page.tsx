@@ -1,12 +1,15 @@
 import { DashboardPageContent } from '@/app/(protected)/dashboard/components/dashboard-page-content';
 import { auth } from '@/auth';
+import { getCategoryBudgetProgressRows } from '@/lib/budgets/get-category-budget-progress';
 import { getCategories } from '@/lib/categories/get-categories';
 import { isSpendingCategoryType } from '@/lib/categories/category-type';
 import { toCategoryOptions } from '@/lib/categories/to-category-options';
+import { buildDashboardMonthStats } from '@/lib/dashboard/build-dashboard-month-stats';
 import { getDefaultDashboardMonthRange } from '@/lib/dashboard/dashboard-date-range';
 import { getCategoryMonthlySpending } from '@/lib/dashboard/get-category-monthly-spending';
-import { getDashboardMonthStats } from '@/lib/dashboard/get-dashboard-month-stats';
+import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
 import { parseMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
+import { getPreviousCalendarMonthRange } from '@/lib/reports/report-month';
 import { validateReportDateRange } from '@/lib/reports/validate-report-date-range';
 
 type DashboardPageProps = {
@@ -38,11 +41,27 @@ export default async function DashboardPage({
     }
   }
 
-  const [stats, categoryRows, categoryMonthlySpending] = await Promise.all([
-    getDashboardMonthStats(monthRange.dateFrom, monthRange.dateTo),
-    getCategories(),
-    getCategoryMonthlySpending(monthRange.dateFrom),
-  ]);
+  const previousRange = getPreviousCalendarMonthRange(monthRange.dateFrom);
+
+  const [categoryRows, categoryMonthlySpending, currentTotals, previousTotals] =
+    await Promise.all([
+      getCategories(),
+      getCategoryMonthlySpending(monthRange.dateFrom),
+      getMonthReportCategoryTotals(monthRange.dateFrom, monthRange.dateTo),
+      previousRange
+        ? getMonthReportCategoryTotals(
+            previousRange.dateFrom,
+            previousRange.dateTo,
+          )
+        : Promise.resolve([]),
+    ]);
+
+  const stats = buildDashboardMonthStats(
+    monthRange.dateFrom,
+    currentTotals,
+    previousRange ? previousTotals : null,
+  );
+  const budgetProgress = await getCategoryBudgetProgressRows(currentTotals);
 
   const spendingCategories = toCategoryOptions(
     categoryRows.filter((category) => isSpendingCategoryType(category.type)),
@@ -55,6 +74,7 @@ export default async function DashboardPage({
       stats={stats}
       spendingCategories={spendingCategories}
       categoryMonthlySpending={categoryMonthlySpending}
+      budgetProgress={budgetProgress}
     />
   );
 }

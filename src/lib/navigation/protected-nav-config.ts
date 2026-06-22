@@ -2,8 +2,10 @@ import type { LucideIcon } from 'lucide-react';
 import {
   ArrowLeftRightIcon,
   FileTextIcon,
+  LandmarkIcon,
   LayoutDashboardIcon,
   NotebookPenIcon,
+  PiggyBankIcon,
   TagsIcon,
   UploadIcon,
   UsersIcon,
@@ -56,6 +58,14 @@ export const protectedSettingsNavItems: ProtectedNavItem[] = [
     match: (pathname) =>
       pathname === '/settings/categories' ||
       pathname.startsWith('/settings/categories/'),
+  },
+  {
+    href: '/settings/budgets',
+    label: 'Budgets',
+    icon: PiggyBankIcon,
+    match: (pathname) =>
+      pathname === '/settings/budgets' ||
+      pathname.startsWith('/settings/budgets/'),
   },
   {
     href: '/settings/household',

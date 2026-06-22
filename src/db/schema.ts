@@ -204,6 +204,42 @@ export const categories = pgTable(
   ],
 );
 
+
+export const budgetPeriodEnum = ['monthly'] as const;
+export type BudgetPeriod = (typeof budgetPeriodEnum)[number];
+
+export const budgets = pgTable(
+  'budget',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    categoryId: text('categoryId')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+    amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
+    period: text('period')
+      .$type<BudgetPeriod>()
+      .notNull()
+      .default('monthly'),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('budget_household_category_idx').on(
+      table.householdId,
+      table.categoryId,
+    ),
+  ],
+);
+
 export const categoryImportSnapshots = pgTable('category_import_snapshot', {
   id: text('id')
     .primaryKey()
@@ -337,6 +373,7 @@ export const householdsRelations = relations(households, ({ many }) => ({
   members: many(householdMembers),
   invites: many(householdInvites),
   categories: many(categories),
+  budgets: many(budgets),
   imports: many(imports),
   notes: many(notes),
   reports: many(reports),
@@ -397,6 +434,18 @@ export const importSkippedRowsRelations = relations(
 export const categoriesRelations = relations(categories, ({ many }) => ({
   transactions: many(transactions),
   notes: many(notes),
+  budgets: many(budgets),
+}));
+
+export const budgetsRelations = relations(budgets, ({ one }) => ({
+  household: one(households, {
+    fields: [budgets.householdId],
+    references: [households.id],
+  }),
+  category: one(categories, {
+    fields: [budgets.categoryId],
+    references: [categories.id],
+  }),
 }));
 
 export const notesRelations = relations(notes, ({ one }) => ({

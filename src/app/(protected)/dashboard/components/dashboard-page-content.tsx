@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
+import { DashboardBudgetProgress } from '@/app/(protected)/dashboard/components/dashboard-budget-progress';
 import { DashboardCategorySpendingChart } from '@/app/(protected)/dashboard/components/dashboard-category-spending-chart';
 import { DashboardMonthPicker } from '@/app/(protected)/dashboard/components/dashboard-month-picker';
 import { DashboardStatsGrid } from '@/app/(protected)/dashboard/components/dashboard-stats-grid';
@@ -13,6 +14,7 @@ import {
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
 import type { CategoryMonthlySpendingRow } from '@/lib/dashboard/dashboard-category-chart-months';
 import type { CategoryOption } from '@/lib/categories/to-category-options';
+import type { CategoryBudgetProgressRow } from '@/lib/budgets/get-category-budget-progress';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 
 type DashboardPageContentProps = {
@@ -21,6 +23,7 @@ type DashboardPageContentProps = {
   stats: DashboardMonthStats;
   spendingCategories: CategoryOption[];
   categoryMonthlySpending: CategoryMonthlySpendingRow[];
+  budgetProgress: CategoryBudgetProgressRow[];
 };
 
 export function DashboardPageContent({
@@ -29,6 +32,7 @@ export function DashboardPageContent({
   stats,
   spendingCategories,
   categoryMonthlySpending,
+  budgetProgress,
 }: DashboardPageContentProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -68,6 +72,11 @@ export function DashboardPageContent({
           categories={spendingCategories}
           monthlySpending={categoryMonthlySpending}
           topSpendingCategory={stats.topSpendingCategory}
+          isLoading={isPending}
+        />
+        <DashboardBudgetProgress
+          key={`${monthRange.dateFrom}-${monthRange.dateTo}-budgets`}
+          rows={budgetProgress}
           isLoading={isPending}
         />
       </div>
