@@ -26,41 +26,42 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { formatCalendarDayKey } from '@/lib/dates/calendar-day-key';
 import { formatPositiveAmountForNoteForm } from '@/lib/notes/normalize-note-value';
-import type { NoteCategoryOption, NoteRow } from '@/lib/notes/types';
-import {
-  isMerchantSlug,
-  MERCHANTS_SORTED_BY_LABEL,
-  type MerchantSlug,
-} from '@/lib/merchants';
+import type { NoteCategoryOption, NoteFormField, NoteRow } from '@/lib/notes/types';
+
+type BankAccountOption = {
+  id: string;
+  label: string;
+};
 
 type NoteFormSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   note: NoteRow | null;
   categories: NoteCategoryOption[];
+  bankAccounts: BankAccountOption[];
   onSubmit: (input: NoteFormInput) => Promise<{
     ok: boolean;
     error?: string;
-    fieldErrors?: Partial<
-      Record<'merchant' | 'date' | 'amount' | 'categoryId' | 'context', string>
-    >;
+    fieldErrors?: Partial<Record<NoteFormField, string>>;
   }>;
 };
 
 function NoteFormBody({
   note,
   categories,
+  bankAccounts,
   onSubmit,
   onCancel,
 }: {
   note: NoteRow | null;
   categories: NoteCategoryOption[];
+  bankAccounts: BankAccountOption[];
   onSubmit: NoteFormSheetProps['onSubmit'];
   onCancel: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [merchant, setMerchant] = useState<MerchantSlug | undefined>(() =>
-    note && isMerchantSlug(note.merchant) ? note.merchant : undefined,
+  const [bankAccountId, setBankAccountId] = useState(
+    note?.bankAccountId ?? '',
   );
   const [date, setDate] = useState(
     note ? formatCalendarDayKey(note.date) : '',
@@ -72,7 +73,7 @@ function NoteFormBody({
   const [context, setContext] = useState(note?.context ?? '');
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<'merchant' | 'date' | 'amount' | 'categoryId' | 'context', string>>
+    Partial<Record<NoteFormField, string>>
   >({});
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -80,15 +81,15 @@ function NoteFormBody({
     setFormError(null);
     setFieldErrors({});
 
-    if (!merchant) {
-      setFieldErrors({ merchant: 'Select a merchant.' });
+    if (!bankAccountId) {
+      setFieldErrors({ bankAccountId: 'Select an account.' });
       return;
     }
 
     startTransition(async () => {
       const result = await onSubmit({
         id: note?.id,
-        merchant,
+        bankAccountId,
         date,
         amount,
         categoryId,
@@ -110,25 +111,21 @@ function NoteFormBody({
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="note-merchant">Merchant</FieldLabel>
+            <FieldLabel htmlFor="note-account">Account</FieldLabel>
             <Combobox
-              id="note-merchant"
-              value={merchant}
-              onValueChange={(value) => {
-                if (isMerchantSlug(value)) {
-                  setMerchant(value);
-                }
-              }}
-              placeholder="Select merchant"
-              searchPlaceholder="Search merchants…"
-              options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
-                value: slug,
-                label,
+              id="note-account"
+              value={bankAccountId}
+              onValueChange={setBankAccountId}
+              placeholder="Select account"
+              searchPlaceholder="Search accounts…"
+              options={bankAccounts.map((account) => ({
+                value: account.id,
+                label: account.label,
               }))}
-              aria-invalid={!!fieldErrors.merchant}
+              aria-invalid={!!fieldErrors.bankAccountId}
             />
-            {fieldErrors.merchant ? (
-              <FieldError>{fieldErrors.merchant}</FieldError>
+            {fieldErrors.bankAccountId ? (
+              <FieldError>{fieldErrors.bankAccountId}</FieldError>
             ) : null}
           </Field>
 
@@ -218,6 +215,7 @@ export function NoteFormSheet({
   onOpenChange,
   note,
   categories,
+  bankAccounts,
   onSubmit,
 }: NoteFormSheetProps) {
   return (
@@ -226,7 +224,7 @@ export function NoteFormSheet({
         <SheetHeader className="border-b px-4 py-4">
           <SheetTitle>{note ? 'Edit note' : 'Create note'}</SheetTitle>
           <SheetDescription>
-            Record merchant, date, and amount so imports can match uncategorized
+            Record account, date, and amount so imports can match uncategorized
             transactions.
           </SheetDescription>
         </SheetHeader>
@@ -235,6 +233,7 @@ export function NoteFormSheet({
           key={note?.id ?? 'new'}
           note={note}
           categories={categories}
+          bankAccounts={bankAccounts}
           onSubmit={onSubmit}
           onCancel={() => onOpenChange(false)}
         />

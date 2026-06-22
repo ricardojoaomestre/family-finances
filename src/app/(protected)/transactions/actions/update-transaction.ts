@@ -22,7 +22,7 @@ type UpdateTransactionResult =
       ok: false;
       error: string;
       fieldErrors?: Partial<
-        Record<'date' | 'description' | 'value' | 'categoryId' | 'merchant', string>
+        Record<'date' | 'description' | 'value' | 'categoryId' | 'bankAccountId', string>
       >;
     };
 
@@ -103,7 +103,7 @@ export async function updateTransaction(
         description: parsed.description,
         value: formatTransactionValueForKey(parsed.value),
         categoryId: parsed.categoryId,
-        merchant: parsed.merchant,
+        bankAccountId: parsed.bankAccountId,
       })
       .where(
         and(

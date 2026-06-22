@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import {
   type HouseholdMemberRole,
+  bankAccounts,
   householdInvites,
   householdMembers,
   households,
@@ -15,7 +16,6 @@ import {
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { seedDefaultCategoriesForHousehold } from '@/lib/household/default-categories';
 import { formatDbError } from '@/lib/db/format-db-error';
-import { isMerchantSlug } from '@/lib/merchants';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -298,8 +298,8 @@ export async function removeMember(targetUserId: string): Promise<ActionResult> 
   }
 }
 
-export async function setPrimaryAccountMerchant(
-  merchant: string | null,
+export async function setPrimaryBankAccount(
+  bankAccountId: string | null,
 ): Promise<ActionResult> {
   const userId = await getCurrentUserId();
 
@@ -320,17 +320,30 @@ export async function setPrimaryAccountMerchant(
     };
   }
 
-  const normalized = merchant?.trim() ?? '';
+  const normalized = bankAccountId?.trim() ?? '';
 
-  if (normalized && !isMerchantSlug(normalized)) {
-    return { ok: false, error: 'Select a valid account.' };
+  if (normalized) {
+    const [account] = await db
+      .select({ id: bankAccounts.id })
+      .from(bankAccounts)
+      .where(
+        and(
+          eq(bankAccounts.id, normalized),
+          eq(bankAccounts.householdId, householdId),
+        ),
+      )
+      .limit(1);
+
+    if (!account) {
+      return { ok: false, error: 'Select a valid account.' };
+    }
   }
 
   try {
     await db
       .update(households)
       .set({
-        primaryAccountMerchant: normalized || null,
+        primaryBankAccountId: normalized || null,
         updatedAt: new Date(),
       })
       .where(eq(households.id, householdId));
@@ -340,7 +353,7 @@ export async function setPrimaryAccountMerchant(
     revalidatePath('/reports');
     return { ok: true };
   } catch (error) {
-    console.error('[setPrimaryAccountMerchant]', error);
+    console.error('[setPrimaryBankAccount]', error);
     return {
       ok: false,
       error: formatDbError(error, 'Could not update primary account'),

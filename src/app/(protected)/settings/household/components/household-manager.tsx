@@ -12,7 +12,7 @@ import {
   removeMember,
   renameHousehold,
   revokeInvite,
-  setPrimaryAccountMerchant,
+  setPrimaryBankAccount,
 } from '@/app/(protected)/settings/household/actions/household-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,6 @@ import { Combobox } from '@/components/ui/combobox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { HouseholdDetail } from '@/lib/household/get-household-detail';
-import { MERCHANTS_SORTED_BY_LABEL } from '@/lib/merchants';
 
 type HouseholdManagerProps = {
   detail: HouseholdDetail;
@@ -54,7 +53,7 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [newHouseholdName, setNewHouseholdName] = useState('');
   const [primaryAccount, setPrimaryAccount] = useState(
-    detail.primaryAccountMerchant ?? '',
+    detail.primaryBankAccountId ?? '',
   );
   const [copied, setCopied] = useState(false);
 
@@ -146,8 +145,7 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
           <CardTitle>Primary account</CardTitle>
           <CardDescription>
             Used for the &ldquo;balance before income&rdquo; metric on monthly
-            reports. Until bank accounts are configurable, pick from the
-            built-in account list.
+            reports.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,20 +160,20 @@ export function HouseholdManager({ detail }: HouseholdManagerProps) {
                 placeholder="Select primary account"
                 searchPlaceholder="Search accounts…"
                 disabled={!isOwner || isPending}
-                options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
-                  value: slug,
-                  label,
+                options={detail.bankAccounts.map((account) => ({
+                  value: account.id,
+                  label: account.label,
                 }))}
               />
             </Field>
             {isOwner ? (
               <Button
                 onClick={() =>
-                  run(() => setPrimaryAccountMerchant(primaryAccount || null))
+                  run(() => setPrimaryBankAccount(primaryAccount || null))
                 }
                 disabled={
                   isPending ||
-                  primaryAccount === (detail.primaryAccountMerchant ?? '')
+                  primaryAccount === (detail.primaryBankAccountId ?? '')
                 }
               >
                 Save

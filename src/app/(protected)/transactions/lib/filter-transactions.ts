@@ -4,7 +4,7 @@ export type FilterableTransactionRow = {
   date: Date;
   description: string;
   categoryId: string | null;
-  merchant: string;
+  bankAccountId: string;
 };
 
 export const ALL_FILTER_VALUE = 'all';
@@ -13,7 +13,7 @@ export const UNCATEGORIZED_FILTER_VALUE = 'uncategorized';
 export type TransactionFilters = {
   description: string;
   categoryId: string;
-  merchant: string;
+  bankAccountId: string;
   dateFrom: string;
   dateTo: string;
 };
@@ -21,7 +21,7 @@ export type TransactionFilters = {
 export const DEFAULT_TRANSACTION_FILTERS: TransactionFilters = {
   description: '',
   categoryId: ALL_FILTER_VALUE,
-  merchant: ALL_FILTER_VALUE,
+  bankAccountId: ALL_FILTER_VALUE,
   dateFrom: '',
   dateTo: '',
 };
@@ -30,7 +30,7 @@ export function hasActiveTransactionFilters(filters: TransactionFilters): boolea
   return (
     filters.description.trim() !== '' ||
     filters.categoryId !== ALL_FILTER_VALUE ||
-    filters.merchant !== ALL_FILTER_VALUE ||
+    filters.bankAccountId !== ALL_FILTER_VALUE ||
     filters.dateFrom !== '' ||
     filters.dateTo !== ''
   );
@@ -60,7 +60,10 @@ export function filterTransactions<T extends FilterableTransactionRow>(
       }
     }
 
-    if (filters.merchant !== ALL_FILTER_VALUE && row.merchant !== filters.merchant) {
+    if (
+      filters.bankAccountId !== ALL_FILTER_VALUE &&
+      row.bankAccountId !== filters.bankAccountId
+    ) {
       return false;
     }
 

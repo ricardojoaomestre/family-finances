@@ -66,7 +66,7 @@ async function getCategoryTypeForNote(
 
 async function hasActiveNoteKeyConflict(
   householdId: string,
-  merchant: string,
+  bankAccountId: string,
   date: Date,
   value: number,
   excludeNoteId?: string,
@@ -74,7 +74,7 @@ async function hasActiveNoteKeyConflict(
   const formattedValue = formatTransactionValueForKey(value);
   const conditions = [
     eq(notes.householdId, householdId),
-    eq(notes.merchant, merchant),
+    eq(notes.bankAccountId, bankAccountId),
     eq(notes.date, date),
     eq(notes.value, formattedValue),
     isNull(notes.archivedAt),
@@ -98,9 +98,9 @@ async function hasActiveNoteKeyConflict(
 function duplicateActiveNoteError(): ActionResult {
   return {
     ok: false,
-    error: 'An active note already exists for this merchant, date, and amount.',
+    error: 'An active note already exists for this account, date, and amount.',
     fieldErrors: {
-      amount: 'Another active note uses this merchant, date, and amount.',
+      amount: 'Another active note uses this account, date, and amount.',
     },
   };
 }
@@ -145,7 +145,7 @@ export async function createNote(input: NoteFormInput): Promise<ActionResult> {
   if (
     await hasActiveNoteKeyConflict(
       householdId,
-      parsed.merchant,
+      parsed.bankAccountId,
       parsed.date,
       parsed.value,
     )
@@ -156,7 +156,7 @@ export async function createNote(input: NoteFormInput): Promise<ActionResult> {
   try {
     await db.insert(notes).values({
       householdId,
-      merchant: parsed.merchant,
+      bankAccountId: parsed.bankAccountId,
       date: parsed.date,
       value: formatTransactionValueForKey(parsed.value),
       categoryId: parsed.categoryId,
@@ -226,7 +226,7 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
   if (
     await hasActiveNoteKeyConflict(
       householdId,
-      parsed.merchant,
+      parsed.bankAccountId,
       parsed.date,
       parsed.value,
       noteId,
@@ -239,7 +239,7 @@ export async function updateNote(input: NoteFormInput): Promise<ActionResult> {
     await db
       .update(notes)
       .set({
-        merchant: parsed.merchant,
+        bankAccountId: parsed.bankAccountId,
         date: parsed.date,
         value: formatTransactionValueForKey(parsed.value),
         categoryId: parsed.categoryId,
@@ -338,7 +338,7 @@ export async function unarchiveNote(noteId: string): Promise<ActionResult> {
   if (
     await hasActiveNoteKeyConflict(
       householdId,
-      existing.merchant,
+      existing.bankAccountId,
       existing.date,
       Number(existing.value),
     )

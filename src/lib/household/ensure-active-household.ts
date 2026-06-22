@@ -2,6 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { householdMembers, households, users } from '@/db/schema';
+import { seedDefaultBankAccountsForHousehold } from '@/lib/bank-accounts/seed-default-bank-accounts';
 import { seedDefaultCategoriesForHousehold } from '@/lib/household/default-categories';
 
 function buildPersonalHouseholdName(
@@ -53,6 +54,7 @@ export async function ensureActiveHousehold(userId: string): Promise<string> {
     });
 
     await seedDefaultCategoriesForHousehold(householdId);
+    await seedDefaultBankAccountsForHousehold(householdId);
 
     await db
       .update(users)

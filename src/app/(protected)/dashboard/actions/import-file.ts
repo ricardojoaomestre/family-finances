@@ -15,11 +15,11 @@ import {
   compileCategoryRules,
   matchCategoryIdWithCompiledRules,
 } from '@/lib/categories/match-category';
+import { getBankAccountForActiveHousehold } from '@/lib/bank-accounts/get-bank-account';
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
 import { applyNoteMatchesToImportRows } from '@/lib/notes/apply-note-matches-to-import-rows';
 import { getActiveNotesForImport } from '@/lib/notes/get-active-notes-for-import';
 import type { RowNoteMatch } from '@/lib/notes/types';
-import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 
 export type ParsedImportRow = ImportedSpreadsheetRow & {
   duplicate: RowDuplicateStatus;
@@ -39,17 +39,26 @@ export async function importSpreadsheetFile(
   formData: FormData,
 ): Promise<ImportSpreadsheetResult> {
   const file = formData.get('file');
-  const merchantValue = formData.get('merchant');
+  const bankAccountIdValue = formData.get('bankAccountId');
 
   if (!(file instanceof File)) {
     return { ok: false as const, error: 'No file provided.' };
   }
 
-  if (typeof merchantValue !== 'string' || !isMerchantSlug(merchantValue)) {
-    return { ok: false as const, error: 'A valid merchant is required.' };
+  if (
+    typeof bankAccountIdValue !== 'string' ||
+    !bankAccountIdValue.trim()
+  ) {
+    return { ok: false as const, error: 'A valid bank account is required.' };
   }
 
-  const merchant = merchantValue;
+  const bankAccount = await getBankAccountForActiveHousehold(
+    bankAccountIdValue.trim(),
+  );
+
+  if (!bankAccount) {
+    return { ok: false as const, error: 'Bank account not found.' };
+  }
 
   const validation = validateSpreadsheetFile(file);
 
@@ -62,7 +71,7 @@ export async function importSpreadsheetFile(
     buffer,
     file.name,
     validation.fileType,
-    merchant,
+    bankAccount.importProfile,
   );
 
   if (!parsed.ok) {
@@ -74,8 +83,12 @@ export async function importSpreadsheetFile(
     description: row.description.trim(),
   }));
 
-  const existingKeys = await getExistingDuplicateKeys(merchant);
-  const duplicateStatuses = detectDuplicateStatuses(data, existingKeys, merchant);
+  const existingKeys = await getExistingDuplicateKeys(bankAccount.id);
+  const duplicateStatuses = detectDuplicateStatuses(
+    data,
+    existingKeys,
+    bankAccount.id,
+  );
 
   const rowsWithDuplicates: ParsedImportRow[] = data.map((row, index) => ({
     ...row,
@@ -83,7 +96,10 @@ export async function importSpreadsheetFile(
     noteMatch: null,
   }));
 
-  const matched = await matchImportRowsToCategories(rowsWithDuplicates, merchant);
+  const matched = await matchImportRowsToCategories(
+    rowsWithDuplicates,
+    bankAccount.id,
+  );
 
   return {
     ok: true as const,
@@ -99,18 +115,18 @@ export type RematchImportCategoriesResult = {
 
 export async function rematchImportCategories(
   rows: ParsedImportRow[],
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): Promise<RematchImportCategoriesResult> {
-  return matchImportRowsToCategories(rows, merchant);
+  return matchImportRowsToCategories(rows, bankAccountId);
 }
 
 async function matchImportRowsToCategories(
   rows: ParsedImportRow[],
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): Promise<RematchImportCategoriesResult> {
   const [categoryRules, activeNotes] = await Promise.all([
     getActiveCategoriesForImport(),
-    getActiveNotesForImport(merchant),
+    getActiveNotesForImport(bankAccountId),
   ]);
   const categories: ImportCategoryOption[] = categoryRules.map(
     ({ id, name, color, icon }) => ({ id, name, color, icon }),
@@ -129,7 +145,7 @@ async function matchImportRowsToCategories(
 
   const data = applyNoteMatchesToImportRows(
     regexMatched,
-    merchant,
+    bankAccountId,
     activeNotes,
     activeCategoryIds,
   );

@@ -1,7 +1,7 @@
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { categories, notes } from '@/db/schema';
+import { bankAccounts, categories, notes } from '@/db/schema';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import {
   getDefaultCategoryColor,
@@ -21,7 +21,8 @@ export type { NoteCategoryOption };
 
 function mapNoteRow(row: {
   id: string;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
   date: Date;
   value: string;
   categoryId: string;
@@ -43,7 +44,8 @@ function mapNoteRow(row: {
 
   return {
     id: row.id,
-    merchant: row.merchant,
+    bankAccountId: row.bankAccountId,
+    bankAccountLabel: row.bankAccountLabel,
     date: row.date,
     value: row.value,
     categoryId: row.categoryId,
@@ -66,7 +68,8 @@ async function queryNotes(archived: boolean): Promise<NoteRow[]> {
   const rows = await db
     .select({
       id: notes.id,
-      merchant: notes.merchant,
+      bankAccountId: notes.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
       date: notes.date,
       value: notes.value,
       categoryId: notes.categoryId,
@@ -82,6 +85,7 @@ async function queryNotes(archived: boolean): Promise<NoteRow[]> {
     })
     .from(notes)
     .innerJoin(categories, eq(notes.categoryId, categories.id))
+    .innerJoin(bankAccounts, eq(notes.bankAccountId, bankAccounts.id))
     .where(
       and(
         eq(notes.householdId, householdId),
@@ -144,7 +148,8 @@ export async function getNoteById(id: string): Promise<NoteRow | null> {
   const rows = await db
     .select({
       id: notes.id,
-      merchant: notes.merchant,
+      bankAccountId: notes.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
       date: notes.date,
       value: notes.value,
       categoryId: notes.categoryId,
@@ -160,6 +165,7 @@ export async function getNoteById(id: string): Promise<NoteRow | null> {
     })
     .from(notes)
     .innerJoin(categories, eq(notes.categoryId, categories.id))
+    .innerJoin(bankAccounts, eq(notes.bankAccountId, bankAccounts.id))
     .where(and(eq(notes.householdId, householdId), eq(notes.id, id)))
     .limit(1);
 

@@ -8,5 +8,6 @@ export type TransactionRow = {
   categoryIcon: string | null;
   value: string;
   importId: string;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
 };

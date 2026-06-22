@@ -3,18 +3,17 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { categories, notes } from '@/db/schema';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
-import type { MerchantSlug } from '@/lib/merchants';
 
 import type { NoteForImportMatch } from './types';
 
 export async function getActiveNotesForImport(
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): Promise<NoteForImportMatch[]> {
   const householdId = await requireActiveHouseholdId();
   return db
     .select({
       id: notes.id,
-      merchant: notes.merchant,
+      bankAccountId: notes.bankAccountId,
       date: notes.date,
       value: notes.value,
       categoryId: notes.categoryId,
@@ -24,7 +23,7 @@ export async function getActiveNotesForImport(
     .where(
       and(
         eq(notes.householdId, householdId),
-        eq(notes.merchant, merchant),
+        eq(notes.bankAccountId, bankAccountId),
         isNull(notes.archivedAt),
       ),
     )

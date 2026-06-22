@@ -2,6 +2,7 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
+  bankAccounts,
   categories,
   importSkippedRows,
   imports,
@@ -19,7 +20,8 @@ export type ImportDetailRecord = {
   rowCount: number;
   skippedCount: number | null;
   status: ImportStatus;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
   importerName: string | null;
   importerEmail: string | null;
 };
@@ -75,12 +77,14 @@ export async function getImportDetail(id: string): Promise<ImportDetail | null> 
       rowCount: imports.rowCount,
       skippedCount: imports.skippedCount,
       status: imports.status,
-      merchant: imports.merchant,
+      bankAccountId: imports.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
       importerName: users.name,
       importerEmail: users.email,
     })
     .from(imports)
     .innerJoin(users, eq(imports.userId, users.id))
+    .innerJoin(bankAccounts, eq(imports.bankAccountId, bankAccounts.id))
     .where(and(eq(imports.id, id), eq(imports.householdId, householdId)))
     .limit(1);
 

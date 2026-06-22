@@ -1,6 +1,5 @@
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
 import { parseLocalizedNumber } from '@/lib/file-import/parse-localized-number';
-import { isMerchantSlug } from '@/lib/merchants';
 
 import {
   isNoteEligibleCategoryType,
@@ -54,8 +53,8 @@ export function validateNoteForm(
 ): Partial<Record<NoteFormField, string>> {
   const fieldErrors: Partial<Record<NoteFormField, string>> = {};
 
-  if (!isMerchantSlug(input.merchant)) {
-    fieldErrors.merchant = 'Select a valid merchant.';
+  if (!isUuid(input.bankAccountId)) {
+    fieldErrors.bankAccountId = 'Select a valid account.';
   }
 
   const date = parseNoteDate(input.date.trim());
@@ -95,7 +94,7 @@ export function parseValidatedNoteForm(
   input: NoteFormInput,
   categoryType: 'spending' | 'income',
 ): {
-  merchant: string;
+  bankAccountId: string;
   date: Date;
   value: number;
   categoryId: string;
@@ -110,12 +109,12 @@ export function parseValidatedNoteForm(
   const date = parseNoteDate(input.date.trim());
   const amount = parseLocalizedNumber(input.amount.trim());
 
-  if (!date || amount === null || !isMerchantSlug(input.merchant)) {
+  if (!date || amount === null || !isUuid(input.bankAccountId)) {
     return null;
   }
 
   return {
-    merchant: input.merchant,
+    bankAccountId: input.bankAccountId,
     date,
     value: normalizeNoteValueFromPositiveAmount(amount, categoryType),
     categoryId: input.categoryId,

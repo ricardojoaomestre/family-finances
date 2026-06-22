@@ -2,9 +2,9 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
-import { requireActiveHouseholdId } from '@/lib/household/active-household';
-import { getPrimaryAccountMerchant } from '@/lib/household/primary-account';
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
+import { requireActiveHouseholdId } from '@/lib/household/active-household';
+import { getPrimaryBankAccountId } from '@/lib/household/primary-bank-account';
 
 function transactionDateInRange(dateFrom: string, dateTo: string) {
   return and(
@@ -18,9 +18,9 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
   dateTo: string,
 ): Promise<string | null> {
   const householdId = await requireActiveHouseholdId();
-  const primaryAccountMerchant = await getPrimaryAccountMerchant(householdId);
+  const primaryBankAccountId = await getPrimaryBankAccountId(householdId);
 
-  if (!primaryAccountMerchant) {
+  if (!primaryBankAccountId) {
     return null;
   }
 
@@ -33,7 +33,7 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
     .where(
       and(
         eq(transactions.householdId, householdId),
-        eq(transactions.merchant, primaryAccountMerchant),
+        eq(transactions.bankAccountId, primaryBankAccountId),
         eq(categories.type, 'income'),
         transactionDateInRange(dateFrom, dateTo),
       ),
@@ -55,7 +55,7 @@ export async function getMonthReportPrimaryAccountBalanceBeforeIncome(
     .where(
       and(
         eq(transactions.householdId, householdId),
-        eq(transactions.merchant, primaryAccountMerchant),
+        eq(transactions.bankAccountId, primaryBankAccountId),
         sql`to_char(${transactions.date} AT TIME ZONE 'UTC', 'YYYY-MM-DD') < ${anchorDate}`,
       ),
     )

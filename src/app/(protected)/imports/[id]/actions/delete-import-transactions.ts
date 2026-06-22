@@ -8,8 +8,6 @@ import { db } from '@/db';
 import { imports, type ImportStatus, transactions } from '@/db/schema';
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatDbError } from '@/lib/db/format-db-error';
-import { isMerchantSlug } from '@/lib/merchants';
-
 export type DeleteImportTransactionsResult =
   | {
       ok: true;
@@ -44,7 +42,7 @@ export async function deleteImportTransactions(input: {
   const [importRecord] = await db
     .select({
       id: imports.id,
-      merchant: imports.merchant,
+      bankAccountId: imports.bankAccountId,
       rowCount: imports.rowCount,
       skippedCount: imports.skippedCount,
     })
@@ -52,7 +50,7 @@ export async function deleteImportTransactions(input: {
     .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)))
     .limit(1);
 
-  if (!importRecord || !isMerchantSlug(importRecord.merchant)) {
+  if (!importRecord?.bankAccountId) {
     return { ok: false, error: 'Import not found.' };
   }
 

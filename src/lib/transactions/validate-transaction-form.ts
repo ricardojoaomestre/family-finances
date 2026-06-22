@@ -1,6 +1,5 @@
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
 import { parseLocalizedNumber } from '@/lib/file-import/parse-localized-number';
-import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 
 export const UNCATEGORIZED_CATEGORY_VALUE = '__none__';
 
@@ -10,7 +9,7 @@ export type TransactionFormInput = {
   description: string;
   value: string;
   categoryId: string | null;
-  merchant: MerchantSlug;
+  bankAccountId: string;
 };
 
 export type TransactionFormField =
@@ -18,7 +17,7 @@ export type TransactionFormField =
   | 'description'
   | 'value'
   | 'categoryId'
-  | 'merchant';
+  | 'bankAccountId';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -91,8 +90,8 @@ export function validateTransactionForm(
     fieldErrors.categoryId = 'Select a valid category.';
   }
 
-  if (!isMerchantSlug(input.merchant)) {
-    fieldErrors.merchant = 'Select a valid merchant.';
+  if (!isUuid(input.bankAccountId)) {
+    fieldErrors.bankAccountId = 'Select a valid account.';
   }
 
   return fieldErrors;
@@ -103,7 +102,7 @@ export function parseValidatedTransactionForm(input: TransactionFormInput): {
   description: string;
   value: number;
   categoryId: string | null;
-  merchant: MerchantSlug;
+  bankAccountId: string;
 } | null {
   const fieldErrors = validateTransactionForm(input);
 
@@ -123,6 +122,6 @@ export function parseValidatedTransactionForm(input: TransactionFormInput): {
     description: input.description.trim(),
     value,
     categoryId: input.categoryId,
-    merchant: input.merchant,
+    bankAccountId: input.bankAccountId,
   };
 }

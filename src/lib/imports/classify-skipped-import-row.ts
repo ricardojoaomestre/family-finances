@@ -6,7 +6,6 @@ import {
   type ImportedSpreadsheetRow,
 } from '@/lib/file-import';
 import type { ImportSkippedRowReason } from '@/db/schema';
-import type { MerchantSlug } from '@/lib/merchants';
 
 export type SkippedImportRowClassification = {
   reason: ImportSkippedRowReason;
@@ -16,7 +15,7 @@ export type SkippedImportRowClassification = {
 
 export function classifySkippedImportRow(
   row: ImportedSpreadsheetRow,
-  merchant: MerchantSlug,
+  bankAccountId: string,
   existingKeys: Set<string>,
   siblingKeys: Set<string>,
 ): SkippedImportRowClassification {
@@ -30,11 +29,11 @@ export function classifySkippedImportRow(
     };
   }
 
-  const [duplicate] = detectDuplicateStatuses([row], existingKeys, merchant);
+  const [duplicate] = detectDuplicateStatuses([row], existingKeys, bankAccountId);
   const classified = { row, validation, duplicate: duplicate! };
 
   if (!duplicate!.isDuplicate) {
-    if (siblingKeys.has(buildDuplicateKey(row.date!, row.value!, merchant))) {
+    if (siblingKeys.has(buildDuplicateKey(row.date!, row.value!, bankAccountId))) {
       return {
         isValid: true,
         reason: 'duplicate_in_file',

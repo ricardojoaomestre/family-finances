@@ -68,6 +68,14 @@ export const protectedSettingsNavItems: ProtectedNavItem[] = [
       pathname.startsWith('/settings/budgets/'),
   },
   {
+    href: '/settings/accounts',
+    label: 'Accounts',
+    icon: LandmarkIcon,
+    match: (pathname) =>
+      pathname === '/settings/accounts' ||
+      pathname.startsWith('/settings/accounts/'),
+  },
+  {
     href: '/settings/household',
     label: 'Household',
     icon: UsersIcon,

@@ -7,10 +7,10 @@ import {
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { transactions } from '@/db/schema';
 
-export function buildTransactionWhere(
+export function createTransactionWhereConditions(
   filters: TransactionFilters,
   householdId: string,
-): SQL | undefined {
+): SQL[] {
   const conditions: SQL[] = [eq(transactions.householdId, householdId)];
   const descriptionQuery = filters.description.trim();
 
@@ -26,8 +26,8 @@ export function buildTransactionWhere(
     }
   }
 
-  if (filters.merchant !== ALL_FILTER_VALUE) {
-    conditions.push(eq(transactions.merchant, filters.merchant));
+  if (filters.bankAccountId !== ALL_FILTER_VALUE) {
+    conditions.push(eq(transactions.bankAccountId, filters.bankAccountId));
   }
 
   if (filters.dateFrom) {
@@ -42,5 +42,13 @@ export function buildTransactionWhere(
     );
   }
 
+  return conditions;
+}
+
+export function buildTransactionWhere(
+  filters: TransactionFilters,
+  householdId: string,
+): SQL | undefined {
+  const conditions = createTransactionWhereConditions(filters, householdId);
   return conditions.length > 0 ? and(...conditions) : undefined;
 }

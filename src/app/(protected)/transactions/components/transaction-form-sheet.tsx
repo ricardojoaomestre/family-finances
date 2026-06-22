@@ -24,11 +24,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
-import {
-  isMerchantSlug,
-  MERCHANTS_SORTED_BY_LABEL,
-  type MerchantSlug,
-} from '@/lib/merchants';
+import type { CategoryOption } from '@/lib/categories/to-category-options';
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 import type { TransactionFormInput } from '@/lib/transactions/validate-transaction-form';
 import {
@@ -36,14 +32,9 @@ import {
   type TransactionFormField,
 } from '@/lib/transactions/validate-transaction-form';
 
-import type { CategoryColorToken } from '@/lib/categories/category-colors';
-import type { CategoryIconName } from '@/lib/categories/category-icons';
-
-type CategoryOption = {
+type BankAccountOption = {
   id: string;
-  name: string;
-  color: CategoryColorToken;
-  icon: CategoryIconName;
+  label: string;
 };
 
 type TransactionFormSheetProps = {
@@ -51,6 +42,7 @@ type TransactionFormSheetProps = {
   onOpenChange: (open: boolean) => void;
   transaction: TransactionRow | null;
   categories: CategoryOption[];
+  bankAccounts: BankAccountOption[];
   onSubmit: (input: TransactionFormInput) => Promise<{
     ok: boolean;
     error?: string;
@@ -61,6 +53,7 @@ type TransactionFormSheetProps = {
 type TransactionFormBodyProps = {
   transaction: TransactionRow;
   categories: CategoryOption[];
+  bankAccounts: BankAccountOption[];
   onSubmit: TransactionFormSheetProps['onSubmit'];
   onCancel: () => void;
 };
@@ -68,6 +61,7 @@ type TransactionFormBodyProps = {
 function TransactionFormBody({
   transaction,
   categories,
+  bankAccounts,
   onSubmit,
   onCancel,
 }: TransactionFormBodyProps) {
@@ -78,8 +72,8 @@ function TransactionFormBody({
   const [categoryId, setCategoryId] = useState(
     transaction.categoryId ?? UNCATEGORIZED_CATEGORY_VALUE,
   );
-  const [merchant, setMerchant] = useState<MerchantSlug | undefined>(() =>
-    isMerchantSlug(transaction.merchant) ? transaction.merchant : undefined,
+  const [bankAccountId, setBankAccountId] = useState(
+    transaction.bankAccountId,
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
@@ -91,8 +85,8 @@ function TransactionFormBody({
     setFormError(null);
     setFieldErrors({});
 
-    if (!merchant) {
-      setFieldErrors({ merchant: 'Select a merchant.' });
+    if (!bankAccountId) {
+      setFieldErrors({ bankAccountId: 'Select an account.' });
       return;
     }
 
@@ -104,7 +98,7 @@ function TransactionFormBody({
         value,
         categoryId:
           categoryId === UNCATEGORIZED_CATEGORY_VALUE ? null : categoryId,
-        merchant,
+        bankAccountId,
       });
 
       if (!result.ok) {
@@ -183,27 +177,23 @@ function TransactionFormBody({
           </FieldContent>
         </Field>
 
-        <Field data-invalid={Boolean(fieldErrors.merchant)}>
-          <FieldLabel htmlFor="transaction-merchant">Merchant</FieldLabel>
+        <Field data-invalid={Boolean(fieldErrors.bankAccountId)}>
+          <FieldLabel htmlFor="transaction-account">Account</FieldLabel>
           <FieldContent>
             <Combobox
-              id="transaction-merchant"
+              id="transaction-account"
               className="w-full"
-              value={merchant}
-              onValueChange={(next) => {
-                if (isMerchantSlug(next)) {
-                  setMerchant(next);
-                }
-              }}
-              placeholder="Select merchant"
-              searchPlaceholder="Search merchants…"
+              value={bankAccountId}
+              onValueChange={setBankAccountId}
+              placeholder="Select account"
+              searchPlaceholder="Search accounts…"
               disabled={isPending}
-              options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
-                value: slug,
-                label,
+              options={bankAccounts.map((account) => ({
+                value: account.id,
+                label: account.label,
               }))}
             />
-            <FieldError>{fieldErrors.merchant}</FieldError>
+            <FieldError>{fieldErrors.bankAccountId}</FieldError>
           </FieldContent>
         </Field>
       </FieldGroup>
@@ -236,6 +226,7 @@ export function TransactionFormSheet({
   onOpenChange,
   transaction,
   categories,
+  bankAccounts,
   onSubmit,
 }: TransactionFormSheetProps) {
   return (
@@ -244,7 +235,7 @@ export function TransactionFormSheet({
         <SheetHeader>
           <SheetTitle>Edit transaction</SheetTitle>
           <SheetDescription>
-            Update the date, description, amount, category, or merchant.
+            Update the date, description, amount, category, or account.
           </SheetDescription>
         </SheetHeader>
 
@@ -253,6 +244,7 @@ export function TransactionFormSheet({
             key={transaction.id}
             transaction={transaction}
             categories={categories}
+            bankAccounts={bankAccounts}
             onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />

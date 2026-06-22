@@ -8,7 +8,8 @@ export type TransactionDetails = {
   description: string;
   value: string;
   balance: string | null;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: CategoryColorToken | null;

@@ -1,6 +1,5 @@
 import { serializeSemicolonCsv } from '@/lib/categories/import/serialize-semicolon-csv';
 import { getCalendarDayKey } from '@/lib/file-import/duplicate-key';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 
 const TRANSACTION_CSV_HEADER = [
@@ -8,7 +7,7 @@ const TRANSACTION_CSV_HEADER = [
   'description',
   'category',
   'value',
-  'merchant',
+  'account',
 ] as const;
 
 export function buildFilteredTransactionsCsv(rows: TransactionRow[]): string {
@@ -19,7 +18,7 @@ export function buildFilteredTransactionsCsv(rows: TransactionRow[]): string {
       row.description,
       row.categoryName ?? '',
       row.value,
-      getMerchantLabelOrSlug(row.merchant),
+      row.bankAccountLabel,
     ]),
   ];
 

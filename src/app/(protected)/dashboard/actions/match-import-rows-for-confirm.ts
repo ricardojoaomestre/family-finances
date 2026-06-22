@@ -10,15 +10,14 @@ import {
 } from '@/lib/categories/match-category';
 import { applyNoteMatchesToImportRows } from '@/lib/notes/apply-note-matches-to-import-rows';
 import { getActiveNotesForImport } from '@/lib/notes/get-active-notes-for-import';
-import type { MerchantSlug } from '@/lib/merchants';
 
 export async function matchImportRowsForConfirm(
   rows: ParsedImportRow[],
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): Promise<ParsedImportRow[]> {
   const [categoryRules, activeNotes] = await Promise.all([
     getActiveCategoriesForImport(),
-    getActiveNotesForImport(merchant),
+    getActiveNotesForImport(bankAccountId),
   ]);
   const activeCategoryIds = new Set(categoryRules.map((category) => category.id));
   const compiledRules = compileCategoryRules(categoryRules);
@@ -38,7 +37,7 @@ export async function matchImportRowsForConfirm(
 
   return applyNoteMatchesToImportRows(
     regexMatched,
-    merchant,
+    bankAccountId,
     activeNotes,
     activeCategoryIds,
   );

@@ -70,6 +70,7 @@ type MonthReportViewProps = {
   spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
   primaryAccountBalanceBeforeIncome?: string | null;
   categories?: CategoryOption[];
+  bankAccounts?: Array<{ id: string; label: string }>;
 };
 
 function getInitialTitle(
@@ -104,6 +105,7 @@ export function MonthReportView({
   spendingCategoryAverages = {},
   primaryAccountBalanceBeforeIncome = null,
   categories = [],
+  bankAccounts = [],
 }: MonthReportViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -403,6 +405,7 @@ export function MonthReportView({
                     dateFrom={listParams.dateFrom}
                     dateTo={listParams.dateTo}
                     categories={categories}
+                    bankAccounts={bankAccounts}
                     spendingCategoryAverages={spendingCategoryAverages}
                   />
                 ))}

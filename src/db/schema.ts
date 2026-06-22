@@ -14,6 +14,7 @@ import {
 import type { CategoryIconName } from '@/lib/categories/category-icon-names';
 import type { CategoryType } from '@/lib/categories/category-type';
 import type { CategorySnapshotRow } from '@/lib/categories/import/types';
+import type { BankAccountImportProfile } from '@/lib/bank-accounts/import-profile';
 
 export const users = pgTable('user', {
   id: text('id')
@@ -34,7 +35,7 @@ export const households = pgTable('household', {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
-  primaryAccountMerchant: text('primaryAccountMerchant'),
+  primaryBankAccountId: text('primaryBankAccountId'),
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
@@ -204,6 +205,34 @@ export const categories = pgTable(
   ],
 );
 
+export const bankAccounts = pgTable(
+  'bank_account',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    householdId: text('householdId')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    label: text('label').notNull(),
+    importProfile: jsonb('importProfile')
+      .$type<BankAccountImportProfile>()
+      .notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('bank_account_household_slug_idx').on(
+      table.householdId,
+      table.slug,
+    ),
+  ],
+);
 
 export const budgetPeriodEnum = ['monthly'] as const;
 export type BudgetPeriod = (typeof budgetPeriodEnum)[number];
@@ -279,7 +308,9 @@ export const imports = pgTable('import', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   status: text('status').$type<ImportStatus>().notNull(),
-  merchant: text('merchant').notNull(),
+  bankAccountId: text('bankAccountId')
+    .notNull()
+    .references(() => bankAccounts.id, { onDelete: 'restrict' }),
 });
 
 export const importSkippedRows = pgTable('import_skipped_row', {
@@ -325,7 +356,9 @@ export const notes = pgTable(
     householdId: text('householdId')
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
-    merchant: text('merchant').notNull(),
+    bankAccountId: text('bankAccountId')
+      .notNull()
+      .references(() => bankAccounts.id, { onDelete: 'restrict' }),
     date: timestamp('date', { mode: 'date' }).notNull(),
     value: numeric('value', { precision: 14, scale: 2 }).notNull(),
     categoryId: text('categoryId')
@@ -341,8 +374,8 @@ export const notes = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('note_active_merchant_date_value_idx')
-      .on(table.householdId, table.merchant, table.date, table.value)
+    uniqueIndex('note_active_bank_account_date_value_idx')
+      .on(table.householdId, table.bankAccountId, table.date, table.value)
       .where(sql`${table.archivedAt} is null`),
   ],
 );
@@ -364,19 +397,43 @@ export const transactions = pgTable('transaction', {
   }),
   value: numeric('value', { precision: 14, scale: 2 }).notNull(),
   balance: numeric('balance', { precision: 14, scale: 2 }),
-  merchant: text('merchant').notNull(),
+  bankAccountId: text('bankAccountId')
+    .notNull()
+    .references(() => bankAccounts.id, { onDelete: 'restrict' }),
   insertedAt: timestamp('inserted_at', { mode: 'date' }).defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow(),
 });
 
-export const householdsRelations = relations(households, ({ many }) => ({
+export const householdsRelations = relations(households, ({ one, many }) => ({
+  primaryBankAccount: one(bankAccounts, {
+    fields: [households.primaryBankAccountId],
+    references: [bankAccounts.id],
+    relationName: 'primaryBankAccount',
+  }),
   members: many(householdMembers),
   invites: many(householdInvites),
+  bankAccounts: many(bankAccounts, { relationName: 'householdBankAccounts' }),
   categories: many(categories),
   budgets: many(budgets),
   imports: many(imports),
   notes: many(notes),
   reports: many(reports),
+  transactions: many(transactions),
+}));
+
+export const bankAccountsRelations = relations(bankAccounts, ({ one, many }) => ({
+  household: one(households, {
+    fields: [bankAccounts.householdId],
+    references: [households.id],
+    relationName: 'householdBankAccounts',
+  }),
+  primaryForHousehold: one(households, {
+    fields: [bankAccounts.id],
+    references: [households.primaryBankAccountId],
+    relationName: 'primaryBankAccount',
+  }),
+  imports: many(imports),
+  notes: many(notes),
   transactions: many(transactions),
 }));
 
@@ -417,6 +474,10 @@ export const importsRelations = relations(imports, ({ one, many }) => ({
     fields: [imports.householdId],
     references: [households.id],
   }),
+  bankAccount: one(bankAccounts, {
+    fields: [imports.bankAccountId],
+    references: [bankAccounts.id],
+  }),
   transactions: many(transactions),
   skippedRows: many(importSkippedRows),
 }));
@@ -431,7 +492,11 @@ export const importSkippedRowsRelations = relations(
   }),
 );
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  household: one(households, {
+    fields: [categories.householdId],
+    references: [households.id],
+  }),
   transactions: many(transactions),
   notes: many(notes),
   budgets: many(budgets),
@@ -449,13 +514,32 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
 }));
 
 export const notesRelations = relations(notes, ({ one }) => ({
+  household: one(households, {
+    fields: [notes.householdId],
+    references: [households.id],
+  }),
   category: one(categories, {
     fields: [notes.categoryId],
     references: [categories.id],
   }),
+  bankAccount: one(bankAccounts, {
+    fields: [notes.bankAccountId],
+    references: [bankAccounts.id],
+  }),
+}));
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  household: one(households, {
+    fields: [reports.householdId],
+    references: [households.id],
+  }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
+  household: one(households, {
+    fields: [transactions.householdId],
+    references: [households.id],
+  }),
   import: one(imports, {
     fields: [transactions.importId],
     references: [imports.id],
@@ -463,5 +547,9 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   category: one(categories, {
     fields: [transactions.categoryId],
     references: [categories.id],
+  }),
+  bankAccount: one(bankAccounts, {
+    fields: [transactions.bankAccountId],
+    references: [bankAccounts.id],
   }),
 }));

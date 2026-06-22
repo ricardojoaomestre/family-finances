@@ -6,7 +6,7 @@ import type { NoteForImportMatch } from '@/lib/notes/types';
 describe('applyNoteMatchesToImportRows', () => {
   const note: NoteForImportMatch = {
     id: 'note-1',
-    merchant: 'bpi',
+    bankAccountId: 'account-bpi',
     date: new Date('2025-06-05T00:00:00.000Z'),
     value: '-50.00',
     categoryId: 'cat-1',
@@ -31,7 +31,7 @@ describe('applyNoteMatchesToImportRows', () => {
 
     const result = applyNoteMatchesToImportRows(
       rows,
-      'bpi',
+      'account-bpi',
       [note],
       new Set(['cat-1']),
     );
@@ -58,7 +58,7 @@ describe('applyNoteMatchesToImportRows', () => {
 
     const result = applyNoteMatchesToImportRows(
       rows,
-      'bpi',
+      'account-bpi',
       [note],
       new Set(['cat-1', 'regex-cat']),
     );
@@ -79,7 +79,7 @@ describe('applyNoteMatchesToImportRows', () => {
 
     const result = applyNoteMatchesToImportRows(
       rows,
-      'bpi',
+      'account-bpi',
       [note],
       new Set(),
     );

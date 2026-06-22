@@ -7,7 +7,6 @@ import {
   validateImportRow,
   type RowValidation,
 } from '@/lib/file-import';
-import type { MerchantSlug } from '@/lib/merchants';
 
 export type ImportPreviewState = {
   parsedData: ParsedImportRow[] | null;
@@ -16,7 +15,7 @@ export type ImportPreviewState = {
   categories: ImportCategoryOption[] | null;
   filename: string | null;
   error: string | null;
-  merchant: MerchantSlug | undefined;
+  bankAccountId: string | undefined;
   usingGenericProfile: boolean;
 };
 
@@ -40,7 +39,7 @@ export type ImportPreviewAction =
   | { type: 'confirm-failed'; error: string }
   | { type: 'clear-preview' }
   | { type: 'reset' }
-  | { type: 'set-merchant'; merchant: MerchantSlug }
+  | { type: 'set-bank-account'; bankAccountId: string }
   | {
       type: 'set-row-category';
       rowIndex: number;
@@ -61,7 +60,7 @@ const initialState: ImportPreviewState = {
   categories: null,
   filename: null,
   error: null,
-  merchant: undefined,
+  bankAccountId: undefined,
   usingGenericProfile: false,
 };
 
@@ -111,11 +110,11 @@ function importPreviewReducer(
       };
     case 'reset':
       return initialState;
-    case 'set-merchant':
+    case 'set-bank-account':
       if (state.parsedData) {
-        return { ...initialState, merchant: action.merchant };
+        return { ...initialState, bankAccountId: action.bankAccountId };
       }
-      return { ...state, merchant: action.merchant };
+      return { ...state, bankAccountId: action.bankAccountId };
     case 'set-row-category':
       if (!state.parsedData) {
         return state;

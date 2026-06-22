@@ -49,6 +49,7 @@ type MonthReportCategoryTotalsTableProps = {
   dateFrom: string;
   dateTo: string;
   categories: CategoryOption[];
+  bankAccounts: Array<{ id: string; label: string }>;
   spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
 };
 
@@ -58,6 +59,7 @@ export function MonthReportCategoryTotalsTable({
   dateFrom,
   dateTo,
   categories,
+  bankAccounts,
   spendingCategoryAverages = {},
 }: MonthReportCategoryTotalsTableProps) {
   const [selectedCategory, setSelectedCategory] =
@@ -190,6 +192,7 @@ export function MonthReportCategoryTotalsTable({
         dateTo={dateTo}
         category={selectedCategory}
         categories={categories}
+        bankAccounts={bankAccounts}
       />
     </Collapsible>
   );

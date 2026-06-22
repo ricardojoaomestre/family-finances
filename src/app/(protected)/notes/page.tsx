@@ -1,4 +1,5 @@
 import { NotesManager } from '@/app/(protected)/notes/components/notes-manager';
+import { getBankAccounts } from '@/lib/bank-accounts/get-bank-accounts';
 import {
   getActiveNotes,
   getArchivedNotes,
@@ -6,10 +7,11 @@ import {
 } from '@/lib/notes/get-notes';
 
 export default async function NotesPage() {
-  const [activeNotes, archivedNotes, categories] = await Promise.all([
+  const [activeNotes, archivedNotes, categories, bankAccounts] = await Promise.all([
     getActiveNotes(),
     getArchivedNotes(),
     getNoteEligibleCategories(),
+    getBankAccounts(),
   ]);
 
   return (
@@ -18,6 +20,10 @@ export default async function NotesPage() {
       activeNotes={activeNotes}
       archivedNotes={archivedNotes}
       categories={categories}
+      bankAccounts={bankAccounts.map((account) => ({
+        id: account.id,
+        label: account.label,
+      }))}
       />
     </div>
   );

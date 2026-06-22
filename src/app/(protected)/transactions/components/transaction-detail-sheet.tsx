@@ -21,7 +21,6 @@ import {
   formatDisplayMoney,
   formatImportStatus,
 } from '@/lib/formatters';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import type { TransactionDetails } from '@/lib/transactions/transaction-details';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
 import { cn } from '@/lib/utils';
@@ -141,8 +140,8 @@ function TransactionDetailBody({ transactionId }: { transactionId: string }) {
                 <DetailField label="Date">
                   {formatDisplayDate(details.date)}
                 </DetailField>
-                <DetailField label="Merchant">
-                  {getMerchantLabelOrSlug(details.merchant)}
+                <DetailField label="Account">
+                  {details.bankAccountLabel}
                 </DetailField>
                 {details.balance != null ? (
                   <DetailField label="Balance">

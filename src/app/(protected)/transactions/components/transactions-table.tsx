@@ -28,8 +28,7 @@ import {
   type TransactionFilters,
 } from '@/app/(protected)/transactions/lib/filter-transactions';
 import { CategoryPill } from '@/components/categories/category-pill';
-import type { CategoryColorToken } from '@/lib/categories/category-colors';
-import type { CategoryIconName } from '@/lib/categories/category-icons';
+import type { CategoryOption } from '@/lib/categories/to-category-options';
 import {
   TABLE_MONEY_HEADER_CLASS,
   TableMoneyCell,
@@ -37,7 +36,6 @@ import {
 import { DataTableRowActions } from '@/components/data-table/row-actions';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { formatDisplayDate } from '@/lib/formatters';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import type { PaginatedTransactionsResult } from '@/lib/transactions/get-paginated-transactions';
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 import {
@@ -124,9 +122,9 @@ function createTransactionColumns({
       },
     },
     {
-      accessorKey: 'merchant',
-      header: 'Merchant',
-      cell: ({ row }) => getMerchantLabelOrSlug(row.original.merchant),
+      accessorKey: 'bankAccountLabel',
+      header: 'Account',
+      cell: ({ row }) => row.original.bankAccountLabel,
       meta: {
         headerClassName: 'hidden lg:table-cell',
         cellClassName: 'hidden lg:table-cell',
@@ -156,17 +154,16 @@ function createTransactionColumns({
   ];
 }
 
-type CategoryOption = {
+type BankAccountOption = {
   id: string;
-  name: string;
-  color: CategoryColorToken;
-  icon: CategoryIconName;
+  label: string;
 };
 
 type TransactionsTableProps = {
   listParams: TransactionListSearchParams;
   result: PaginatedTransactionsResult;
   categories: CategoryOption[];
+  bankAccounts: BankAccountOption[];
 };
 
 function resolvePagination(
@@ -180,6 +177,7 @@ export function TransactionsTable({
   listParams,
   result,
   categories,
+  bankAccounts,
 }: TransactionsTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -323,6 +321,7 @@ export function TransactionsTable({
       <TransactionsTableFilters
         filters={filters}
         categories={categories}
+        bankAccounts={bankAccounts}
         onFiltersChange={handleFiltersChange}
         onClear={handleClearFilters}
         hasActiveFilters={hasActiveFilters}
@@ -346,7 +345,7 @@ export function TransactionsTable({
               <p className="text-sm font-medium">{transaction.description}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {formatDisplayDate(transaction.date)} ·{' '}
-                {getMerchantLabelOrSlug(transaction.merchant)}
+                {transaction.bankAccountLabel}
               </p>
               {transaction.categoryName && transaction.categoryColor ? (
                 <span className="mt-2 inline-flex">
@@ -388,6 +387,7 @@ export function TransactionsTable({
         }}
         transaction={editingTransaction}
         categories={categories}
+        bankAccounts={bankAccounts}
         onSubmit={handleUpdateTransaction}
       />
       <TransactionDetailSheet

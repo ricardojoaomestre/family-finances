@@ -2,7 +2,7 @@ import { count, desc, eq } from 'drizzle-orm';
 
 import type { TransactionRow } from '@/lib/transactions/transaction-row';
 import { db } from '@/db';
-import { categories, transactions } from '@/db/schema';
+import { categories, bankAccounts, transactions } from '@/db/schema';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 import { buildTransactionWhere } from './build-transaction-where';
@@ -45,10 +45,12 @@ export async function getPaginatedTransactions(
       categoryIcon: categories.icon,
       value: transactions.value,
       importId: transactions.importId,
-      merchant: transactions.merchant,
+      bankAccountId: transactions.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
+    .innerJoin(bankAccounts, eq(transactions.bankAccountId, bankAccounts.id))
     .where(where)
     .orderBy(desc(transactions.date))
     .limit(params.pageSize)

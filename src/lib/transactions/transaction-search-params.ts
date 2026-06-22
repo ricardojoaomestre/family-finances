@@ -50,7 +50,7 @@ export function parseTransactionListSearchParams(
     filters: {
       description: readParam(params, 'description'),
       categoryId: readParam(params, 'categoryId') || ALL_FILTER_VALUE,
-      merchant: readParam(params, 'merchant') || ALL_FILTER_VALUE,
+      bankAccountId: readParam(params, 'bankAccountId') || ALL_FILTER_VALUE,
       dateFrom: readParam(params, 'dateFrom'),
       dateTo: readParam(params, 'dateTo'),
     },
@@ -89,8 +89,8 @@ export function buildTransactionSearchParams(
     searchParams.set('categoryId', filters.categoryId);
   }
 
-  if (filters.merchant !== ALL_FILTER_VALUE) {
-    searchParams.set('merchant', filters.merchant);
+  if (filters.bankAccountId !== ALL_FILTER_VALUE) {
+    searchParams.set('bankAccountId', filters.bankAccountId);
   }
 
   if (filters.dateFrom) {

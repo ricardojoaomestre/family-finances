@@ -20,8 +20,6 @@ import {
   validateSkippedImportRowForm,
   type SkippedImportRowFormInput,
 } from '@/lib/imports/validate-skipped-import-row-form';
-import { isMerchantSlug } from '@/lib/merchants';
-
 export type UpdateSkippedImportRowInput = {
   importId: string;
   skippedRowId: string;
@@ -86,13 +84,13 @@ export async function updateSkippedImportRow(
   const [importRecord] = await db
     .select({
       id: imports.id,
-      merchant: imports.merchant,
+      bankAccountId: imports.bankAccountId,
     })
     .from(imports)
     .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)))
     .limit(1);
 
-  if (!importRecord || !isMerchantSlug(importRecord.merchant)) {
+  if (!importRecord?.bankAccountId) {
     return { ok: false, error: 'Import not found.' };
   }
 
@@ -115,17 +113,17 @@ export async function updateSkippedImportRow(
     return { ok: false, error: 'Skipped row not found.' };
   }
 
-  const merchant = importRecord.merchant;
+  const bankAccountId = importRecord.bankAccountId;
   const [existingKeys, { siblingKeys }] = await Promise.all([
-    getExistingDuplicateKeys(merchant),
-    getImportDuplicateContext(input.importId, merchant, {
+    getExistingDuplicateKeys(bankAccountId),
+    getImportDuplicateContext(input.importId, bankAccountId, {
       excludeSkippedRowId: input.skippedRowId,
     }),
   ]);
 
   const classification = classifySkippedImportRow(
     parsed,
-    merchant,
+    bankAccountId,
     existingKeys,
     siblingKeys,
   );

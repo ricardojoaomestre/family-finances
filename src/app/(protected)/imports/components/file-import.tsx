@@ -44,12 +44,17 @@ import { useImportPreviewState } from '@/hooks/use-import-preview-state';
 import { useSpreadsheetFile } from '@/hooks/use-spreadsheet-file';
 import { escapeRegexLiteral } from '@/lib/categories/escape-regex-literal';
 import { countUnconfirmedNoteMatches } from '@/lib/notes/resolve-import-row-category';
-import {
-  isMerchantSlug,
-  MERCHANTS_SORTED_BY_LABEL,
-} from '@/lib/merchants';
 
-export function FileImport() {
+type BankAccountOption = {
+  id: string;
+  label: string;
+};
+
+type FileImportProps = {
+  bankAccounts: BankAccountOption[];
+};
+
+export function FileImport({ bankAccounts }: FileImportProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const { validation, validate, clear } = useSpreadsheetFile();
@@ -61,7 +66,7 @@ export function FileImport() {
     categories,
     filename,
     error,
-    merchant,
+    bankAccountId,
     usingGenericProfile,
   } = state;
   const [isParsing, startParseTransition] = useTransition();
@@ -121,12 +126,12 @@ export function FileImport() {
     async (input: CategoryFormInput) => {
       const result = await createCategory(input);
 
-      if (result.ok && parsedData && merchant) {
+      if (result.ok && parsedData && bankAccountId) {
         setCreateCategoryOpen(false);
         setCreateCategoryPattern(null);
 
         startRematchTransition(async () => {
-          const rematched = await rematchImportCategories(parsedData, merchant);
+          const rematched = await rematchImportCategories(parsedData, bankAccountId);
 
           dispatch({
             type: 'categories-rematched',
@@ -138,7 +143,7 @@ export function FileImport() {
 
       return result;
     },
-    [dispatch, merchant, parsedData],
+    [dispatch, bankAccountId, parsedData],
   );
 
   const unconfirmedNoteMatchCount = useMemo(
@@ -147,14 +152,14 @@ export function FileImport() {
   );
 
   const runConfirmImport = useCallback(() => {
-    if (!filename || !merchant || !parsedData) {
+    if (!filename || !bankAccountId || !parsedData) {
       return;
     }
 
     startConfirmTransition(async () => {
       const result = await confirmImport({
         filename,
-        merchant,
+        bankAccountId,
         rows: parsedData,
       });
 
@@ -168,7 +173,7 @@ export function FileImport() {
 
       router.push('/imports');
     });
-  }, [dispatch, filename, merchant, parsedData, router]);
+  }, [dispatch, filename, bankAccountId, parsedData, router]);
 
   const handleConfirmImportClick = useCallback(() => {
     if (unconfirmedNoteMatchCount > 0) {
@@ -220,9 +225,9 @@ export function FileImport() {
     setCreateCategoryPattern(null);
   }, [clear, dispatch]);
 
-  const handleMerchantChange = (value: string) => {
-    if (!isMerchantSlug(value)) return;
-    dispatch({ type: 'set-merchant', merchant: value });
+  const handleBankAccountChange = (value: string) => {
+    if (!value) return;
+    dispatch({ type: 'set-bank-account', bankAccountId: value });
   };
 
   const summaryParts = previewRows
@@ -243,17 +248,17 @@ export function FileImport() {
     <TooltipProvider>
       <div className="flex w-full flex-col gap-6">
         <Field>
-          <FieldLabel htmlFor="merchant">Merchant</FieldLabel>
+          <FieldLabel htmlFor="bank-account">Account</FieldLabel>
           <Combobox
-            id="merchant"
+            id="bank-account"
             className="w-full max-w-md"
-            value={merchant}
-            onValueChange={handleMerchantChange}
-            placeholder="Select merchant"
-            searchPlaceholder="Search merchants…"
-            options={MERCHANTS_SORTED_BY_LABEL.map(({ slug, label }) => ({
-              value: slug,
-              label,
+            value={bankAccountId}
+            onValueChange={handleBankAccountChange}
+            placeholder="Select account"
+            searchPlaceholder="Search accounts…"
+            options={bankAccounts.map((account) => ({
+              value: account.id,
+              label: account.label,
             }))}
           />
         </Field>
@@ -261,11 +266,11 @@ export function FileImport() {
         <form
           ref={formRef}
           action={(formData) => {
-            if (!merchant) return;
+            if (!bankAccountId) return;
 
             startParseTransition(async () => {
               dispatch({ type: 'parse-started' });
-              formData.set('merchant', merchant);
+              formData.set('bankAccountId', bankAccountId);
 
               const file = formData.get('file');
               const parsedFilename =
@@ -297,7 +302,7 @@ export function FileImport() {
               id="file"
               name="file"
               accept=".csv,.xlsx,.xls"
-              disabled={!merchant}
+              disabled={!bankAccountId}
               onChange={(e) => validate(e.target.files?.[0] ?? null)}
             />
             {validation?.ok === false && (
@@ -307,7 +312,7 @@ export function FileImport() {
           <Button
             type="submit"
             disabled={
-              !merchant ||
+              !bankAccountId ||
               validation?.ok !== true ||
               isParsing ||
               !!previewRows
@@ -325,13 +330,13 @@ export function FileImport() {
           </Alert>
         )}
 
-        {previewRows && filename && merchant && categories && (
+        {previewRows && filename && bankAccountId && categories && (
           <div className="flex flex-col gap-4">
             {usingGenericProfile && (
               <Alert>
                 <AlertTitle>Generic import profile</AlertTitle>
                 <AlertDescription>
-                  No dedicated import profile is configured for this merchant.
+                  No dedicated import profile is configured for this account.
                   Column detection uses generic rules and results may need
                   review before confirming.
                 </AlertDescription>

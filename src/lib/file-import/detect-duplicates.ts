@@ -1,5 +1,3 @@
-import type { MerchantSlug } from '@/lib/merchants';
-
 import { buildDuplicateKey } from './duplicate-key';
 import type { ImportedSpreadsheetRow } from './types';
 import {
@@ -30,7 +28,7 @@ export type ClassifiedImportRow = {
 export function detectDuplicateStatuses(
   rows: ImportedSpreadsheetRow[],
   existingKeys: Set<string>,
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): RowDuplicateStatus[] {
   const seenInFile = new Set<string>();
 
@@ -41,7 +39,7 @@ export function detectDuplicateStatuses(
       return { isDuplicate: false as const };
     }
 
-    const key = buildDuplicateKey(row.date!, row.value!, merchant);
+    const key = buildDuplicateKey(row.date!, row.value!, bankAccountId);
 
     if (existingKeys.has(key)) {
       return { isDuplicate: true as const, reason: 'existing' as const };
@@ -59,12 +57,12 @@ export function detectDuplicateStatuses(
 export function classifyImportRows(
   rows: ImportedSpreadsheetRow[],
   existingKeys: Set<string>,
-  merchant: MerchantSlug,
+  bankAccountId: string,
 ): ClassifiedImportRow[] {
   const duplicateStatuses = detectDuplicateStatuses(
     rows,
     existingKeys,
-    merchant,
+    bankAccountId,
   );
 
   return rows.map((row, index) => ({

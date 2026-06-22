@@ -1,9 +1,9 @@
-import type { MerchantSlug } from '@/lib/merchants';
+import type { BankAccountImportProfile } from '@/lib/bank-accounts/import-profile';
 
 import { detectImportHeader } from './detect-import-header';
-import { getMerchantImportProfile } from './merchant-profiles';
 import { mapRawRowsToImportRows } from './map-raw-rows-to-import-rows';
 import { parseSpreadsheetToRawGrid } from './parse-spreadsheet-to-raw-grid';
+import { resolveBankAccountImportProfile } from '@/lib/bank-accounts/resolve-import-profile';
 import type { ImportedSpreadsheetRow, SpreadsheetFileType } from './types';
 
 export type ParseBankSpreadsheetResult =
@@ -18,7 +18,7 @@ export function parseBankSpreadsheet(
   data: ArrayBuffer,
   filename: string,
   fileType: SpreadsheetFileType,
-  merchant: MerchantSlug,
+  importProfile: BankAccountImportProfile,
 ): ParseBankSpreadsheetResult {
   const grid = parseSpreadsheetToRawGrid(data, filename, fileType);
 
@@ -29,7 +29,8 @@ export function parseBankSpreadsheet(
     };
   }
 
-  const { profile, isConfigured } = getMerchantImportProfile(merchant);
+  const { profile, isConfigured } =
+    resolveBankAccountImportProfile(importProfile);
   const header = detectImportHeader(grid.rows, profile);
 
   if (!header) {

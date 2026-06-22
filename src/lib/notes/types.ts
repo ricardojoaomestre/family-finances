@@ -9,7 +9,7 @@ export type RowNoteMatch = {
 
 export type NoteForImportMatch = {
   id: string;
-  merchant: string;
+  bankAccountId: string;
   date: Date;
   value: string;
   categoryId: string;
@@ -18,7 +18,8 @@ export type NoteForImportMatch = {
 
 export type NoteRow = {
   id: string;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
   date: Date;
   value: string;
   categoryId: string;
@@ -43,7 +44,7 @@ export type NoteCategoryOption = {
 
 export type NoteFormInput = {
   id?: string;
-  merchant: string;
+  bankAccountId: string;
   date: string;
   amount: string;
   categoryId: string;
@@ -51,7 +52,7 @@ export type NoteFormInput = {
 };
 
 export type NoteFormField =
-  | 'merchant'
+  | 'bankAccountId'
   | 'date'
   | 'amount'
   | 'categoryId'

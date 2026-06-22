@@ -3,11 +3,10 @@ import { and, eq, ne } from 'drizzle-orm';
 import { db } from '@/db';
 import { importSkippedRows, transactions } from '@/db/schema';
 import { buildDuplicateKey } from '@/lib/file-import';
-import type { MerchantSlug } from '@/lib/merchants';
 
 export async function getImportDuplicateContext(
   importId: string,
-  merchant: MerchantSlug,
+  bankAccountId: string,
   options?: { excludeSkippedRowId?: string },
 ): Promise<{
   importedKeys: Set<string>;
@@ -46,7 +45,7 @@ export async function getImportDuplicateContext(
       continue;
     }
 
-    const key = buildDuplicateKey(row.date, Number(row.value), merchant);
+    const key = buildDuplicateKey(row.date, Number(row.value), bankAccountId);
     importedKeys.add(key);
     siblingKeys.add(key);
   }
@@ -57,7 +56,7 @@ export async function getImportDuplicateContext(
     }
 
     siblingKeys.add(
-      buildDuplicateKey(row.date, Number(row.value), merchant),
+      buildDuplicateKey(row.date, Number(row.value), bankAccountId),
     );
   }
 

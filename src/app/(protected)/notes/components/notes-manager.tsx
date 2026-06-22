@@ -29,16 +29,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { NoteCategoryOption } from '@/lib/notes/types';
 import type { NoteRow } from '@/lib/notes/types';
 
+type BankAccountOption = {
+  id: string;
+  label: string;
+};
+
 type NotesManagerProps = {
   activeNotes: NoteRow[];
   archivedNotes: NoteRow[];
   categories: NoteCategoryOption[];
+  bankAccounts: BankAccountOption[];
 };
 
 export function NotesManager({
   activeNotes,
   archivedNotes,
   categories,
+  bankAccounts,
 }: NotesManagerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -172,6 +179,7 @@ export function NotesManager({
         onOpenChange={setSheetOpen}
         note={editingNote}
         categories={categories}
+        bankAccounts={bankAccounts}
         onSubmit={async (input) => {
           const result = editingNote
             ? await updateNote(input)

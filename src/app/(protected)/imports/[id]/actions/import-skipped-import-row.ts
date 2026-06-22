@@ -21,8 +21,6 @@ import {
 import { DUPLICATE_IN_FILE_MESSAGE } from '@/lib/imports/duplicate-in-file-message';
 import { getImportDuplicateContext } from '@/lib/imports/get-import-duplicate-context';
 import { skippedRowToSpreadsheetRow } from '@/lib/imports/skipped-row-to-spreadsheet';
-import { isMerchantSlug } from '@/lib/merchants';
-
 export type ImportedSkippedTransaction = {
   id: string;
   date: Date;
@@ -68,7 +66,7 @@ export async function importSkippedImportRow(input: {
   const [importRecord] = await db
     .select({
       id: imports.id,
-      merchant: imports.merchant,
+      bankAccountId: imports.bankAccountId,
       rowCount: imports.rowCount,
       skippedCount: imports.skippedCount,
       status: imports.status,
@@ -77,7 +75,7 @@ export async function importSkippedImportRow(input: {
     .where(and(eq(imports.id, input.importId), eq(imports.householdId, householdId)))
     .limit(1);
 
-  if (!importRecord || !isMerchantSlug(importRecord.merchant)) {
+  if (!importRecord?.bankAccountId) {
     return { ok: false, error: 'Import not found.' };
   }
 
@@ -102,7 +100,7 @@ export async function importSkippedImportRow(input: {
     return { ok: false, error: 'Skipped row not found.' };
   }
 
-  const merchant = importRecord.merchant;
+  const bankAccountId = importRecord.bankAccountId;
   const spreadsheetRow = skippedRowToSpreadsheetRow(skippedRow);
   const validation = validateImportRow(spreadsheetRow);
 
@@ -116,12 +114,12 @@ export async function importSkippedImportRow(input: {
   const duplicateKey = buildDuplicateKey(
     spreadsheetRow.date!,
     spreadsheetRow.value!,
-    merchant,
+    bankAccountId,
   );
 
   const { importedKeys } = await getImportDuplicateContext(
     input.importId,
-    merchant,
+    bankAccountId,
   );
 
   if (importedKeys.has(duplicateKey) && !input.allowDuplicateInFile) {
@@ -147,7 +145,7 @@ export async function importSkippedImportRow(input: {
         value,
         balance: skippedRow.balance,
         importId: input.importId,
-        merchant,
+        bankAccountId,
       })
       .returning({
         id: transactions.id,

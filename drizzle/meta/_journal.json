@@ -134,6 +134,13 @@
       "when": 1780270000000,
       "tag": "0018_budgets",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780280000000,
+      "tag": "0019_bank_accounts",
+      "breakpoints": true
     }
   ]
 }

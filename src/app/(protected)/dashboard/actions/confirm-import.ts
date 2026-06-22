@@ -14,6 +14,7 @@ import {
 } from '@/db/schema';
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
 import { matchImportRowsForConfirm } from '@/app/(protected)/dashboard/actions/match-import-rows-for-confirm';
+import { getBankAccountForActiveHousehold } from '@/lib/bank-accounts/get-bank-account';
 import { getActiveCategoriesForImport } from '@/lib/categories/get-active-categories-for-import';
 import { formatDbError } from '@/lib/db/format-db-error';
 import {
@@ -25,11 +26,10 @@ import {
 import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { resolveImportRowCategory } from '@/lib/notes/resolve-import-row-category';
-import { isMerchantSlug, type MerchantSlug } from '@/lib/merchants';
 
 export type ConfirmImportInput = {
   filename: string;
-  merchant: MerchantSlug;
+  bankAccountId: string;
   rows: ParsedImportRow[];
 };
 
@@ -67,14 +67,20 @@ export async function confirmImport(
     return { ok: false, error: 'No rows to import.' };
   }
 
-  if (!isMerchantSlug(input.merchant)) {
-    return { ok: false, error: 'A valid merchant is required.' };
+  const bankAccount = await getBankAccountForActiveHousehold(input.bankAccountId);
+
+  if (!bankAccount) {
+    return { ok: false, error: 'A valid bank account is required.' };
   }
 
-  const merchant = input.merchant;
-  const existingKeys = await getExistingDuplicateKeys(merchant);
-  const serverRows = await matchImportRowsForConfirm(input.rows, merchant);
-  const classifiedRows = classifyImportRows(input.rows, existingKeys, merchant);
+  const bankAccountId = bankAccount.id;
+  const existingKeys = await getExistingDuplicateKeys(bankAccountId);
+  const serverRows = await matchImportRowsForConfirm(input.rows, bankAccountId);
+  const classifiedRows = classifyImportRows(
+    input.rows,
+    existingKeys,
+    bankAccountId,
+  );
   const importableRows = classifiedRows
     .map((classified, index) => ({
       classified,
@@ -144,7 +150,7 @@ export async function confirmImport(
       skippedCount,
       userId: session.user.id,
       status,
-      merchant,
+      bankAccountId,
     });
 
     if (resolvedImportableRows.length > 0) {
@@ -164,7 +170,7 @@ export async function confirmImport(
                 ? formatTransactionValueForKey(row.balance)
                 : null,
             importId,
-            merchant,
+            bankAccountId,
           };
         }),
       );

@@ -7,7 +7,7 @@ export function applyNoteMatchesToImportRows<
   T extends ImportedSpreadsheetRow,
 >(
   rows: T[],
-  merchant: string,
+  bankAccountId: string,
   notes: NoteForImportMatch[],
   activeCategoryIds: Set<string>,
 ): Array<T & { noteMatch: RowNoteMatch | null }> {
@@ -21,7 +21,7 @@ export function applyNoteMatchesToImportRows<
     const key = buildDuplicateKey(
       note.date,
       Number(note.value),
-      note.merchant,
+      note.bankAccountId,
     );
     noteByKey.set(key, note);
   }
@@ -37,7 +37,7 @@ export function applyNoteMatchesToImportRows<
       return { ...row, noteMatch: null };
     }
 
-    const key = buildDuplicateKey(row.date, row.value, merchant);
+    const key = buildDuplicateKey(row.date, row.value, bankAccountId);
 
     if (usedKeys.has(key)) {
       return { ...row, noteMatch: null };

@@ -10,6 +10,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty';
+import { getBankAccounts } from '@/lib/bank-accounts/get-bank-accounts';
 import { getCategories } from '@/lib/categories/get-categories';
 import { toCategoryOptions } from '@/lib/categories/to-category-options';
 import {
@@ -31,8 +32,9 @@ export default async function TransactionsPage({
   const resolvedSearchParams = await searchParams;
   const listParams = parseTransactionListSearchParams(resolvedSearchParams);
 
-  const [categoryRows, result] = await Promise.all([
+  const [categoryRows, bankAccounts, result] = await Promise.all([
     getCategories(),
+    getBankAccounts(),
     getPaginatedTransactions(listParams),
   ]);
 
@@ -78,6 +80,10 @@ export default async function TransactionsPage({
           listParams={listParams}
           result={result}
           categories={categoryOptions}
+          bankAccounts={bankAccounts.map((account) => ({
+            id: account.id,
+            label: account.label,
+          }))}
         />
       )}
     </div>

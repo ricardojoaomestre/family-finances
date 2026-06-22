@@ -22,7 +22,6 @@ import { TableMoneyCell } from '@/components/data-table/table-money-cell';
 import { formatDisplayDate } from '@/lib/formatters';
 import { noteHasInactiveCategoryWarning } from '@/lib/notes/note-display';
 import type { NoteRow } from '@/lib/notes/types';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 
 type NotesTableProps = {
   notes: NoteRow[];
@@ -60,7 +59,7 @@ export function NotesTable({
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>
-          <TableHead>Merchant</TableHead>
+          <TableHead>Account</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Context</TableHead>
           <TableHead className="text-right">Amount</TableHead>
@@ -74,7 +73,7 @@ export function NotesTable({
           return (
             <TableRow key={note.id}>
               <TableCell>{formatDisplayDate(note.date)}</TableCell>
-              <TableCell>{getMerchantLabelOrSlug(note.merchant)}</TableCell>
+              <TableCell>{note.bankAccountLabel}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <CategoryIcon

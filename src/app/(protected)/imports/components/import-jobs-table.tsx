@@ -14,7 +14,6 @@ import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-d
 import { Badge } from '@/components/ui/badge';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
 import type { ImportJobRow } from '@/lib/imports/get-imports';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
 
 const columns: ColumnDef<ImportJobRow>[] = [
@@ -24,14 +23,14 @@ const columns: ColumnDef<ImportJobRow>[] = [
     cell: ({ row }) => formatDisplayDate(row.original.importedAt),
   },
   {
-    accessorKey: 'merchant',
-    header: 'Merchant',
+    accessorKey: 'bankAccountLabel',
+    header: 'Account',
     cell: ({ row }) => (
       <Link
         href={`/imports/${row.original.id}`}
         className="text-primary underline-offset-4 hover:underline"
       >
-        {getMerchantLabelOrSlug(row.original.merchant)}
+        {row.original.bankAccountLabel}
       </Link>
     ),
   },
@@ -108,7 +107,7 @@ export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps)
                 href={`/imports/${job.id}`}
                 className="text-sm font-medium text-primary underline-offset-4 hover:underline"
               >
-                {getMerchantLabelOrSlug(job.merchant)}
+                {job.bankAccountLabel}
               </Link>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {formatDisplayDate(job.importedAt)} · {job.rowCount}{' '}

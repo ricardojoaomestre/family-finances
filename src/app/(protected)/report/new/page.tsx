@@ -55,6 +55,7 @@ export default async function NewReportPage({
   const {
     categoryTotals,
     categories,
+    bankAccounts,
     primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   } = await loadMonthReportData(validation.dateFrom, validation.dateTo);
@@ -70,6 +71,7 @@ export default async function NewReportPage({
         spendingCategoryAverages={spendingCategoryAverages}
         primaryAccountBalanceBeforeIncome={primaryAccountBalanceBeforeIncome}
         categories={categories}
+        bankAccounts={bankAccounts}
       />
     </div>
   );

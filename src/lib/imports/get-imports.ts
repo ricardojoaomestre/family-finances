@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { imports, type ImportStatus } from '@/db/schema';
+import { bankAccounts, imports, type ImportStatus } from '@/db/schema';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 export type ImportJobRow = {
@@ -10,7 +10,8 @@ export type ImportJobRow = {
   importedAt: Date;
   rowCount: number;
   status: ImportStatus;
-  merchant: string;
+  bankAccountId: string;
+  bankAccountLabel: string;
 };
 
 export async function getImports(limit?: number): Promise<ImportJobRow[]> {
@@ -22,9 +23,11 @@ export async function getImports(limit?: number): Promise<ImportJobRow[]> {
       importedAt: imports.importedAt,
       rowCount: imports.rowCount,
       status: imports.status,
-      merchant: imports.merchant,
+      bankAccountId: imports.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
     })
     .from(imports)
+    .innerJoin(bankAccounts, eq(imports.bankAccountId, bankAccounts.id))
     .where(eq(imports.householdId, householdId))
     .orderBy(desc(imports.importedAt));
 

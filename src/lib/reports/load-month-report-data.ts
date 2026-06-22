@@ -1,3 +1,4 @@
+import { getBankAccounts } from '@/lib/bank-accounts/get-bank-accounts';
 import { getCategories } from '@/lib/categories/get-categories';
 import {
   toCategoryOptions,
@@ -16,6 +17,7 @@ import {
 export type MonthReportData = {
   categoryTotals: MonthReportCategoryTotal[];
   categories: CategoryOption[];
+  bankAccounts: Array<{ id: string; label: string }>;
   primaryAccountBalanceBeforeIncome: string | null;
   spendingCategoryAverages: Record<string, SpendingCategoryAverage>;
 };
@@ -27,11 +29,13 @@ export async function loadMonthReportData(
   const [
     categoryTotals,
     categoryRows,
+    bankAccountRows,
     primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   ] = await Promise.all([
     getMonthReportCategoryTotals(dateFrom, dateTo),
     getCategories(),
+    getBankAccounts(),
     getMonthReportPrimaryAccountBalanceBeforeIncome(dateFrom, dateTo),
     getSpendingCategoryMonthAverages(dateFrom),
   ]);
@@ -39,6 +43,10 @@ export async function loadMonthReportData(
   return {
     categoryTotals,
     categories: toCategoryOptions(categoryRows),
+    bankAccounts: bankAccountRows.map((account) => ({
+      id: account.id,
+      label: account.label,
+    })),
     primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
   };

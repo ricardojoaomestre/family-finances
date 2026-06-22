@@ -13,7 +13,7 @@ export function getCalendarDayKey(date: Date | string): string {
 export function buildDuplicateKey(
   date: Date | string,
   value: number,
-  merchant: string,
+  bankAccountId: string,
 ): string {
-  return `${getCalendarDayKey(date)}|${formatTransactionValueForKey(value)}|${merchant}`;
+  return `${getCalendarDayKey(date)}|${formatTransactionValueForKey(value)}|${bankAccountId}`;
 }

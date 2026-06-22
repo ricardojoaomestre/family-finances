@@ -14,6 +14,7 @@ export function transactionDetailsToRow(
     categoryIcon: details.categoryIcon,
     value: details.value,
     importId: details.importId,
-    merchant: details.merchant,
+    bankAccountId: details.bankAccountId,
+    bankAccountLabel: details.bankAccountLabel,
   };
 }

@@ -11,7 +11,7 @@ function buildRow(
     description: 'LEV ATM',
     value: -50,
     categoryId: 'cat-1',
-    duplicate: { isDuplicate: false, reason: null },
+    duplicate: { isDuplicate: false },
     noteMatch: {
       noteId: 'note-1',
       context: 'Cash',

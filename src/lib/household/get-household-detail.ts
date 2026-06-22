@@ -9,6 +9,7 @@ import {
   households,
   users,
 } from '@/db/schema';
+import { getBankAccountsForHousehold } from '@/lib/bank-accounts/get-bank-accounts';
 
 export type HouseholdMemberRow = {
   userId: string;
@@ -26,10 +27,16 @@ export type HouseholdInviteRow = {
   createdAt: Date;
 };
 
+export type HouseholdBankAccountOption = {
+  id: string;
+  label: string;
+};
+
 export type HouseholdDetail = {
   id: string;
   name: string;
-  primaryAccountMerchant: string | null;
+  primaryBankAccountId: string | null;
+  bankAccounts: HouseholdBankAccountOption[];
   currentUserRole: HouseholdMemberRole;
   members: HouseholdMemberRow[];
   pendingInvites: HouseholdInviteRow[];
@@ -43,7 +50,7 @@ export async function getHouseholdDetail(
     .select({
       id: households.id,
       name: households.name,
-      primaryAccountMerchant: households.primaryAccountMerchant,
+      primaryBankAccountId: households.primaryBankAccountId,
     })
     .from(households)
     .where(eq(households.id, householdId))
@@ -53,19 +60,40 @@ export async function getHouseholdDetail(
     return null;
   }
 
-  const memberRows = await db
-    .select({
-      userId: householdMembers.userId,
-      role: householdMembers.role,
-      name: users.name,
-      email: users.email,
-      image: users.image,
-      createdAt: householdMembers.createdAt,
-    })
-    .from(householdMembers)
-    .innerJoin(users, eq(householdMembers.userId, users.id))
-    .where(eq(householdMembers.householdId, householdId))
-    .orderBy(asc(householdMembers.createdAt));
+  const [bankAccountRows, memberRows, pendingInvites] = await Promise.all([
+    getBankAccountsForHousehold(householdId),
+    db
+      .select({
+        userId: householdMembers.userId,
+        role: householdMembers.role,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+        createdAt: householdMembers.createdAt,
+      })
+      .from(householdMembers)
+      .innerJoin(users, eq(householdMembers.userId, users.id))
+      .where(eq(householdMembers.householdId, householdId))
+      .orderBy(asc(householdMembers.createdAt)),
+    db
+      .select({
+        id: householdInvites.id,
+        email: householdInvites.email,
+        role: householdInvites.role,
+        createdAt: householdInvites.createdAt,
+      })
+      .from(householdInvites)
+      .where(
+        and(
+          eq(householdInvites.householdId, householdId),
+          eq(
+            householdInvites.status,
+            'pending' satisfies HouseholdInviteStatus,
+          ),
+        ),
+      )
+      .orderBy(asc(householdInvites.createdAt)),
+  ]);
 
   const currentMember = memberRows.find(
     (member) => member.userId === currentUserId,
@@ -75,29 +103,14 @@ export async function getHouseholdDetail(
     return null;
   }
 
-  const pendingInvites = await db
-    .select({
-      id: householdInvites.id,
-      email: householdInvites.email,
-      role: householdInvites.role,
-      createdAt: householdInvites.createdAt,
-    })
-    .from(householdInvites)
-    .where(
-      and(
-        eq(householdInvites.householdId, householdId),
-        eq(
-          householdInvites.status,
-          'pending' satisfies HouseholdInviteStatus,
-        ),
-      ),
-    )
-    .orderBy(asc(householdInvites.createdAt));
-
   return {
     id: household.id,
     name: household.name,
-    primaryAccountMerchant: household.primaryAccountMerchant,
+    primaryBankAccountId: household.primaryBankAccountId,
+    bankAccounts: bankAccountRows.map((account) => ({
+      id: account.id,
+      label: account.label,
+    })),
     currentUserRole: currentMember.role,
     members: memberRows.map((member) => ({
       userId: member.userId,

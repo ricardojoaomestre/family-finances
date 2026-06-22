@@ -19,7 +19,7 @@ export async function getMonthReportCategoryTransactions(
   const where = buildTransactionWhere(
     {
       description: '',
-      merchant: ALL_FILTER_VALUE,
+      bankAccountId: ALL_FILTER_VALUE,
       dateFrom,
       dateTo,
       categoryId:

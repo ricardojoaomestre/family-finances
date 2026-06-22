@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { categories, imports, transactions } from '@/db/schema';
+import { bankAccounts, categories, imports, transactions } from '@/db/schema';
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import {
   getDefaultCategoryColor,
@@ -52,7 +52,8 @@ export async function getTransactionDetails(
       description: transactions.description,
       value: transactions.value,
       balance: transactions.balance,
-      merchant: transactions.merchant,
+      bankAccountId: transactions.bankAccountId,
+      bankAccountLabel: bankAccounts.label,
       categoryId: transactions.categoryId,
       categoryName: categories.name,
       categoryColor: categories.color,
@@ -66,6 +67,7 @@ export async function getTransactionDetails(
     })
     .from(transactions)
     .innerJoin(imports, eq(transactions.importId, imports.id))
+    .innerJoin(bankAccounts, eq(transactions.bankAccountId, bankAccounts.id))
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .where(
       and(
@@ -94,7 +96,8 @@ export async function getTransactionDetails(
       description: row.description,
       value: row.value,
       balance: row.balance,
-      merchant: row.merchant,
+      bankAccountId: row.bankAccountId,
+      bankAccountLabel: row.bankAccountLabel,
       categoryId: row.categoryId,
       categoryName: row.categoryName,
       categoryColor,

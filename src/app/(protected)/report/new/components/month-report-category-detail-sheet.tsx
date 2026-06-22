@@ -112,6 +112,7 @@ type MonthReportCategoryDetailSheetProps = {
   dateTo: string;
   category: MonthReportCategoryTotal | null;
   categories: CategoryOption[];
+  bankAccounts: Array<{ id: string; label: string }>;
 };
 
 function getCategoryTitle(category: MonthReportCategoryTotal): string {
@@ -129,6 +130,7 @@ export function MonthReportCategoryDetailSheet({
   dateTo,
   category,
   categories,
+  bankAccounts,
 }: MonthReportCategoryDetailSheetProps) {
   const router = useRouter();
   const [rows, setRows] = useState<MonthReportCategoryTransactionRow[]>([]);
@@ -316,6 +318,7 @@ export function MonthReportCategoryDetailSheet({
         }}
         transaction={editingTransaction}
         categories={categories}
+        bankAccounts={bankAccounts}
         onSubmit={handleUpdateTransaction}
       />
     </>

@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
+  bankAccounts,
   budgets,
   categories,
   categoryImportSnapshots,
@@ -39,7 +40,7 @@ import {
 import { formatTransactionValueForKey } from '@/lib/file-import/duplicate-key';
 import { parseImportDate } from '@/lib/file-import/parse-import-date';
 import { parseLocalizedNumber } from '@/lib/file-import/parse-localized-number';
-import { MERCHANTS, type MerchantSlug } from '@/lib/merchants';
+import { seedDefaultBankAccountsForHousehold } from '@/lib/bank-accounts/seed-default-bank-accounts';
 
 import { EXTRATO_CATEGORY_ALIASES } from './seed/extrato-category-aliases';
 import { inferSeedCategoryType } from './seed/infer-seed-category-type';
@@ -69,7 +70,7 @@ type ParsedExtratoRow = {
   description: string;
   value: number;
   categoryLabel: string;
-  merchant: MerchantSlug;
+  accountSlug: string;
 };
 
 function loadEnv() {
@@ -109,8 +110,9 @@ async function wipeSeedTables(db: ReturnType<typeof drizzle>) {
   await db.delete(transactions);
   await db.delete(importSkippedRows);
   await db.delete(imports);
-  await db.delete(budgets);
   await db.delete(notes);
+  await db.delete(budgets);
+  await db.delete(bankAccounts);
   await db.delete(categoryImportSnapshots);
   await db.delete(categories);
   await db.delete(householdInvites);
@@ -128,11 +130,12 @@ async function seedHousehold(
     .insert(households)
     .values({
       name: `${owner}'s household`,
-      primaryAccountMerchant: 'bpi',
     })
     .returning({ id: households.id });
 
   const householdId = household!.id;
+
+  await seedDefaultBankAccountsForHousehold(householdId);
 
   await db.insert(householdMembers).values({
     householdId,
@@ -333,9 +336,9 @@ function parseExtratoRows(content: string): {
       continue;
     }
 
-    const merchant = mapContaToMerchant(conta);
+    const accountSlug = mapContaToMerchant(conta);
 
-    if (!merchant) {
+    if (!accountSlug) {
       skippedInvalid += 1;
       console.warn(`Skipping row with unknown Conta "${conta.trim()}".`);
       continue;
@@ -369,7 +372,7 @@ function parseExtratoRows(content: string): {
       description,
       value: -parsedValue,
       categoryLabel: rawRow.Categoria ?? '',
-      merchant,
+      accountSlug,
     });
   }
 
@@ -410,34 +413,47 @@ async function seedTransactions(
   const nextPriorityRef = { value: await getNextCategoryPriority(db, householdId) };
   const createdCategoryNames: string[] = [];
 
-  const rowsByMerchant = new Map<MerchantSlug, ParsedExtratoRow[]>();
+  const rowsByAccountSlug = new Map<string, ParsedExtratoRow[]>();
 
   for (const row of rows) {
-    const bucket = rowsByMerchant.get(row.merchant) ?? [];
+    const bucket = rowsByAccountSlug.get(row.accountSlug) ?? [];
     bucket.push(row);
-    rowsByMerchant.set(row.merchant, bucket);
+    rowsByAccountSlug.set(row.accountSlug, bucket);
   }
 
   let totalTransactions = 0;
-  const perMerchantCounts: Record<string, number> = {};
+  const perAccountCounts: Record<string, number> = {};
+  const accountRows = await db
+    .select({ id: bankAccounts.id, slug: bankAccounts.slug, label: bankAccounts.label })
+    .from(bankAccounts)
+    .where(eq(bankAccounts.householdId, householdId));
+  const accountIdBySlug = new Map(accountRows.map((row) => [row.slug, row.id]));
+  const accountLabelBySlug = new Map(accountRows.map((row) => [row.slug, row.label]));
 
-  for (const [merchant, merchantRows] of rowsByMerchant) {
+  for (const [accountSlug, accountRows_] of rowsByAccountSlug) {
+    const bankAccountId = accountIdBySlug.get(accountSlug);
+
+    if (!bankAccountId) {
+      console.warn(`Skipping rows for unknown account slug "${accountSlug}".`);
+      continue;
+    }
+
     const importId = crypto.randomUUID();
 
     await db.insert(imports).values({
       id: importId,
       householdId,
       filename: SEED_IMPORT_FILENAME,
-      rowCount: merchantRows.length,
+      rowCount: accountRows_.length,
       skippedCount: 0,
       userId,
       status: 'completed',
-      merchant,
+      bankAccountId,
     });
 
     const transactionValues = [];
 
-    for (const row of merchantRows) {
+    for (const row of accountRows_) {
       const categoryId = await resolveCategoryId(
         db,
         householdId,
@@ -456,7 +472,7 @@ async function seedTransactions(
         value: formatTransactionValueForKey(row.value),
         balance: null,
         importId,
-        merchant,
+        bankAccountId,
       });
     }
 
@@ -465,16 +481,17 @@ async function seedTransactions(
     }
 
     totalTransactions += transactionValues.length;
-    perMerchantCounts[merchant] = transactionValues.length;
+    perAccountCounts[accountSlug] = transactionValues.length;
   }
 
   return {
     totalTransactions,
-    perMerchantCounts,
+    perAccountCounts,
+    accountLabelBySlug,
     skippedBlankConta,
     skippedInvalid,
     createdCategoryNames,
-    merchantImportCount: rowsByMerchant.size,
+    merchantImportCount: rowsByAccountSlug.size,
   };
 }
 
@@ -510,14 +527,14 @@ async function seedDatabase() {
   );
   console.log(`Inserted ${categoryCount} categories.`);
 
-  console.log(`Loading transactions from ${extratoPath}...`);
-  const result = await seedTransactions(db, user.id, householdId, extratoPath);
-
-  console.log('');
   console.log('Creating demo budgets...');
   const budgetCount = await seedBudgets(db, householdId);
   console.log(`Inserted ${budgetCount} budgets.`);
 
+  console.log(`Loading transactions from ${extratoPath}...`);
+  const result = await seedTransactions(db, user.id, householdId, extratoPath);
+
+  console.log('');
   console.log('Seed complete.');
   console.log(`User: ${user.email ?? user.id}`);
   console.log(`Categories from fixture: ${categoryCount}`);
@@ -536,12 +553,17 @@ async function seedDatabase() {
   console.log('Skipped rows:');
   console.log(`  blank Conta: ${result.skippedBlankConta}`);
   console.log(`  invalid/unmapped: ${result.skippedInvalid}`);
-  console.log('Transactions per merchant:');
+  console.log('Transactions per account:');
 
-  for (const [merchant, count] of Object.entries(result.perMerchantCounts).sort(
-    (a, b) => MERCHANTS[a[0] as MerchantSlug].localeCompare(MERCHANTS[b[0] as MerchantSlug], 'pt'),
+  for (const [accountSlug, count] of Object.entries(result.perAccountCounts).sort(
+    (a, b) =>
+      (result.accountLabelBySlug.get(a[0]) ?? a[0]).localeCompare(
+        result.accountLabelBySlug.get(b[0]) ?? b[0],
+        'pt',
+      ),
   )) {
-    console.log(`  ${MERCHANTS[merchant as MerchantSlug]} (${merchant}): ${count}`);
+    const label = result.accountLabelBySlug.get(accountSlug) ?? accountSlug;
+    console.log(`  ${label} (${accountSlug}): ${count}`);
   }
 }
 

@@ -6,7 +6,6 @@ import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/impo
 import { Badge } from '@/components/ui/badge';
 import { getImportDetail } from '@/lib/imports/get-import-detail';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
-import { getMerchantLabelOrSlug } from '@/lib/merchants';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
 
 type ImportDetailPageProps = {
@@ -78,11 +77,9 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Merchant
+            Account
           </dt>
-          <dd className="font-medium">
-            {getMerchantLabelOrSlug(importRecord.merchant)}
-          </dd>
+          <dd className="font-medium">{importRecord.bankAccountLabel}</dd>
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
