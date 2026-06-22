@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { ThemeModeToggle } from '@/components/theme-mode-toggle';
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +22,6 @@ import {
 import type { UserHousehold } from '@/lib/household/get-households-for-user';
 
 import { AppSidebarFooter } from './app-sidebar-footer';
-import { HouseholdSwitcher } from './household-switcher';
 
 type AppSidebarProps = {
   userName: string | null | undefined;
@@ -44,32 +42,21 @@ export function AppSidebar({
 
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader className="h-14 shrink-0 justify-center gap-0 border-b border-sidebar-border px-2 py-0">
-        <div className="flex h-full w-full items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-2">
-          <SidebarMenu className="min-w-0 flex-1 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:flex-none">
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link href="/dashboard">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
-                    F
-                  </span>
-                  <span className="truncate font-semibold">Family Finances</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <ThemeModeToggle />
-        </div>
+      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-border px-2 py-0">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/dashboard">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+                  F
+                </span>
+                <span className="truncate font-semibold">Family Finances</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <HouseholdSwitcher
-              households={households}
-              activeHouseholdId={activeHouseholdId}
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -127,6 +114,8 @@ export function AppSidebar({
         userName={userName}
         userEmail={userEmail}
         userImage={userImage}
+        households={households}
+        activeHouseholdId={activeHouseholdId}
       />
     </Sidebar>
   );
