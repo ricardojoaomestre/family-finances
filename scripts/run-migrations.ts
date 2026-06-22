@@ -5,6 +5,8 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
 
+import { repairPartialMigration0016 } from './repair-partial-migration-0016';
+
 function loadEnv() {
   if (!process.env.DATABASE_URL) {
     config({ path: '.env.local' });
@@ -27,7 +29,12 @@ function getDatabaseUrl(): string {
 
 async function runMigrations() {
   loadEnv();
-  const db = drizzle(neon(getDatabaseUrl()));
+  const databaseUrl = getDatabaseUrl();
+  const sql = neon(databaseUrl);
+
+  await repairPartialMigration0016(sql);
+
+  const db = drizzle(sql);
 
   await migrate(db, {
     migrationsFolder: path.resolve(process.cwd(), 'drizzle'),
