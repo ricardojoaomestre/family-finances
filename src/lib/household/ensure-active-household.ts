@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { asc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
@@ -19,7 +20,7 @@ function buildPersonalHouseholdName(
  * Creates a personal household (seeded with default categories) on first use.
  * Safe to call on every protected request.
  */
-export async function ensureActiveHousehold(userId: string): Promise<string> {
+export const ensureActiveHousehold = cache(async (userId: string): Promise<string> => {
   const [user] = await db
     .select({
       name: users.name,
@@ -78,4 +79,4 @@ export async function ensureActiveHousehold(userId: string): Promise<string> {
   }
 
   return resolvedHouseholdId;
-}
+});
