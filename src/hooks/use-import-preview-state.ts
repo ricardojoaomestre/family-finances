@@ -1,5 +1,6 @@
 import { useReducer } from 'react';
 
+import type { ImportSource } from '@/db/schema';
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
 import type { ImportCategoryOption } from '@/lib/categories/get-active-categories-for-import';
 import {
@@ -14,6 +15,10 @@ export type ImportPreviewState = {
   includeBalanceColumn: boolean;
   categories: ImportCategoryOption[] | null;
   filename: string | null;
+  previewLabel: string | null;
+  importSource: ImportSource | null;
+  periodFrom: string | null;
+  periodTo: string | null;
   error: string | null;
   bankAccountId: string | undefined;
   usingGenericProfile: boolean;
@@ -33,6 +38,10 @@ export type ImportPreviewAction =
       data: ParsedImportRow[];
       categories: ImportCategoryOption[];
       filename: string | null;
+      previewLabel?: string | null;
+      importSource?: ImportSource;
+      periodFrom?: string | null;
+      periodTo?: string | null;
       usingGenericProfile: boolean;
     }
   | { type: 'parse-failed'; error: string }
@@ -59,6 +68,10 @@ const initialState: ImportPreviewState = {
   includeBalanceColumn: false,
   categories: null,
   filename: null,
+  previewLabel: null,
+  importSource: null,
+  periodFrom: null,
+  periodTo: null,
   error: null,
   bankAccountId: undefined,
   usingGenericProfile: false,
@@ -78,6 +91,10 @@ function importPreviewReducer(
         includeBalanceColumn: false,
         categories: null,
         filename: null,
+        previewLabel: null,
+        importSource: null,
+        periodFrom: null,
+        periodTo: null,
         usingGenericProfile: false,
       };
     case 'parse-succeeded': {
@@ -91,6 +108,10 @@ function importPreviewReducer(
         includeBalanceColumn: previewMeta.includeBalanceColumn,
         categories: action.categories,
         filename: action.filename,
+        previewLabel: action.previewLabel ?? action.filename,
+        importSource: action.importSource ?? 'file',
+        periodFrom: action.periodFrom ?? null,
+        periodTo: action.periodTo ?? null,
         usingGenericProfile: action.usingGenericProfile,
       };
     }
@@ -105,6 +126,10 @@ function importPreviewReducer(
         includeBalanceColumn: false,
         categories: null,
         filename: null,
+        previewLabel: null,
+        importSource: null,
+        periodFrom: null,
+        periodTo: null,
         error: null,
         usingGenericProfile: false,
       };

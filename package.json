@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -14,7 +15,9 @@
     "db:push": "drizzle-kit push",
     "db:reset": "tsx scripts/reset-database.ts",
     "db:seed": "tsx scripts/seed-database.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "bank:connect": "tsx scripts/bank-connect.ts",
+    "bank:fetch": "tsx scripts/bank-fetch.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

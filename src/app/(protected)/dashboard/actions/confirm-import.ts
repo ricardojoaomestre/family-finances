@@ -1,43 +1,29 @@
 'use server';
 
-import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { auth } from '@/auth';
-import { db } from '@/db';
-import {
-  importSkippedRows,
-  imports,
-  notes,
-  type ImportStatus,
-  transactions,
-} from '@/db/schema';
 import type { ParsedImportRow } from '@/app/(protected)/dashboard/actions/import-file';
-import { matchImportRowsForConfirm } from '@/app/(protected)/dashboard/actions/match-import-rows-for-confirm';
 import { getBankAccountForActiveHousehold } from '@/lib/bank-accounts/get-bank-account';
-import { getActiveCategoriesForImport } from '@/lib/categories/get-active-categories-for-import';
-import { formatDbError } from '@/lib/db/format-db-error';
-import {
-  classifyImportRows,
-  formatTransactionValueForKey,
-  getSkippedRowReason,
-  isImportableWithOverride,
-} from '@/lib/file-import';
-import { getExistingDuplicateKeys } from '@/lib/file-import/get-existing-duplicate-keys';
+import type { ImportSource } from '@/db/schema';
 import { getActiveHouseholdId } from '@/lib/household/active-household';
-import { resolveImportRowCategory } from '@/lib/notes/resolve-import-row-category';
+import { isApiImportConfirmInput } from '@/lib/imports/validate-import-period';
+import { persistImportRows } from '@/lib/imports/persist-import-rows';
 
 export type ConfirmImportInput = {
-  filename: string;
+  filename?: string | null;
   bankAccountId: string;
   rows: ParsedImportRow[];
+  source?: ImportSource;
+  periodFrom?: string | null;
+  periodTo?: string | null;
 };
 
 export type ConfirmImportResult =
   | {
       ok: true;
       importId: string;
-      status: ImportStatus;
+      status: 'completed' | 'partial' | 'failed';
       importedCount: number;
       skippedCount: number;
     }
@@ -58,8 +44,10 @@ export async function confirmImport(
     return { ok: false, error: 'No active household selected.' };
   }
 
-  const filename = input.filename?.trim();
-  if (!filename) {
+  const source = input.source ?? 'file';
+  const filename = input.filename?.trim() || null;
+
+  if (!isApiImportConfirmInput({ source }) && !filename) {
     return { ok: false, error: 'Filename is required.' };
   }
 
@@ -73,175 +61,26 @@ export async function confirmImport(
     return { ok: false, error: 'A valid bank account is required.' };
   }
 
-  const bankAccountId = bankAccount.id;
-  const existingKeys = await getExistingDuplicateKeys(bankAccountId);
-  const serverRows = await matchImportRowsForConfirm(input.rows, bankAccountId);
-  const classifiedRows = classifyImportRows(
-    input.rows,
-    existingKeys,
-    bankAccountId,
-  );
-  const importableRows = classifiedRows
-    .map((classified, index) => ({
-      classified,
-      clientRow: input.rows[index]!,
-      serverRow: serverRows[index]!,
-    }))
-    .filter(({ classified, clientRow }) =>
-      isImportableWithOverride(classified, clientRow.duplicate),
-    );
-  const skippedRows = classifiedRows
-    .map((classified, rowIndex) => ({
-      classified,
-      rowIndex,
-      clientRow: input.rows[rowIndex]!,
-    }))
-    .filter(
-      ({ classified, clientRow }) =>
-        !isImportableWithOverride(classified, clientRow.duplicate),
-    );
+  const result = await persistImportRows({
+    householdId,
+    userId: session.user.id,
+    bankAccountId: bankAccount.id,
+    rows: input.rows,
+    filename,
+    source,
+    periodFrom: input.periodFrom ?? null,
+    periodTo: input.periodTo ?? null,
+  });
 
-  const skippedCount = skippedRows.length;
-  const status: ImportStatus =
-    skippedCount === 0 ? 'completed' : 'partial';
-
-  const importId = crypto.randomUUID();
-  const activeCategories = await getActiveCategoriesForImport();
-  const activeCategoryIds = new Set(activeCategories.map((category) => category.id));
-  const noteIdsToArchive = new Set<string>();
-
-  const resolvedImportableRows = importableRows.map(
-    ({ classified, clientRow, serverRow }) => {
-      const resolved = resolveImportRowCategory(clientRow, serverRow);
-
-      if (resolved.archiveNoteId) {
-        noteIdsToArchive.add(resolved.archiveNoteId);
-      }
-
-      return {
-        classified: {
-          ...classified,
-          row: {
-            ...classified.row,
-            categoryId: resolved.categoryId,
-          },
-        },
-      };
-    },
-  );
-
-  for (const { classified } of resolvedImportableRows) {
-    const { row } = classified;
-    if (row.categoryId !== null && !activeCategoryIds.has(row.categoryId)) {
-      return {
-        ok: false,
-        error:
-          'One or more selected categories are no longer available. Review categories and try again.',
-      };
-    }
-  }
-
-  try {
-    await db.insert(imports).values({
-      id: importId,
-      householdId,
-      filename,
-      rowCount: resolvedImportableRows.length,
-      skippedCount,
-      userId: session.user.id,
-      status,
-      bankAccountId,
-    });
-
-    if (resolvedImportableRows.length > 0) {
-      await db.insert(transactions).values(
-        resolvedImportableRows.map(({ classified }) => {
-          const { row } = classified;
-          const description = row.description.trim();
-
-          return {
-            householdId,
-            date: new Date(row.date!),
-            description,
-            categoryId: row.categoryId,
-            value: formatTransactionValueForKey(row.value!),
-            balance:
-              row.balance != null && Number.isFinite(row.balance)
-                ? formatTransactionValueForKey(row.balance)
-                : null,
-            importId,
-            bankAccountId,
-          };
-        }),
-      );
-    }
-
-    if (skippedRows.length > 0) {
-      await db.insert(importSkippedRows).values(
-        skippedRows.map(({ classified, rowIndex }) => {
-          const { row, validation } = classified;
-          const reason = getSkippedRowReason(classified);
-
-          return {
-            importId,
-            rowIndex,
-            date: row.date ? new Date(row.date) : null,
-            description: row.description,
-            value:
-              row.value !== null && Number.isFinite(row.value)
-                ? formatTransactionValueForKey(row.value)
-                : null,
-            balance:
-              row.balance != null && Number.isFinite(row.balance)
-                ? formatTransactionValueForKey(row.balance)
-                : null,
-            reason,
-            errors: !validation.valid
-              ? JSON.stringify(validation.errors)
-              : null,
-          };
-        }),
-      );
-    }
-
-    if (noteIdsToArchive.size > 0) {
-      const now = new Date();
-      await db
-        .update(notes)
-        .set({ archivedAt: now, updatedAt: now })
-        .where(
-          and(
-            eq(notes.householdId, householdId),
-            inArray(notes.id, [...noteIdsToArchive]),
-            isNull(notes.archivedAt),
-          ),
-        );
-    }
-  } catch (error) {
-    try {
-      await db.delete(imports).where(eq(imports.id, importId));
-    } catch {
-      // Best-effort rollback if import row was created before transactions failed.
-    }
-
-    console.error('[confirmImport]', error);
-
-    return {
-      ok: false,
-      error: formatDbError(error, 'Could not save import'),
-    };
+  if (!result.ok) {
+    return result;
   }
 
   revalidatePath('/imports');
   revalidatePath('/report/new');
   revalidatePath('/reports');
   revalidatePath('/notes');
+  revalidatePath('/transactions');
 
-  return {
-    ok: true,
-    importId,
-    status,
-    importedCount: resolvedImportableRows.length,
-    skippedCount,
-  };
+  return result;
 }

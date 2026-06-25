@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { ProtectedShell } from '@/app/(protected)/components/protected-shell';
 import { ensureActiveHousehold } from '@/lib/household/ensure-active-household';
 import { getHouseholdsForUser } from '@/lib/household/get-households-for-user';
+import { isBankAggregatorConfigured } from '@/lib/bank/config';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -23,6 +24,7 @@ export default async function ProtectedLayout({
 
   const activeHouseholdId = await ensureActiveHousehold(session.user.id);
   const households = await getHouseholdsForUser(session.user.id);
+  const bankApiEnabled = isBankAggregatorConfigured();
 
   return (
     <ProtectedShell
@@ -31,6 +33,7 @@ export default async function ProtectedLayout({
       userImage={session.user.image}
       households={households}
       activeHouseholdId={activeHouseholdId}
+      bankApiEnabled={bankApiEnabled}
     >
       {children}
     </ProtectedShell>

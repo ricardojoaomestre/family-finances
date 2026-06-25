@@ -32,7 +32,7 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <SetPageTitle title={importRecord.filename} />
+      <SetPageTitle title={importRecord.label} />
       <Link
         href="/imports"
         className="text-sm text-muted-foreground transition-colors hover:text-foreground"

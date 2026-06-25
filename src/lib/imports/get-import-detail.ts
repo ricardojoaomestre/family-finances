@@ -11,11 +11,14 @@ import {
   transactions,
   users,
 } from '@/db/schema';
+import { formatImportJobLabel } from '@/lib/imports/format-import-job-label';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
 
 export type ImportDetailRecord = {
   id: string;
-  filename: string;
+  label: string;
+  filename: string | null;
+  source: string;
   importedAt: Date;
   rowCount: number;
   skippedCount: number | null;
@@ -73,6 +76,9 @@ export async function getImportDetail(id: string): Promise<ImportDetail | null> 
     .select({
       id: imports.id,
       filename: imports.filename,
+      source: imports.source,
+      periodFrom: imports.periodFrom,
+      periodTo: imports.periodTo,
       importedAt: imports.importedAt,
       rowCount: imports.rowCount,
       skippedCount: imports.skippedCount,
@@ -125,7 +131,15 @@ export async function getImportDetail(id: string): Promise<ImportDetail | null> 
   ]);
 
   return {
-    record,
+    record: {
+      ...record,
+      label: formatImportJobLabel({
+        source: record.source,
+        filename: record.filename,
+        periodFrom: record.periodFrom,
+        periodTo: record.periodTo,
+      }),
+    },
     transactions: importTransactions,
     skippedRows: skippedRowRecords.map((row) => ({
       ...row,

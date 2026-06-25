@@ -291,6 +291,78 @@ export const importSkippedRowReasonEnum = [
 export type ImportSkippedRowReason =
   (typeof importSkippedRowReasonEnum)[number];
 
+export const importSourceEnum = ['file', 'api'] as const;
+export type ImportSource = (typeof importSourceEnum)[number];
+
+export const bankConnectionStatusEnum = [
+  'linked',
+  'expired',
+  'failed',
+] as const;
+export type BankConnectionStatus =
+  (typeof bankConnectionStatusEnum)[number];
+
+export const bankSyncStatusEnum = [
+  'success',
+  'failed',
+  'rate_limited',
+  'session_expired',
+] as const;
+export type BankSyncStatus = (typeof bankSyncStatusEnum)[number];
+
+export const bankConnections = pgTable('bank_connection', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  householdId: text('householdId')
+    .notNull()
+    .references(() => households.id, { onDelete: 'cascade' }),
+  providerId: text('providerId').notNull(),
+  externalSessionId: text('externalSessionId').notNull(),
+  institutionId: text('institutionId'),
+  connectedByUserId: text('connectedByUserId').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  accessValidUntil: timestamp('accessValidUntil', { mode: 'date' }),
+  status: text('status')
+    .$type<BankConnectionStatus>()
+    .notNull()
+    .default('linked'),
+  createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+export const bankAccountApiLinks = pgTable(
+  'bank_account_api_link',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    bankAccountId: text('bankAccountId')
+      .notNull()
+      .references(() => bankAccounts.id, { onDelete: 'cascade' }),
+    connectionId: text('connectionId')
+      .notNull()
+      .references(() => bankConnections.id, { onDelete: 'cascade' }),
+    externalAccountId: text('externalAccountId').notNull(),
+    accountIban: text('accountIban'),
+    accountName: text('accountName'),
+    linkedAt: timestamp('linkedAt', { mode: 'date' }).notNull().defaultNow(),
+    lastSyncedAt: timestamp('lastSyncedAt', { mode: 'date' }),
+    lastSyncStatus: text('lastSyncStatus').$type<BankSyncStatus>(),
+    lastSyncError: text('lastSyncError'),
+    lastSyncImportId: text('lastSyncImportId'),
+    syncsTodayCount: integer('syncsTodayCount').notNull().default(0),
+    syncsTodayDate: text('syncsTodayDate'),
+    syncInProgressAt: timestamp('syncInProgressAt', { mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('bank_account_api_link_bank_account_unique').on(
+      table.bankAccountId,
+    ),
+  ],
+);
+
 export const imports = pgTable('import', {
   id: text('id')
     .primaryKey()
@@ -298,7 +370,10 @@ export const imports = pgTable('import', {
   householdId: text('householdId')
     .notNull()
     .references(() => households.id, { onDelete: 'cascade' }),
-  filename: text('filename').notNull(),
+  filename: text('filename'),
+  source: text('source').$type<ImportSource>().notNull().default('file'),
+  periodFrom: text('periodFrom'),
+  periodTo: text('periodTo'),
   importedAt: timestamp('importedAt', { mode: 'date' })
     .notNull()
     .defaultNow(),
@@ -413,6 +488,7 @@ export const householdsRelations = relations(households, ({ one, many }) => ({
   members: many(householdMembers),
   invites: many(householdInvites),
   bankAccounts: many(bankAccounts, { relationName: 'householdBankAccounts' }),
+  bankConnections: many(bankConnections),
   categories: many(categories),
   budgets: many(budgets),
   imports: many(imports),
@@ -435,7 +511,40 @@ export const bankAccountsRelations = relations(bankAccounts, ({ one, many }) => 
   imports: many(imports),
   notes: many(notes),
   transactions: many(transactions),
+  apiLink: one(bankAccountApiLinks, {
+    fields: [bankAccounts.id],
+    references: [bankAccountApiLinks.bankAccountId],
+  }),
 }));
+
+export const bankConnectionsRelations = relations(
+  bankConnections,
+  ({ one, many }) => ({
+    household: one(households, {
+      fields: [bankConnections.householdId],
+      references: [households.id],
+    }),
+    connectedBy: one(users, {
+      fields: [bankConnections.connectedByUserId],
+      references: [users.id],
+    }),
+    apiLinks: many(bankAccountApiLinks),
+  }),
+);
+
+export const bankAccountApiLinksRelations = relations(
+  bankAccountApiLinks,
+  ({ one }) => ({
+    bankAccount: one(bankAccounts, {
+      fields: [bankAccountApiLinks.bankAccountId],
+      references: [bankAccounts.id],
+    }),
+    connection: one(bankConnections, {
+      fields: [bankAccountApiLinks.connectionId],
+      references: [bankConnections.id],
+    }),
+  }),
+);
 
 export const householdMembersRelations = relations(
   householdMembers,

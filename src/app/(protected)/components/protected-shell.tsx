@@ -1,6 +1,7 @@
 'use client';
 
 import { AppSidebar } from '@/app/(protected)/components/app-sidebar';
+import { BankSyncOnLoad } from '@/app/(protected)/components/bank-sync-on-load';
 import {
   ProtectedPageProvider,
   ProtectedPageReset,
@@ -16,6 +17,7 @@ type ProtectedShellProps = {
   userImage: string | null | undefined;
   households: UserHousehold[];
   activeHouseholdId: string;
+  bankApiEnabled?: boolean;
 };
 
 export function ProtectedShell({
@@ -25,6 +27,7 @@ export function ProtectedShell({
   userImage,
   households,
   activeHouseholdId,
+  bankApiEnabled = false,
 }: ProtectedShellProps) {
   return (
     <ProtectedPageProvider>
@@ -38,6 +41,7 @@ export function ProtectedShell({
         />
         <SidebarInset>
           <ProtectedTopBar />
+          {bankApiEnabled ? <BankSyncOnLoad /> : null}
           <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col">
             <ProtectedPageReset />
             {children}

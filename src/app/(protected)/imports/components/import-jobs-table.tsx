@@ -55,15 +55,15 @@ const columns: ColumnDef<ImportJobRow>[] = [
     },
   },
   {
-    accessorKey: 'filename',
-    header: 'Filename',
+    accessorKey: 'label',
+    header: 'Import',
     meta: {
       headerClassName: 'hidden w-full md:table-cell',
       cellClassName: 'hidden w-full md:table-cell',
     },
     cell: ({ row }) => (
       <span className="block truncate text-muted-foreground">
-        {row.original.filename}
+        {row.original.label}
       </span>
     ),
   },
@@ -114,7 +114,7 @@ export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps)
                 {job.rowCount === 1 ? 'row' : 'rows'}
               </p>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                {job.filename}
+                {job.label}
               </p>
             </div>
             <Badge variant={importStatusBadgeVariant(job.status)}>

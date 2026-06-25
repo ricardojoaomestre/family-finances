@@ -1,15 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
 import {
   createBankAccount,
   deleteBankAccount,
   updateBankAccount,
 } from '@/app/(protected)/settings/accounts/actions/bank-account-actions';
+import {
+  syncBankAccountNow,
+  unlinkBankAccountApi,
+} from '@/app/(protected)/settings/accounts/actions/bank-connection-actions';
 import { AccountsTable } from '@/app/(protected)/settings/accounts/components/accounts-table';
 import { BankAccountFormSheet } from '@/app/(protected)/settings/accounts/components/bank-account-form-sheet';
+import { BankConnectSheet } from '@/app/(protected)/settings/accounts/components/bank-connect-sheet';
 import { PrimaryOverflowActions } from '@/app/(protected)/components/primary-overflow-actions';
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import {
@@ -23,20 +28,47 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { BankAccountRow } from '@/lib/bank-accounts/get-bank-accounts';
+import type { BankAccountApiLinkRow } from '@/lib/bank-connections/types';
 
 type AccountsManagerProps = {
   accounts: BankAccountRow[];
+  apiLinks: BankAccountApiLinkRow[];
+  bankApiEnabled: boolean;
+  pendingBankAccountId?: string | null;
+  pendingConnectionId?: string | null;
 };
 
-export function AccountsManager({ accounts }: AccountsManagerProps) {
+export function AccountsManager({
+  accounts,
+  apiLinks,
+  bankApiEnabled,
+  pendingBankAccountId = null,
+  pendingConnectionId = null,
+}: AccountsManagerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const shouldOpenPendingConnect = Boolean(
+    pendingBankAccountId && pendingConnectionId,
+  );
+  const [connectOpen, setConnectOpen] = useState(shouldOpenPendingConnect);
+  const [connectAccount, setConnectAccount] = useState<BankAccountRow | null>(
+    () =>
+      shouldOpenPendingConnect
+        ? (accounts.find((row) => row.id === pendingBankAccountId) ?? null)
+        : null,
+  );
   const [editingAccount, setEditingAccount] = useState<BankAccountRow | null>(
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<BankAccountRow | null>(null);
+  const [syncingAccountId, setSyncingAccountId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const apiLinksByAccountId = useMemo(
+    () => Object.fromEntries(apiLinks.map((link) => [link.bankAccountId, link])),
+    [apiLinks],
+  );
 
   function openCreateSheet() {
     setEditingAccount(null);
@@ -56,6 +88,16 @@ export function AccountsManager({ accounts }: AccountsManagerProps) {
     }
   }
 
+  function openConnectSheet(account: BankAccountRow) {
+    setConnectAccount(account);
+    setConnectOpen(true);
+  }
+
+  function handleConnectCompleted() {
+    router.replace('/settings/accounts');
+    router.refresh();
+  }
+
   function runDelete() {
     if (!deleteTarget) {
       return;
@@ -71,6 +113,34 @@ export function AccountsManager({ accounts }: AccountsManagerProps) {
       }
 
       setDeleteTarget(null);
+      router.refresh();
+    });
+  }
+
+  function runUnlink(account: BankAccountRow) {
+    setActionError(null);
+    startTransition(async () => {
+      const result = await unlinkBankAccountApi(account.id);
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function runSync(account: BankAccountRow) {
+    setActionError(null);
+    setSyncingAccountId(account.id);
+    startTransition(async () => {
+      const result = await syncBankAccountNow(account.id);
+      setSyncingAccountId(null);
+
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
       router.refresh();
     });
   }
@@ -96,8 +166,14 @@ export function AccountsManager({ accounts }: AccountsManagerProps) {
         ) : null}
         <AccountsTable
           accounts={accounts}
+          apiLinksByAccountId={apiLinksByAccountId}
+          bankApiEnabled={bankApiEnabled}
           onEdit={openEditSheet}
           onDelete={setDeleteTarget}
+          onConnect={openConnectSheet}
+          onUnlink={runUnlink}
+          onSync={runSync}
+          syncingAccountId={syncingAccountId}
           isPending={isPending}
         />
       </div>
@@ -114,6 +190,14 @@ export function AccountsManager({ accounts }: AccountsManagerProps) {
 
           return createBankAccount(input);
         }}
+      />
+
+      <BankConnectSheet
+        account={connectAccount}
+        open={connectOpen}
+        onOpenChange={setConnectOpen}
+        pendingConnectionId={pendingConnectionId}
+        onCompleted={handleConnectCompleted}
       />
 
       <AlertDialog

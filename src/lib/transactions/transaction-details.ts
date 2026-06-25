@@ -15,7 +15,7 @@ export type TransactionDetails = {
   categoryColor: CategoryColorToken | null;
   categoryIcon: CategoryIconName | null;
   importId: string;
-  importFilename: string;
+  importFilename: string | null;
   importStatus: ImportStatus;
   importImportedAt: string;
   insertedAt: string | null;
