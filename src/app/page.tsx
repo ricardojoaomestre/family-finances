@@ -5,6 +5,7 @@ import {
   TrendingUpIcon,
   UploadIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { auth, signIn } from '@/auth';
@@ -110,7 +111,7 @@ export default async function Home({
         </p>
       </section>
 
-      <section className="mx-auto grid w-full max-w-5xl gap-4 px-6 pb-20 sm:grid-cols-3">
+      <section className="mx-auto grid w-full max-w-5xl gap-4 px-6 pb-12 sm:grid-cols-3">
         {features.map((feature) => (
           <Card key={feature.title} className="bg-card/60 backdrop-blur">
             <CardHeader>
@@ -123,6 +124,16 @@ export default async function Home({
           </Card>
         ))}
       </section>
+
+      <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-6 pb-10 text-sm text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground">
+          Privacy
+        </Link>
+        <span aria-hidden>·</span>
+        <Link href="/terms" className="hover:text-foreground">
+          Terms
+        </Link>
+      </footer>
     </main>
   );
 }
