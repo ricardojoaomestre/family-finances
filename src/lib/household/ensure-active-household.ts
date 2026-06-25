@@ -3,7 +3,6 @@ import { asc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { householdMembers, households, users } from '@/db/schema';
-import { seedDefaultBankAccountsForHousehold } from '@/lib/bank-accounts/seed-default-bank-accounts';
 import { seedDefaultCategoriesForHousehold } from '@/lib/household/default-categories';
 import { pickActiveHouseholdId } from '@/lib/household/pick-active-household-id';
 
@@ -56,7 +55,6 @@ export const ensureActiveHousehold = cache(async (userId: string): Promise<strin
     });
 
     await seedDefaultCategoriesForHousehold(householdId);
-    await seedDefaultBankAccountsForHousehold(householdId);
 
     await db
       .update(users)
