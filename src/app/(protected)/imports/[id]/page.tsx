@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { SetPageTitle } from '@/app/(protected)/components/protected-page-context';
 import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/import-detail-tabs';
 import { Badge } from '@/components/ui/badge';
+import { getCategories } from '@/lib/categories/get-categories';
+import { getTopUsedCategories } from '@/lib/categories/get-top-used-categories';
 import { getImportDetail } from '@/lib/imports/get-import-detail';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
@@ -15,11 +17,26 @@ type ImportDetailPageProps = {
 export default async function ImportDetailPage({ params }: ImportDetailPageProps) {
   const { id } = await params;
 
-  const detail = await getImportDetail(id);
+  const [detail, categoryRows, topUsedCategories] = await Promise.all([
+    getImportDetail(id),
+    getCategories(),
+    getTopUsedCategories(),
+  ]);
 
   if (!detail) {
     notFound();
   }
+
+  const categorySelectorItems = categoryRows
+    .filter((category) => category.active)
+    .map(({ id: categoryId, name, color, icon, type, active }) => ({
+      id: categoryId,
+      name,
+      color,
+      icon,
+      type,
+      active,
+    }));
 
   const {
     record: importRecord,
@@ -97,6 +114,9 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         transactions={importTransactions}
         skippedCount={importRecord.skippedCount}
         importStatus={importRecord.status}
+        categories={categorySelectorItems}
+        topUsedCategories={topUsedCategories}
+        bankAccountLabel={importRecord.bankAccountLabel}
       />
     </div>
   );

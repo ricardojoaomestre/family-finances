@@ -33,6 +33,7 @@ export type ImportDetailTransaction = {
   id: string;
   date: Date;
   description: string;
+  categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
   categoryIcon: string | null;
@@ -104,6 +105,7 @@ export async function getImportDetail(id: string): Promise<ImportDetail | null> 
         id: transactions.id,
         date: transactions.date,
         description: transactions.description,
+        categoryId: transactions.categoryId,
         categoryName: categories.name,
         categoryColor: categories.color,
         categoryIcon: categories.icon,

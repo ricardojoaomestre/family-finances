@@ -25,6 +25,7 @@ export type ImportedSkippedTransaction = {
   id: string;
   date: Date;
   description: string;
+  categoryId: null;
   categoryName: null;
   categoryColor: null;
   categoryIcon: null;
@@ -189,6 +190,7 @@ export async function importSkippedImportRow(input: {
         id: transaction.id,
         date: transaction.date,
         description: transaction.description,
+        categoryId: null,
         categoryName: null,
         categoryColor: null,
         categoryIcon: null,

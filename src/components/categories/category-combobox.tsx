@@ -29,6 +29,10 @@ type CategoryComboboxProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  autoFocusSearch?: boolean;
   'aria-label'?: string;
   'aria-invalid'?: boolean;
 };
@@ -56,6 +60,10 @@ export function CategoryCombobox({
   placeholder = 'Select category',
   disabled = false,
   className,
+  open,
+  defaultOpen,
+  onOpenChange,
+  autoFocusSearch,
   'aria-label': ariaLabel,
   'aria-invalid': ariaInvalid,
 }: CategoryComboboxProps) {
@@ -81,6 +89,10 @@ export function CategoryCombobox({
       emptyMessage="No category found."
       disabled={disabled}
       className={cn('w-full', className)}
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+      autoFocusSearch={autoFocusSearch}
       aria-label={ariaLabel}
       aria-invalid={ariaInvalid}
     />

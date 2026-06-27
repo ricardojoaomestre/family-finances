@@ -36,6 +36,10 @@ export type ComboboxProps = {
   disabled?: boolean;
   className?: string;
   size?: 'sm' | 'default';
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  autoFocusSearch?: boolean;
   'aria-label'?: string;
   'aria-invalid'?: boolean;
 };
@@ -51,15 +55,28 @@ export function Combobox({
   disabled = false,
   className,
   size = 'default',
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
+  autoFocusSearch = false,
   'aria-label': ariaLabel,
   'aria-invalid': ariaInvalid,
 }: ComboboxProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+  const open = openProp ?? uncontrolledOpen;
+
+  function setOpen(nextOpen: boolean) {
+    onOpenChange?.(nextOpen);
+
+    if (openProp === undefined) {
+      setUncontrolledOpen(nextOpen);
+    }
+  }
 
   const selected = options.find((option) => option.value === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={autoFocusSearch}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -87,6 +104,23 @@ export function Combobox({
       <PopoverContent
         className="w-(--radix-popover-trigger-width) p-0"
         align="start"
+        onOpenAutoFocus={(event) => {
+          if (!autoFocusSearch) {
+            return;
+          }
+
+          event.preventDefault();
+          const content = event.currentTarget;
+
+          if (!(content instanceof HTMLElement)) {
+            return;
+          }
+
+          const input = content.querySelector(
+            '[data-slot="command-input"]',
+          ) as HTMLInputElement | null;
+          input?.focus();
+        }}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />

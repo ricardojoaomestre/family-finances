@@ -26,6 +26,7 @@ export type ImportTransactionRow = {
   id: string;
   date: Date;
   description: string;
+  categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
   categoryIcon: string | null;

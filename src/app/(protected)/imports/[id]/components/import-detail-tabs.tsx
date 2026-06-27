@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 
+import { CategorizeUncategorizedDialog } from '@/app/(protected)/imports/[id]/components/categorize-uncategorized-dialog';
 import { deleteImportTransactions } from '@/app/(protected)/imports/[id]/actions/delete-import-transactions';
 import { importSkippedImportRow } from '@/app/(protected)/imports/[id]/actions/import-skipped-import-row';
 import { DUPLICATE_IN_FILE_MESSAGE } from '@/lib/imports/duplicate-in-file-message';
@@ -31,8 +32,11 @@ import {
   EmptyHeader,
 } from '@/components/ui/empty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import type { CategorySelectorItem } from '@/lib/categories/filter-category-selector-items';
 import type { ImportStatus } from '@/db/schema';
+import type { UpdatedTransactionCategory } from '@/app/(protected)/transactions/actions/update-transaction-category';
 
 type ImportDetailTabsProps = {
   importId: string;
@@ -40,6 +44,9 @@ type ImportDetailTabsProps = {
   transactions: ImportTransactionRow[];
   skippedCount: number | null;
   importStatus: ImportStatus;
+  categories: CategorySelectorItem[];
+  topUsedCategories: CategorySelectorItem[];
+  bankAccountLabel: string;
 };
 
 function getMissingRowsEmptyMessage(
@@ -59,6 +66,9 @@ export function ImportDetailTabs({
   transactions: initialTransactions,
   skippedCount: initialSkippedCount,
   importStatus,
+  categories,
+  topUsedCategories,
+  bankAccountLabel,
 }: ImportDetailTabsProps) {
   const router = useRouter();
   const [, startRefresh] = useTransition();
@@ -81,6 +91,13 @@ export function ImportDetailTabs({
   );
   const [isDeletingTransactions, setIsDeletingTransactions] = useState(false);
   const [transactionsSelectionKey, setTransactionsSelectionKey] = useState(0);
+  const [categorizeOpen, setCategorizeOpen] = useState(false);
+  const [categorizeSessionKey, setCategorizeSessionKey] = useState(0);
+
+  const uncategorizedCount = useMemo(
+    () => transactions.filter((transaction) => transaction.categoryId == null).length,
+    [transactions],
+  );
 
   const missingRowsTabCount = skippedCount ?? skippedRows.length;
 
@@ -203,6 +220,36 @@ export function ImportDetailTabs({
     [importId, refreshPage],
   );
 
+  const handleCategorySaved = useCallback(
+    (transactionId: string, category: UpdatedTransactionCategory) => {
+      setTransactions((current) =>
+        current.map((transaction) =>
+          transaction.id === transactionId
+            ? {
+                ...transaction,
+                categoryId: category.id,
+                categoryName: category.name,
+                categoryColor: category.color,
+                categoryIcon: category.icon,
+              }
+            : transaction,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleCategorizeDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setCategorizeOpen(open);
+
+      if (!open) {
+        refreshPage();
+      }
+    },
+    [refreshPage],
+  );
+
   return (
     <TooltipProvider>
       {actionError ? (
@@ -223,14 +270,29 @@ export function ImportDetailTabs({
           setActiveTab(nextTab);
         }}
       >
-        <TabsList>
-          <TabsTrigger value="missing">
-            Missing rows ({missingRowsTabCount})
-          </TabsTrigger>
-          <TabsTrigger value="transactions">
-            Transactions ({transactions.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="missing">
+              Missing rows ({missingRowsTabCount})
+            </TabsTrigger>
+            <TabsTrigger value="transactions">
+              Transactions ({transactions.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {uncategorizedCount > 0 ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setCategorizeSessionKey((current) => current + 1);
+                setCategorizeOpen(true);
+              }}
+            >
+              Categorize uncategorized ({uncategorizedCount})
+            </Button>
+          ) : null}
+        </div>
 
         <TabsContent value="missing">
           {skippedRows.length === 0 ? (
@@ -328,6 +390,17 @@ export function ImportDetailTabs({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CategorizeUncategorizedDialog
+        key={categorizeSessionKey}
+        open={categorizeOpen}
+        onOpenChange={handleCategorizeDialogOpenChange}
+        transactions={transactions}
+        categories={categories}
+        topUsedCategories={topUsedCategories}
+        bankAccountLabel={bankAccountLabel}
+        onCategorySaved={handleCategorySaved}
+      />
     </TooltipProvider>
   );
 }
