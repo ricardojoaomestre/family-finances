@@ -45,7 +45,6 @@ type ImportDetailTabsProps = {
   skippedCount: number | null;
   importStatus: ImportStatus;
   categories: CategorySelectorItem[];
-  topUsedCategories: CategorySelectorItem[];
   bankAccountLabel: string;
 };
 
@@ -67,7 +66,6 @@ export function ImportDetailTabs({
   skippedCount: initialSkippedCount,
   importStatus,
   categories,
-  topUsedCategories,
   bankAccountLabel,
 }: ImportDetailTabsProps) {
   const router = useRouter();
@@ -397,7 +395,6 @@ export function ImportDetailTabs({
         onOpenChange={handleCategorizeDialogOpenChange}
         transactions={transactions}
         categories={categories}
-        topUsedCategories={topUsedCategories}
         bankAccountLabel={bankAccountLabel}
         onCategorySaved={handleCategorySaved}
       />

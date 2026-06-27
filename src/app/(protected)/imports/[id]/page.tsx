@@ -5,7 +5,6 @@ import { SetPageTitle } from '@/app/(protected)/components/protected-page-contex
 import { ImportDetailTabs } from '@/app/(protected)/imports/[id]/components/import-detail-tabs';
 import { Badge } from '@/components/ui/badge';
 import { getCategories } from '@/lib/categories/get-categories';
-import { getTopUsedCategories } from '@/lib/categories/get-top-used-categories';
 import { getImportDetail } from '@/lib/imports/get-import-detail';
 import { formatDisplayDate, formatImportStatus } from '@/lib/formatters';
 import { importStatusBadgeVariant } from '@/lib/status-badge';
@@ -17,10 +16,9 @@ type ImportDetailPageProps = {
 export default async function ImportDetailPage({ params }: ImportDetailPageProps) {
   const { id } = await params;
 
-  const [detail, categoryRows, topUsedCategories] = await Promise.all([
+  const [detail, categoryRows] = await Promise.all([
     getImportDetail(id),
     getCategories(),
-    getTopUsedCategories(),
   ]);
 
   if (!detail) {
@@ -115,7 +113,6 @@ export default async function ImportDetailPage({ params }: ImportDetailPageProps
         skippedCount={importRecord.skippedCount}
         importStatus={importRecord.status}
         categories={categorySelectorItems}
-        topUsedCategories={topUsedCategories}
         bankAccountLabel={importRecord.bankAccountLabel}
       />
     </div>

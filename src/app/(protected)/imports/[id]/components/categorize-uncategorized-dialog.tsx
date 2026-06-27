@@ -35,7 +35,6 @@ type CategorizeUncategorizedDialogProps = {
   onOpenChange: (open: boolean) => void;
   transactions: ImportTransactionRow[];
   categories: CategorySelectorItem[];
-  topUsedCategories: CategorySelectorItem[];
   bankAccountLabel: string;
   onCategorySaved: (
     transactionId: string,
@@ -68,7 +67,6 @@ export function CategorizeUncategorizedDialog({
   onOpenChange,
   transactions,
   categories: initialCategories,
-  topUsedCategories,
   bankAccountLabel,
   onCategorySaved,
 }: CategorizeUncategorizedDialogProps) {
@@ -392,12 +390,12 @@ export function CategorizeUncategorizedDialog({
                     onValueChange={handleCategoryChange}
                     onConfirm={handleSaveAndAdvance}
                     categories={categories}
-                    topUsedCategories={topUsedCategories}
                     filter={categoryFilter}
                     disabled={isSaving}
                     error={categoryError}
                     onCreateCategory={handleOpenCreateCategory}
                     focusSearch
+                    searchFocusKey={currentRow.id}
                   />
 
                   {formError ? (

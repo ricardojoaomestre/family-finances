@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Plus } from 'lucide-react';
 
 import { CategoryIcon } from '@/components/categories/category-icon';
@@ -25,21 +25,13 @@ type CategorizeCategoryPickerProps = {
   onValueChange: (value: string) => void;
   onConfirm: (categoryId: string) => void;
   categories: readonly CategorySelectorItem[];
-  topUsedCategories: readonly CategorySelectorItem[];
   filter?: CategorySelectorFilter;
   disabled?: boolean;
   error?: string | null;
   onCreateCategory: () => void;
   focusSearch?: boolean;
+  searchFocusKey?: string;
 };
-
-function getQuickPickCategories(
-  topUsedCategories: readonly CategorySelectorItem[],
-  filter: CategorySelectorFilter | undefined,
-  limit: number,
-): CategorySelectorItem[] {
-  return filterCategorySelectorItems(topUsedCategories, filter).slice(0, limit);
-}
 
 function findCategoryByCommandValue(
   categories: readonly CategorySelectorItem[],
@@ -122,12 +114,12 @@ export function CategorizeCategoryPicker({
   onValueChange,
   onConfirm,
   categories,
-  topUsedCategories,
   filter,
   disabled = false,
   error,
   onCreateCategory,
   focusSearch = false,
+  searchFocusKey,
 }: CategorizeCategoryPickerProps) {
   const commandRef = useRef<HTMLDivElement>(null);
 
@@ -136,10 +128,20 @@ export function CategorizeCategoryPicker({
     [categories, filter],
   );
 
-  const quickPickCategories = useMemo(
-    () => getQuickPickCategories(topUsedCategories, filter, 3),
-    [filter, topUsedCategories],
-  );
+  useEffect(() => {
+    if (!focusSearch || disabled || !searchFocusKey) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const input = commandRef.current?.querySelector<HTMLInputElement>(
+        '[data-slot="command-input"]',
+      );
+      input?.focus();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [disabled, focusSearch, searchFocusKey]);
 
   function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (
@@ -168,29 +170,6 @@ export function CategorizeCategoryPicker({
   return (
     <Field data-invalid={Boolean(error)} className="flex min-h-0 flex-1 flex-col gap-3">
       <FieldLabel htmlFor="categorize-category-search">Category</FieldLabel>
-
-      {quickPickCategories.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {quickPickCategories.map((category) => {
-            const isSelected = value === category.id;
-
-            return (
-              <Button
-                key={category.id}
-                type="button"
-                variant={isSelected ? 'secondary' : 'outline'}
-                size="sm"
-                disabled={disabled}
-                className="h-8 max-w-full gap-1.5 px-2.5"
-                onClick={() => onValueChange(category.id)}
-              >
-                <CategoryIcon icon={category.icon} color={category.color} />
-                <span className="truncate">{category.name}</span>
-              </Button>
-            );
-          })}
-        </div>
-      ) : null}
 
       <div
         ref={commandRef}
