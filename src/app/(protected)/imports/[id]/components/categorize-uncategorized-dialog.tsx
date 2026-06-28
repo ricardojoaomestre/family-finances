@@ -107,17 +107,6 @@ export function CategorizeUncategorizedDialog({
     [queue],
   );
 
-  const categoryFilter = useMemo(() => {
-    if (!currentRow) {
-      return undefined;
-    }
-
-    return {
-      activeOnly: true,
-      types: categoryTypesForTransactionValue(currentRow.value),
-    };
-  }, [currentRow]);
-
   function advanceCursor() {
     setCursor((current) => {
       const next = current + 1;
@@ -390,7 +379,6 @@ export function CategorizeUncategorizedDialog({
                     onValueChange={handleCategoryChange}
                     onConfirm={handleSaveAndAdvance}
                     categories={categories}
-                    filter={categoryFilter}
                     disabled={isSaving}
                     error={categoryError}
                     onCreateCategory={handleOpenCreateCategory}
