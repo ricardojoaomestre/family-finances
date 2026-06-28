@@ -1,6 +1,7 @@
 'use server';
 
 import { getCategories } from '@/lib/categories/get-categories';
+import { toCategorySelectorItems } from '@/lib/categories/to-category-selector-items';
 import type { CategorySelectorItem } from '@/lib/categories/filter-category-selector-items';
 
 export async function getCategorySelectorItems(): Promise<
@@ -8,14 +9,5 @@ export async function getCategorySelectorItems(): Promise<
 > {
   const rows = await getCategories();
 
-  return rows
-    .filter((row) => row.active)
-    .map(({ id, name, color, icon, type, active }) => ({
-      id,
-      name,
-      color,
-      icon,
-      type,
-      active,
-    }));
+  return toCategorySelectorItems(rows);
 }

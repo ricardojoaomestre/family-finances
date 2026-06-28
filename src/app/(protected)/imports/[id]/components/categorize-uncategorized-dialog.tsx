@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 
 import { CategorizeCategoryPicker } from '@/app/(protected)/imports/[id]/components/categorize-category-picker';
 import { getCategorySelectorItems } from '@/app/(protected)/imports/[id]/actions/get-category-selector-items';
-import type { ImportTransactionRow } from '@/app/(protected)/imports/[id]/components/import-transactions-table';
+import type { CategorizeTransactionRow } from '@/lib/transactions/categorize-transaction-row';
 import {
   createCategory,
   type CategoryFormInput,
@@ -33,9 +33,9 @@ import { cn } from '@/lib/utils';
 type CategorizeUncategorizedDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  transactions: ImportTransactionRow[];
+  transactions: CategorizeTransactionRow[];
   categories: CategorySelectorItem[];
-  bankAccountLabel: string;
+  bankAccountLabel?: string;
   onCategorySaved: (
     transactionId: string,
     category: UpdatedTransactionCategory,
@@ -44,12 +44,12 @@ type CategorizeUncategorizedDialogProps = {
 
 type FlowPhase = 'categorizing' | 'summary';
 
-function isUncategorized(row: ImportTransactionRow): boolean {
+function isUncategorized(row: CategorizeTransactionRow): boolean {
   return row.categoryId == null;
 }
 
 function getSavedCategoryId(
-  row: ImportTransactionRow,
+  row: CategorizeTransactionRow,
   sessionAssignments: ReadonlyMap<string, string>,
 ): string | null {
   return sessionAssignments.get(row.id) ?? row.categoryId;
@@ -290,6 +290,9 @@ export function CategorizeUncategorizedDialog({
     ? categoryTypesForTransactionValue(currentRow.value)[0]
     : 'spending';
 
+  const resolvedBankAccountLabel =
+    currentRow?.bankAccountLabel ?? bankAccountLabel ?? '—';
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -367,7 +370,7 @@ export function CategorizeUncategorizedDialog({
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Account
                       </dt>
-                      <dd className="font-medium">{bankAccountLabel}</dd>
+                      <dd className="font-medium">{resolvedBankAccountLabel}</dd>
                     </div>
                   </dl>
                 </div>

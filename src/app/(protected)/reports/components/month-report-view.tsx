@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 
+import { CategorizeUncategorizedDialog } from '@/app/(protected)/imports/[id]/components/categorize-uncategorized-dialog';
+import { getUncategorizedTransactionsForReportPeriod } from '@/app/(protected)/reports/actions/get-uncategorized-transactions-for-period';
 import { MonthReportCategoryTotalsTable } from '@/app/(protected)/report/new/components/month-report-category-totals-table';
 import { MonthReportSummaryTable } from '@/app/(protected)/reports/components/month-report-summary-table';
 import {
@@ -49,15 +51,11 @@ import {
 } from '@/lib/reports/validate-report-date-range';
 import { validateReportName } from '@/lib/reports/validate-report-name';
 
-import type { CategoryColorToken } from '@/lib/categories/category-colors';
-import type { CategoryIconName } from '@/lib/categories/category-icons';
+import type { CategorySelectorItem } from '@/lib/categories/filter-category-selector-items';
+import type { CategorizeTransactionRow } from '@/lib/transactions/categorize-transaction-row';
+import type { UpdatedTransactionCategory } from '@/app/(protected)/transactions/actions/update-transaction-category';
 
-type CategoryOption = {
-  id: string;
-  name: string;
-  color: CategoryColorToken;
-  icon: CategoryIconName;
-};
+type CategoryOption = CategorySelectorItem;
 
 type MonthReportViewProps = {
   mode: 'new' | 'edit';
@@ -70,7 +68,9 @@ type MonthReportViewProps = {
   spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
   primaryAccountBalanceBeforeIncome?: string | null;
   categories?: CategoryOption[];
+  categorySelectorItems?: CategorySelectorItem[];
   bankAccounts?: Array<{ id: string; label: string }>;
+  uncategorizedCount?: number;
 };
 
 function getInitialTitle(
@@ -105,10 +105,13 @@ export function MonthReportView({
   spendingCategoryAverages = {},
   primaryAccountBalanceBeforeIncome = null,
   categories = [],
+  categorySelectorItems = [],
   bankAccounts = [],
+  uncategorizedCount: initialUncategorizedCount = 0,
 }: MonthReportViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [, startRefresh] = useTransition();
   const [dateFrom, setDateFrom] = useState(listParams.dateFrom);
   const [dateTo, setDateTo] = useState(listParams.dateTo);
   const [title, setTitle] = useState(() =>
@@ -117,10 +120,22 @@ export function MonthReportView({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [categorizeOpen, setCategorizeOpen] = useState(false);
+  const [categorizeSessionKey, setCategorizeSessionKey] = useState(0);
+  const [categorizeTransactions, setCategorizeTransactions] = useState<
+    CategorizeTransactionRow[]
+  >([]);
+  const [categorizeCountDelta, setCategorizeCountDelta] = useState(0);
+  const [categorizeError, setCategorizeError] = useState<string | null>(null);
+  const [isCategorizeLoading, setIsCategorizeLoading] = useState(false);
   const lastAutoTitleDatesRef = useRef({
     dateFrom: listParams.dateFrom,
     dateTo: listParams.dateTo,
   });
+
+  const displayedUncategorizedCount = categorizeOpen
+    ? Math.max(0, initialUncategorizedCount + categorizeCountDelta)
+    : initialUncategorizedCount;
 
   const pickerValidation = validateReportDateRange(dateFrom, dateTo);
   const showRequiredMonthDescription =
@@ -179,6 +194,66 @@ export function MonthReportView({
       : isDirty;
 
   const showSaveSuccess = saveSuccess !== null && !isDirty;
+
+  const refreshPage = useCallback(() => {
+    startRefresh(() => {
+      router.refresh();
+    });
+  }, [router]);
+
+  const handleOpenCategorize = useCallback(async () => {
+    setCategorizeError(null);
+    setIsCategorizeLoading(true);
+
+    const result = await getUncategorizedTransactionsForReportPeriod({
+      dateFrom: listParams.dateFrom,
+      dateTo: listParams.dateTo,
+    });
+
+    setIsCategorizeLoading(false);
+
+    if (!result.ok) {
+      setCategorizeError(result.error);
+      return;
+    }
+
+    setCategorizeTransactions(result.transactions);
+    setCategorizeCountDelta(0);
+    setCategorizeSessionKey((current) => current + 1);
+    setCategorizeOpen(true);
+  }, [listParams.dateFrom, listParams.dateTo]);
+
+  const handleCategorySaved = useCallback(
+    (transactionId: string, category: UpdatedTransactionCategory) => {
+      setCategorizeCountDelta((current) => current - 1);
+      setCategorizeTransactions((current) =>
+        current.map((transaction) =>
+          transaction.id === transactionId
+            ? {
+                ...transaction,
+                categoryId: category.id,
+                categoryName: category.name,
+                categoryColor: category.color,
+                categoryIcon: category.icon,
+              }
+            : transaction,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleCategorizeDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setCategorizeOpen(open);
+
+      if (!open) {
+        setCategorizeCountDelta(0);
+        refreshPage();
+      }
+    },
+    [refreshPage],
+  );
 
   function handleTitleChange(nextTitle: string) {
     setSaveSuccess(null);
@@ -370,6 +445,12 @@ export function MonthReportView({
         </p>
       ) : null}
 
+      {categorizeError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {categorizeError}
+        </p>
+      ) : null}
+
       {showDashboard && groupedTotals ? (
         <>
           {hasTotals && summaryTotals ? (
@@ -380,11 +461,25 @@ export function MonthReportView({
             />
           ) : null}
           <section className="flex flex-col gap-6">
-            <div>
-              <h2 className="text-lg font-semibold">By category</h2>
-              <p className="text-sm text-muted-foreground">
-                Totals for {formatReportMonth(listParams.dateFrom)}
-              </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">By category</h2>
+                <p className="text-sm text-muted-foreground">
+                  Totals for {formatReportMonth(listParams.dateFrom)}
+                </p>
+              </div>
+              {displayedUncategorizedCount > 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isCategorizeLoading || isPending}
+                  onClick={handleOpenCategorize}
+                >
+                  {isCategorizeLoading
+                    ? 'Loading…'
+                    : `Categorize uncategorized (${displayedUncategorizedCount})`}
+                </Button>
+              ) : null}
             </div>
             {!hasTotals ? (
               <Empty className="border">
@@ -424,6 +519,15 @@ export function MonthReportView({
         isPending={isPending}
         error={saveError}
         onConfirm={handleSaveConfirm}
+      />
+
+      <CategorizeUncategorizedDialog
+        key={categorizeSessionKey}
+        open={categorizeOpen}
+        onOpenChange={handleCategorizeDialogOpenChange}
+        transactions={categorizeTransactions}
+        categories={categorySelectorItems}
+        onCategorySaved={handleCategorySaved}
       />
     </div>
   );

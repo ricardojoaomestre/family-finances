@@ -163,6 +163,7 @@ export async function updateTransactionCategory(input: {
   revalidatePath('/imports');
   revalidatePath('/dashboard');
   revalidatePath('/report/new');
+  revalidatePath('/reports');
 
   return {
     ok: true,

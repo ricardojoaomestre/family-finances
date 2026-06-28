@@ -1,5 +1,7 @@
 import { getBankAccounts } from '@/lib/bank-accounts/get-bank-accounts';
 import { getCategories } from '@/lib/categories/get-categories';
+import type { CategorySelectorItem } from '@/lib/categories/filter-category-selector-items';
+import { toCategorySelectorItems } from '@/lib/categories/to-category-selector-items';
 import {
   toCategoryOptions,
   type CategoryOption,
@@ -9,6 +11,7 @@ import {
   getMonthReportCategoryTotals,
   type MonthReportCategoryTotal,
 } from '@/lib/reports/get-month-report-category-totals';
+import { countUncategorizedTransactionsForPeriod } from '@/lib/reports/get-uncategorized-transactions-for-period';
 import {
   getSpendingCategoryMonthAverages,
   type SpendingCategoryAverage,
@@ -17,9 +20,11 @@ import {
 export type MonthReportData = {
   categoryTotals: MonthReportCategoryTotal[];
   categories: CategoryOption[];
+  categorySelectorItems: CategorySelectorItem[];
   bankAccounts: Array<{ id: string; label: string }>;
   primaryAccountBalanceBeforeIncome: string | null;
   spendingCategoryAverages: Record<string, SpendingCategoryAverage>;
+  uncategorizedCount: number;
 };
 
 export async function loadMonthReportData(
@@ -32,22 +37,26 @@ export async function loadMonthReportData(
     bankAccountRows,
     primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
+    uncategorizedCount,
   ] = await Promise.all([
     getMonthReportCategoryTotals(dateFrom, dateTo),
     getCategories(),
     getBankAccounts(),
     getMonthReportPrimaryAccountBalanceBeforeIncome(dateFrom, dateTo),
     getSpendingCategoryMonthAverages(dateFrom),
+    countUncategorizedTransactionsForPeriod(dateFrom, dateTo),
   ]);
 
   return {
     categoryTotals,
     categories: toCategoryOptions(categoryRows),
+    categorySelectorItems: toCategorySelectorItems(categoryRows),
     bankAccounts: bankAccountRows.map((account) => ({
       id: account.id,
       label: account.label,
     })),
     primaryAccountBalanceBeforeIncome,
     spendingCategoryAverages,
+    uncategorizedCount,
   };
 }
