@@ -1,4 +1,8 @@
-import type { CategoryType } from '@/lib/categories/category-type';
+import {
+  isSavingCategoryType,
+  isTransferCategoryType,
+  type CategoryType,
+} from '@/lib/categories/category-type';
 
 export function categoryTypesForTransactionValue(
   value: string | number,
@@ -16,6 +20,13 @@ export function isCategoryTypeAllowedForTransactionValue(
   value: string | number,
   categoryType: CategoryType,
 ): boolean {
+  if (
+    isTransferCategoryType(categoryType) ||
+    isSavingCategoryType(categoryType)
+  ) {
+    return true;
+  }
+
   return categoryTypesForTransactionValue(value).includes(
     categoryType as 'spending' | 'income',
   );
