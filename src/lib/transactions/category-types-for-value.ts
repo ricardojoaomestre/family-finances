@@ -4,6 +4,9 @@ import {
   type CategoryType,
 } from '@/lib/categories/category-type';
 
+export const CATEGORY_TYPE_MISMATCH_MESSAGE =
+  'Category type does not match this transaction amount.';
+
 export function categoryTypesForTransactionValue(
   value: string | number,
 ): Array<'spending' | 'income'> {

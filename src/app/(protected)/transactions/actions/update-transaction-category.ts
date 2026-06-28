@@ -18,7 +18,10 @@ import {
 import { resolveCategoryType } from '@/lib/categories/category-type';
 import { getActiveHouseholdId } from '@/lib/household/active-household';
 import { formatDbError } from '@/lib/db/format-db-error';
-import { isCategoryTypeAllowedForTransactionValue } from '@/lib/transactions/category-types-for-value';
+import {
+  CATEGORY_TYPE_MISMATCH_MESSAGE,
+  isCategoryTypeAllowedForTransactionValue,
+} from '@/lib/transactions/category-types-for-value';
 import { isTransactionId } from '@/lib/transactions/validate-transaction-form';
 
 const UUID_RE =
@@ -46,6 +49,7 @@ type UpdateTransactionCategoryResult =
 export async function updateTransactionCategory(input: {
   transactionId: string;
   categoryId: string;
+  allowCategoryTypeMismatch?: boolean;
 }): Promise<UpdateTransactionCategoryResult> {
   const session = await auth();
 
@@ -124,13 +128,14 @@ export async function updateTransactionCategory(input: {
   const categoryType = resolveCategoryType(category.type);
 
   if (
+    !input.allowCategoryTypeMismatch &&
     !isCategoryTypeAllowedForTransactionValue(existing.value, categoryType)
   ) {
     return {
       ok: false,
       error: 'Fix the highlighted fields.',
       fieldErrors: {
-        categoryId: 'Category type does not match this transaction amount.',
+        categoryId: CATEGORY_TYPE_MISMATCH_MESSAGE,
       },
     };
   }

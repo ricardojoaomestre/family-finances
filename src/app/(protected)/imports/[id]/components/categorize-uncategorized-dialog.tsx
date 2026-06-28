@@ -15,6 +15,16 @@ import {
   updateTransactionCategory,
   type UpdatedTransactionCategory,
 } from '@/app/(protected)/transactions/actions/update-transaction-category';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -27,7 +37,10 @@ import {
 import { escapeRegexLiteral } from '@/lib/categories/escape-regex-literal';
 import type { CategorySelectorItem } from '@/lib/categories/filter-category-selector-items';
 import { formatDisplayDate, formatDisplayMoney } from '@/lib/formatters';
-import { categoryTypesForTransactionValue } from '@/lib/transactions/category-types-for-value';
+import {
+  categoryTypesForTransactionValue,
+  CATEGORY_TYPE_MISMATCH_MESSAGE,
+} from '@/lib/transactions/category-types-for-value';
 import { cn } from '@/lib/utils';
 
 type CategorizeUncategorizedDialogProps = {
@@ -92,6 +105,11 @@ export function CategorizeUncategorizedDialog({
   const [createCategoryPattern, setCreateCategoryPattern] = useState<
     string | null
   >(null);
+  const [categoryTypeMismatchOpen, setCategoryTypeMismatchOpen] =
+    useState(false);
+  const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(
+    null,
+  );
   const [isSaving, startSaveTransition] = useTransition();
 
   const currentRow = queue[cursor] ?? null;
@@ -167,40 +185,83 @@ export function CategorizeUncategorizedDialog({
     setCategoryError(null);
 
     startSaveTransition(async () => {
-      const result = await updateTransactionCategory({
-        transactionId: currentRow.id,
-        categoryId,
-      });
+      await saveCategory(categoryId);
+    });
+  }
 
-      if (!result.ok) {
-        setFormError(result.error);
-        setCategoryError(result.fieldErrors?.categoryId ?? null);
+  async function saveCategory(
+    categoryId: string,
+    allowCategoryTypeMismatch = false,
+  ) {
+    if (!currentRow) {
+      return;
+    }
+
+    const result = await updateTransactionCategory({
+      transactionId: currentRow.id,
+      categoryId,
+      allowCategoryTypeMismatch,
+    });
+
+    if (!result.ok) {
+      if (
+        !allowCategoryTypeMismatch &&
+        result.fieldErrors?.categoryId === CATEGORY_TYPE_MISMATCH_MESSAGE
+      ) {
+        setPendingCategoryId(categoryId);
+        setCategoryTypeMismatchOpen(true);
         return;
       }
 
-      setSessionAssignments((current) => {
-        const next = new Map(current);
-        next.set(currentRow.id, categoryId);
-        return next;
-      });
+      setFormError(result.error);
+      setCategoryError(result.fieldErrors?.categoryId ?? null);
+      return;
+    }
 
-      setQueue((current) =>
-        current.map((row) =>
-          row.id === currentRow.id
-            ? {
-                ...row,
-                categoryId: result.category.id,
-                categoryName: result.category.name,
-                categoryColor: result.category.color,
-                categoryIcon: result.category.icon,
-              }
-            : row,
-        ),
-      );
+    setCategoryTypeMismatchOpen(false);
+    setPendingCategoryId(null);
 
-      onCategorySaved(currentRow.id, result.category);
-      advanceCursor();
+    setSessionAssignments((current) => {
+      const next = new Map(current);
+      next.set(currentRow.id, categoryId);
+      return next;
     });
+
+    setQueue((current) =>
+      current.map((row) =>
+        row.id === currentRow.id
+          ? {
+              ...row,
+              categoryId: result.category.id,
+              categoryName: result.category.name,
+              categoryColor: result.category.color,
+              categoryIcon: result.category.icon,
+            }
+          : row,
+      ),
+    );
+
+    onCategorySaved(currentRow.id, result.category);
+    advanceCursor();
+  }
+
+  function handleConfirmCategoryTypeMismatch() {
+    const categoryId = pendingCategoryId;
+    if (!categoryId) {
+      return;
+    }
+
+    setCategoryTypeMismatchOpen(false);
+    setPendingCategoryId(null);
+
+    startSaveTransition(async () => {
+      await saveCategory(categoryId, true);
+    });
+  }
+
+  function handleDismissCategoryTypeMismatch() {
+    setCategoryTypeMismatchOpen(false);
+    setPendingCategoryId(null);
   }
 
   function handleContinue() {
@@ -454,6 +515,33 @@ export function CategorizeUncategorizedDialog({
         defaultType={defaultCategoryType}
         onSubmit={handleCreateCategory}
       />
+
+      <AlertDialog
+        open={categoryTypeMismatchOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            handleDismissCategoryTypeMismatch();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Category type mismatch</AlertDialogTitle>
+            <AlertDialogDescription>
+              {CATEGORY_TYPE_MISMATCH_MESSAGE} Use this category anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCategoryTypeMismatch}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving…' : 'Use category anyway'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
