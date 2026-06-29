@@ -20,8 +20,7 @@ import {
 } from '@/lib/bank/providers/enable-banking/enrich-sparse-enable-banking-transactions';
 import {
   buildEnableBankingAccessValidUntil,
-  enrichTransactionsWithRunningBalances,
-  isBankTransactionDateRangeAnchoredToToday,
+  enrichBankTransactionsWithAccountBalance,
   mapEnableBankingAccountDetails,
   mapEnableBankingAspspToInstitution,
   mapEnableBankingSessionToConnection,
@@ -245,36 +244,26 @@ export function createEnableBankingBankAggregatorProvider(): BankAggregatorProvi
       }
 
       const transactions = rawTransactions.map(mapEnableBankingTransaction);
+      const enriched = await enrichBankTransactionsWithAccountBalance(transactions, {
+        dateTo: query.dateTo,
+        fetchAccountBalance: async () => {
+          const balancesResponse = await client.getAccountBalances(
+            query.accountId,
+            query.psuHeaders,
+          );
+          return pickEnableBankingBookedBalance(balancesResponse.balances ?? []);
+        },
+      });
 
       if (query.fetchMode === 'initial') {
         return resolveInitialSyncTransactions(
-          transactions,
+          enriched,
           query.dateFrom,
           query.dateTo,
         );
       }
 
-      if (transactions.every((transaction) => transaction.balance !== null)) {
-        return transactions;
-      }
-
-      if (!isBankTransactionDateRangeAnchoredToToday(query.dateTo)) {
-        return transactions;
-      }
-
-      const balancesResponse = await client.getAccountBalances(
-        query.accountId,
-        query.psuHeaders,
-      );
-      const anchorBalance = pickEnableBankingBookedBalance(
-        balancesResponse.balances ?? [],
-      );
-
-      if (anchorBalance === null) {
-        return transactions;
-      }
-
-      return enrichTransactionsWithRunningBalances(transactions, anchorBalance);
+      return enriched;
     },
   };
 }

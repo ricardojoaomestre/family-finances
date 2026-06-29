@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   decodeBankInstitutionId,
   encodeBankInstitutionId,
 } from '@/lib/bank/institution-id';
 import {
+  enrichBankTransactionsWithAccountBalance,
   enrichTransactionsWithRunningBalances,
   mapEnableBankingTransaction,
   pickEnableBankingBookedBalance,
@@ -78,6 +79,87 @@ describe('running balance enrichment', () => {
     ]);
   });
 
+  it('fills older transactions from an in-batch balance when account balance is missing', () => {
+    const enriched = enrichTransactionsWithRunningBalances(
+      [
+        {
+          id: 'older',
+          bookingDate: '2025-03-14',
+          amount: -50,
+          currency: 'EUR',
+          description: 'Coffee',
+          pending: false,
+          balance: 1042.5,
+        },
+        {
+          id: 'newer',
+          bookingDate: '2025-03-15',
+          amount: -42.5,
+          currency: 'EUR',
+          description: 'Supermarket',
+          pending: false,
+          balance: null,
+        },
+      ],
+      null,
+    );
+
+    expect(enriched).toEqual([
+      expect.objectContaining({ id: 'older', balance: 1042.5 }),
+      expect.objectContaining({ id: 'newer', balance: 1000 }),
+    ]);
+  });
+
+  it('fetches account balance when the period ends today', async () => {
+    const fetchAccountBalance = vi.fn().mockResolvedValue(1000);
+    const enriched = await enrichBankTransactionsWithAccountBalance(
+      [
+        {
+          id: 'tx-1',
+          bookingDate: '2025-03-15',
+          amount: -42.5,
+          currency: 'EUR',
+          description: 'Supermarket',
+          pending: false,
+          balance: null,
+        },
+      ],
+      {
+        dateTo: new Date().toISOString().slice(0, 10),
+        fetchAccountBalance,
+      },
+    );
+
+    expect(fetchAccountBalance).toHaveBeenCalledOnce();
+    expect(enriched[0]?.balance).toBe(1000);
+  });
+
+  it('skips account balance fetch for historical periods', async () => {
+    const fetchAccountBalance = vi.fn().mockResolvedValue(1000);
+    const enriched = await enrichBankTransactionsWithAccountBalance(
+      [
+        {
+          id: 'tx-1',
+          bookingDate: '2025-03-15',
+          amount: -42.5,
+          currency: 'EUR',
+          description: 'Supermarket',
+          pending: false,
+          balance: null,
+        },
+      ],
+      {
+        dateTo: '2025-03-15',
+        fetchAccountBalance,
+      },
+    );
+
+    expect(fetchAccountBalance).not.toHaveBeenCalled();
+    expect(enriched[0]?.balance).toBeNull();
+  });
+});
+
+describe('pickEnableBankingBookedBalance', () => {
   it('prefers closing booked balances when available', () => {
     expect(
       pickEnableBankingBookedBalance([

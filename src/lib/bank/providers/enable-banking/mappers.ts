@@ -178,22 +178,31 @@ export function isBankTransactionDateRangeAnchoredToToday(
 
 export function enrichTransactionsWithRunningBalances(
   transactions: BankTransaction[],
-  anchorBalance: number,
+  accountBalance: number | null,
 ): BankTransaction[] {
   if (transactions.length === 0) {
     return transactions;
   }
 
+  if (transactions.every((transaction) => transaction.balance != null)) {
+    return transactions;
+  }
+
   const enriched = transactions.map((transaction) => ({ ...transaction }));
-  const sortedIndexes = enriched
+  const sortedNewestFirst = enriched
     .map((transaction, index) => ({ transaction, index }))
     .sort(compareBankTransactionsNewestFirst);
+  const sortedOldestFirst = [...sortedNewestFirst].reverse();
 
-  let runningBalance = anchorBalance;
+  let runningBalance: number | null = accountBalance;
 
-  for (const { transaction, index } of sortedIndexes) {
+  for (const { transaction, index } of sortedNewestFirst) {
     if (transaction.balance != null) {
       runningBalance = transaction.balance;
+      continue;
+    }
+
+    if (runningBalance == null) {
       continue;
     }
 
@@ -204,7 +213,51 @@ export function enrichTransactionsWithRunningBalances(
     runningBalance = roundMoney(runningBalance - transaction.amount);
   }
 
+  runningBalance = null;
+
+  for (const { transaction, index } of sortedOldestFirst) {
+    const currentBalance = enriched[index]!.balance;
+
+    if (currentBalance != null) {
+      runningBalance = currentBalance;
+      continue;
+    }
+
+    if (runningBalance == null) {
+      continue;
+    }
+
+    runningBalance = roundMoney(runningBalance + transaction.amount);
+    enriched[index] = {
+      ...transaction,
+      balance: runningBalance,
+    };
+  }
+
   return enriched;
+}
+
+export async function enrichBankTransactionsWithAccountBalance(
+  transactions: BankTransaction[],
+  options: {
+    dateTo: string;
+    fetchAccountBalance?: () => Promise<number | null>;
+  },
+): Promise<BankTransaction[]> {
+  if (transactions.every((transaction) => transaction.balance != null)) {
+    return transactions;
+  }
+
+  let accountBalance: number | null = null;
+
+  if (
+    options.fetchAccountBalance &&
+    isBankTransactionDateRangeAnchoredToToday(options.dateTo)
+  ) {
+    accountBalance = await options.fetchAccountBalance();
+  }
+
+  return enrichTransactionsWithRunningBalances(transactions, accountBalance);
 }
 
 function compareBankTransactionsNewestFirst(
