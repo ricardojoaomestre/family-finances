@@ -226,6 +226,7 @@ export function createEnableBankingBankAggregatorProvider(): BankAggregatorProvi
           cashAccountType: query.cashAccountType,
           currency: query.currency,
           product: query.product,
+          applyCardFallback: false,
         });
       }
 
@@ -234,6 +235,14 @@ export function createEnableBankingBankAggregatorProvider(): BankAggregatorProvi
         query.accountId,
         rawTransactions,
       );
+
+      if (query.cashAccountType === 'CARD') {
+        enrichSparseEnableBankingTransactions(rawTransactions, {
+          cashAccountType: query.cashAccountType,
+          currency: query.currency,
+          product: query.product,
+        });
+      }
 
       const transactions = rawTransactions.map(mapEnableBankingTransaction);
 

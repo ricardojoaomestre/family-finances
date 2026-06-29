@@ -79,6 +79,7 @@ export function enrichSparseEnableBankingTransactions(
     cashAccountType?: string;
     currency?: string;
     product?: string;
+    applyCardFallback?: boolean;
   },
 ): void {
   for (let index = 0; index < transactions.length; index++) {
@@ -107,7 +108,7 @@ export function enrichSparseEnableBankingTransactions(
       continue;
     }
 
-    if (options.cashAccountType === 'CARD') {
+    if (options.cashAccountType === 'CARD' && options.applyCardFallback !== false) {
       transactions[index] = {
         ...transaction,
         remittance_information: [
