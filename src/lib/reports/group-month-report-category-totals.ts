@@ -12,6 +12,11 @@ export const monthReportCategoryTableTypes = [
 export type MonthReportCategoryTableType =
   (typeof monthReportCategoryTableTypes)[number];
 
+export const monthReportSecondaryCategoryTableTypes = [
+  'saving',
+  'transfer',
+] as const satisfies readonly MonthReportCategoryTableType[];
+
 export type MonthReportCategoryTotalsByTable = Record<
   MonthReportCategoryTableType,
   MonthReportCategoryTotal[]

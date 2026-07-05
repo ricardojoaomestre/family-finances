@@ -50,7 +50,7 @@ export default async function ReportPage({
     categorySelectorItems,
     bankAccounts,
     primaryAccountBalanceBeforeIncome,
-    spendingCategoryAverages,
+    spendingVsAverage,
     uncategorizedCount,
   } = await loadMonthReportData(validation.dateFrom, validation.dateTo);
 
@@ -67,7 +67,7 @@ export default async function ReportPage({
         }}
         initialTitle={report.name}
         categoryTotals={categoryTotals}
-        spendingCategoryAverages={spendingCategoryAverages}
+        spendingVsAverage={spendingVsAverage}
         primaryAccountBalanceBeforeIncome={primaryAccountBalanceBeforeIncome}
         categories={categories}
         categorySelectorItems={categorySelectorItems}

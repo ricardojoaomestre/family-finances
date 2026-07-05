@@ -7,6 +7,7 @@ import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 import { CategorizeUncategorizedDialog } from '@/app/(protected)/imports/[id]/components/categorize-uncategorized-dialog';
 import { getUncategorizedTransactionsForReportPeriod } from '@/app/(protected)/reports/actions/get-uncategorized-transactions-for-period';
 import { MonthReportCategoryTotalsTable } from '@/app/(protected)/report/new/components/month-report-category-totals-table';
+import { MonthReportSpendingVsAverage } from '@/app/(protected)/reports/components/month-report-spending-vs-average';
 import { MonthReportSummaryTable } from '@/app/(protected)/reports/components/month-report-summary-table';
 import {
   createReport,
@@ -34,14 +35,14 @@ import {
   NEW_REPORT_TITLE,
 } from '@/lib/reports/build-default-report-name';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
+import type { CategorySpendingVsAverageRow } from '@/lib/reports/build-category-spending-vs-average-rows';
 import {
   groupMonthReportCategoryTotals,
   hasMonthReportCategoryTotals,
-  monthReportCategoryTableTypes,
+  monthReportSecondaryCategoryTableTypes,
 } from '@/lib/reports/group-month-report-category-totals';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 import type { MonthReportSearchParams } from '@/lib/reports/month-report-search-params';
-import type { SpendingCategoryAverage } from '@/lib/reports/get-spending-category-month-averages';
 import { formatReportMonth } from '@/lib/reports/report-month';
 import { sumCategoryTotals } from '@/lib/reports/sum-category-totals';
 import type { ReportRow } from '@/lib/reports/get-report-by-id';
@@ -65,7 +66,7 @@ type MonthReportViewProps = {
   initialTitle: string;
   validationError?: string;
   categoryTotals?: MonthReportCategoryTotal[];
-  spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
+  spendingVsAverage?: CategorySpendingVsAverageRow[];
   primaryAccountBalanceBeforeIncome?: string | null;
   categories?: CategoryOption[];
   categorySelectorItems?: CategorySelectorItem[];
@@ -102,7 +103,7 @@ export function MonthReportView({
   initialTitle,
   validationError: serverValidationError,
   categoryTotals,
-  spendingCategoryAverages = {},
+  spendingVsAverage = [],
   primaryAccountBalanceBeforeIncome = null,
   categories = [],
   categorySelectorItems = [],
@@ -492,7 +493,15 @@ export function MonthReportView({
               </Empty>
             ) : (
               <>
-                {monthReportCategoryTableTypes.map((tableType) => (
+                <MonthReportSpendingVsAverage
+                  rows={spendingVsAverage}
+                  spendingTotals={groupedTotals.spending}
+                  dateFrom={listParams.dateFrom}
+                  dateTo={listParams.dateTo}
+                  categories={categories}
+                  bankAccounts={bankAccounts}
+                />
+                {monthReportSecondaryCategoryTableTypes.map((tableType) => (
                   <MonthReportCategoryTotalsTable
                     key={tableType}
                     tableType={tableType}
@@ -501,7 +510,6 @@ export function MonthReportView({
                     dateTo={listParams.dateTo}
                     categories={categories}
                     bankAccounts={bankAccounts}
-                    spendingCategoryAverages={spendingCategoryAverages}
                   />
                 ))}
               </>

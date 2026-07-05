@@ -5,7 +5,6 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 
 import { MonthReportCategoryDetailSheet } from '@/app/(protected)/report/new/components/month-report-category-detail-sheet';
-import { SpendingComparisonGauge } from '@/app/(protected)/reports/components/spending-comparison-gauge';
 import { ImportDataTable } from '@/app/(protected)/dashboard/components/import-data-table';
 import {
   TABLE_MONEY_CELL_CLASS,
@@ -22,8 +21,6 @@ import { CategoryPill } from '@/components/categories/category-pill';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import type { CategoryIconName } from '@/lib/categories/category-icons';
 import { categoryTypeLabels } from '@/lib/categories/category-type';
-import { computeSpendingComparison } from '@/lib/reports/compute-spending-comparison';
-import type { SpendingCategoryAverage } from '@/lib/reports/get-spending-category-month-averages';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import type { MonthReportCategoryTableType } from '@/lib/reports/group-month-report-category-totals';
 import { sumCategoryTotals } from '@/lib/reports/sum-category-totals';
@@ -50,7 +47,6 @@ type MonthReportCategoryTotalsTableProps = {
   dateTo: string;
   categories: CategoryOption[];
   bankAccounts: Array<{ id: string; label: string }>;
-  spendingCategoryAverages?: Record<string, SpendingCategoryAverage>;
 };
 
 export function MonthReportCategoryTotalsTable({
@@ -60,7 +56,6 @@ export function MonthReportCategoryTotalsTable({
   dateTo,
   categories,
   bankAccounts,
-  spendingCategoryAverages = {},
 }: MonthReportCategoryTotalsTableProps) {
   const [selectedCategory, setSelectedCategory] =
     useState<MonthReportCategoryTotal | null>(null);
@@ -110,23 +105,7 @@ export function MonthReportCategoryTotalsTable({
           headerClassName: cn(TABLE_MONEY_HEADER_CLASS, 'w-32 sm:w-44'),
           cellClassName: cn(TABLE_MONEY_CELL_CLASS, 'w-32 sm:w-44'),
         },
-        cell: ({ row }) => {
-          const { categoryId, total } = row.original;
-          const comparison =
-            tableType === 'spending' && categoryId
-              ? computeSpendingComparison(
-                  total,
-                  spendingCategoryAverages[categoryId],
-                )
-              : { kind: 'hidden' as const };
-
-          return (
-            <div className="flex items-center justify-end gap-2">
-              <TableMoneyCell value={total} />
-              <SpendingComparisonGauge comparison={comparison} />
-            </div>
-          );
-        },
+        cell: ({ row }) => <TableMoneyCell value={row.original.total} />,
       },
       {
         id: 'actions',
@@ -154,7 +133,7 @@ export function MonthReportCategoryTotalsTable({
         ),
       },
     ],
-    [spendingCategoryAverages, tableType],
+    [],
   );
 
   const sectionTotal = useMemo(() => sumCategoryTotals(data), [data]);

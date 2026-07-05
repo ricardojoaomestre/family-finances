@@ -4,21 +4,33 @@ import { DEFAULT_TRANSACTION_FILTERS } from '@/app/(protected)/transactions/lib/
 import { db } from '@/db';
 import { categories, transactions } from '@/db/schema';
 import {
-  type CategoryMonthlySpendingRow,
-  getDashboardCategoryChartMonthRanges,
-} from '@/lib/dashboard/dashboard-category-chart-months';
+  getSpendingVsAveragePriorMonthRanges,
+  type SpendingVsAverageMonthRange,
+} from '@/lib/reports/spending-vs-average-months';
 import { requireActiveHouseholdId } from '@/lib/household/active-household';
 import { buildTransactionWhere } from '@/lib/transactions/build-transaction-where';
 
-export async function getCategoryMonthlySpending(
+export type CategoryPriorMonthlySpendingRow = {
+  categoryId: string | null;
+  monthDateFrom: string;
+  total: string;
+};
+
+export async function getCategoryPriorMonthlySpending(
   reportDateFrom: string,
-): Promise<CategoryMonthlySpendingRow[]> {
-  const monthRanges = getDashboardCategoryChartMonthRanges(reportDateFrom);
+): Promise<CategoryPriorMonthlySpendingRow[]> {
+  const monthRanges = getSpendingVsAveragePriorMonthRanges(reportDateFrom);
 
   if (monthRanges.length === 0) {
     return [];
   }
 
+  return fetchCategoryMonthlySpendingForRanges(monthRanges);
+}
+
+async function fetchCategoryMonthlySpendingForRanges(
+  monthRanges: SpendingVsAverageMonthRange[],
+): Promise<CategoryPriorMonthlySpendingRow[]> {
   const dateFrom = monthRanges[0].dateFrom;
   const dateTo = monthRanges[monthRanges.length - 1].dateTo;
   const householdId = await requireActiveHouseholdId();

@@ -6,16 +6,14 @@ import {
   toCategoryOptions,
   type CategoryOption,
 } from '@/lib/categories/to-category-options';
+import type { CategorySpendingVsAverageRow } from '@/lib/reports/build-category-spending-vs-average-rows';
+import { getCategorySpendingVsAverageRows } from '@/lib/reports/get-category-spending-vs-average-rows';
 import { getMonthReportPrimaryAccountBalanceBeforeIncome } from '@/lib/reports/get-month-report-primary-account-balance-before-income';
 import {
   getMonthReportCategoryTotals,
   type MonthReportCategoryTotal,
 } from '@/lib/reports/get-month-report-category-totals';
 import { countUncategorizedTransactionsForPeriod } from '@/lib/reports/get-uncategorized-transactions-for-period';
-import {
-  getSpendingCategoryMonthAverages,
-  type SpendingCategoryAverage,
-} from '@/lib/reports/get-spending-category-month-averages';
 
 export type MonthReportData = {
   categoryTotals: MonthReportCategoryTotal[];
@@ -23,7 +21,7 @@ export type MonthReportData = {
   categorySelectorItems: CategorySelectorItem[];
   bankAccounts: Array<{ id: string; label: string }>;
   primaryAccountBalanceBeforeIncome: string | null;
-  spendingCategoryAverages: Record<string, SpendingCategoryAverage>;
+  spendingVsAverage: CategorySpendingVsAverageRow[];
   uncategorizedCount: number;
 };
 
@@ -36,16 +34,19 @@ export async function loadMonthReportData(
     categoryRows,
     bankAccountRows,
     primaryAccountBalanceBeforeIncome,
-    spendingCategoryAverages,
     uncategorizedCount,
   ] = await Promise.all([
     getMonthReportCategoryTotals(dateFrom, dateTo),
     getCategories(),
     getBankAccounts(),
     getMonthReportPrimaryAccountBalanceBeforeIncome(dateFrom, dateTo),
-    getSpendingCategoryMonthAverages(dateFrom),
     countUncategorizedTransactionsForPeriod(dateFrom, dateTo),
   ]);
+
+  const spendingVsAverage = await getCategorySpendingVsAverageRows(
+    dateFrom,
+    categoryTotals,
+  );
 
   return {
     categoryTotals,
@@ -56,7 +57,7 @@ export async function loadMonthReportData(
       label: account.label,
     })),
     primaryAccountBalanceBeforeIncome,
-    spendingCategoryAverages,
+    spendingVsAverage,
     uncategorizedCount,
   };
 }
