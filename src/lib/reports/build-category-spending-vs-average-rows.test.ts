@@ -40,6 +40,13 @@ describe('buildCategorySpendingVsAverageRows', () => {
       isOverAverage: false,
       hasBaseline: true,
     });
+    expect(rows[0]?.averageContext.priorMonths).toEqual([
+      {
+        monthDateFrom: '2026-01-01',
+        monthLabel: expect.any(String),
+        amount: '400.00',
+      },
+    ]);
   });
 
   it('ignores zero-spend prior months in the divisor', () => {
@@ -61,6 +68,7 @@ describe('buildCategorySpendingVsAverageRows', () => {
 
     expect(rows[0]?.usage.averageAmount).toBe('400.00');
     expect(rows[0]?.usage.percentOfAverage).toBe(100);
+    expect(rows[0]?.averageContext.priorMonths).toHaveLength(2);
   });
 
   it('marks categories with no prior spending as having no baseline', () => {
@@ -74,6 +82,7 @@ describe('buildCategorySpendingVsAverageRows', () => {
       hasBaseline: false,
       isOverAverage: false,
     });
+    expect(rows[0]?.averageContext.priorMonths).toEqual([]);
   });
 });
 

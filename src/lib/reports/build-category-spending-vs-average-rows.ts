@@ -9,6 +9,19 @@ import {
 } from '@/lib/categories/category-icons';
 import type { CategoryPriorMonthlySpendingRow } from '@/lib/reports/get-category-prior-monthly-spending';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
+import { formatReportMonth } from '@/lib/reports/report-month';
+
+export type CategoryPriorMonthSpendingPoint = {
+  monthDateFrom: string;
+  monthLabel: string;
+  amount: string;
+};
+
+export type CategorySpendingAverageContext = {
+  priorMonths: CategoryPriorMonthSpendingPoint[];
+  averageAmount: string | null;
+  hasBaseline: boolean;
+};
 
 export type CategorySpendingVsAverageUsage = {
   currentAmount: string;
@@ -24,20 +37,24 @@ export type CategorySpendingVsAverageRow = {
   categoryColor: CategoryColorToken;
   categoryIcon: CategoryIconName;
   usage: CategorySpendingVsAverageUsage;
+  averageContext: CategorySpendingAverageContext;
 };
 
 export function buildCategorySpendingVsAverageRows(
   currentSpendingTotals: MonthReportCategoryTotal[],
   priorMonthlySpending: CategoryPriorMonthlySpendingRow[],
 ): CategorySpendingVsAverageRow[] {
-  const averagesByCategoryId =
-    computeCategoryAverageSpending(priorMonthlySpending);
+  const averageDataByCategoryId =
+    computeCategoryAverageData(priorMonthlySpending);
 
   return currentSpendingTotals
     .map((row) => {
+      const averageData =
+        averageDataByCategoryId.get(row.categoryId) ??
+        emptyCategoryAverageData();
       const usage = computeCategorySpendingVsAverage(
         row.total,
-        averagesByCategoryId.get(row.categoryId) ?? 0,
+        averageData.averageAmount ?? 0,
       );
 
       if (!usage) {
@@ -50,6 +67,11 @@ export function buildCategorySpendingVsAverageRows(
         categoryColor: resolveRowCategoryColor(row),
         categoryIcon: resolveCategoryIcon(row.categoryIcon ?? 'tag'),
         usage,
+        averageContext: {
+          priorMonths: averageData.priorMonths,
+          averageAmount: usage.averageAmount,
+          hasBaseline: usage.hasBaseline,
+        },
       };
     })
     .filter((row): row is CategorySpendingVsAverageRow => row !== null)
@@ -60,11 +82,25 @@ export function buildCategorySpendingVsAverageRows(
     );
 }
 
-function computeCategoryAverageSpending(
+type CategoryAverageData = {
+  averageAmount: number | null;
+  priorMonths: CategoryPriorMonthSpendingPoint[];
+};
+
+function emptyCategoryAverageData(): CategoryAverageData {
+  return {
+    averageAmount: null,
+    priorMonths: [],
+  };
+}
+
+function computeCategoryAverageData(
   priorMonthlySpending: CategoryPriorMonthlySpendingRow[],
-): Map<string | null, number> {
-  const sumsByCategoryId = new Map<string | null, number>();
-  const monthsWithSpendingByCategoryId = new Map<string | null, number>();
+): Map<string | null, CategoryAverageData> {
+  const monthsByCategoryId = new Map<
+    string | null,
+    CategoryPriorMonthSpendingPoint[]
+  >();
 
   for (const row of priorMonthlySpending) {
     const amount = Math.abs(Number(row.total));
@@ -73,27 +109,35 @@ function computeCategoryAverageSpending(
       continue;
     }
 
-    sumsByCategoryId.set(
-      row.categoryId,
-      (sumsByCategoryId.get(row.categoryId) ?? 0) + amount,
-    );
-    monthsWithSpendingByCategoryId.set(
-      row.categoryId,
-      (monthsWithSpendingByCategoryId.get(row.categoryId) ?? 0) + 1,
-    );
+    const existing = monthsByCategoryId.get(row.categoryId) ?? [];
+
+    existing.push({
+      monthDateFrom: row.monthDateFrom,
+      monthLabel: formatReportMonth(row.monthDateFrom),
+      amount: amount.toFixed(2),
+    });
+    monthsByCategoryId.set(row.categoryId, existing);
   }
 
-  const averagesByCategoryId = new Map<string | null, number>();
+  const averageDataByCategoryId = new Map<string | null, CategoryAverageData>();
 
-  for (const [categoryId, sum] of sumsByCategoryId) {
-    const monthsWithSpending = monthsWithSpendingByCategoryId.get(categoryId) ?? 0;
+  for (const [categoryId, priorMonths] of monthsByCategoryId) {
+    const sortedPriorMonths = [...priorMonths].sort((a, b) =>
+      a.monthDateFrom.localeCompare(b.monthDateFrom),
+    );
+    const sum = sortedPriorMonths.reduce(
+      (total, month) => total + Number(month.amount),
+      0,
+    );
 
-    if (monthsWithSpending > 0) {
-      averagesByCategoryId.set(categoryId, sum / monthsWithSpending);
-    }
+    averageDataByCategoryId.set(categoryId, {
+      priorMonths: sortedPriorMonths,
+      averageAmount:
+        sortedPriorMonths.length > 0 ? sum / sortedPriorMonths.length : null,
+    });
   }
 
-  return averagesByCategoryId;
+  return averageDataByCategoryId;
 }
 
 export function computeCategorySpendingVsAverage(

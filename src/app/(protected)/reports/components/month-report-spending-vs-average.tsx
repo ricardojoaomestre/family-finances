@@ -13,8 +13,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty';
-import { Progress } from '@/components/ui/progress';
-import { getBudgetProgressValue } from '@/lib/budgets/compute-category-budget-usage';
+import { SpendingVsAverageProgress } from '@/components/spending-vs-average-progress';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import type { CategoryIconName } from '@/lib/categories/category-icons';
 import type { CategorySpendingVsAverageRow } from '@/lib/reports/build-category-spending-vs-average-rows';
@@ -48,6 +47,8 @@ export function MonthReportSpendingVsAverage({
 }: MonthReportSpendingVsAverageProps) {
   const [selectedCategory, setSelectedCategory] =
     useState<MonthReportCategoryTotal | null>(null);
+  const [selectedAverageContext, setSelectedAverageContext] =
+    useState<CategorySpendingVsAverageRow['averageContext'] | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const totalsByCategoryId = useMemo(
@@ -58,6 +59,11 @@ export function MonthReportSpendingVsAverage({
     [spendingTotals],
   );
 
+  const averageContextByCategoryId = useMemo(
+    () => new Map(rows.map((row) => [row.categoryId, row.averageContext] as const)),
+    [rows],
+  );
+
   function handleViewDetails(categoryId: string | null) {
     const category = totalsByCategoryId.get(categoryId) ?? null;
 
@@ -66,6 +72,9 @@ export function MonthReportSpendingVsAverage({
     }
 
     setSelectedCategory(category);
+    setSelectedAverageContext(
+      averageContextByCategoryId.get(categoryId) ?? null,
+    );
     setSheetOpen(true);
   }
 
@@ -145,17 +154,10 @@ export function MonthReportSpendingVsAverage({
                     </Button>
                   </div>
                 </div>
-                <Progress
-                  value={
-                    row.usage.hasBaseline
-                      ? getBudgetProgressValue(row.usage.percentOfAverage)
-                      : 0
-                  }
-                  className={cn(
-                    row.usage.hasBaseline &&
-                      row.usage.isOverAverage &&
-                      '[&_[data-slot=progress-indicator]]:bg-destructive',
-                  )}
+                <SpendingVsAverageProgress
+                  percentOfAverage={row.usage.percentOfAverage}
+                  hasBaseline={row.usage.hasBaseline}
+                  isOverAverage={row.usage.isOverAverage}
                 />
               </div>
             ))}
@@ -169,6 +171,7 @@ export function MonthReportSpendingVsAverage({
 
           if (!open) {
             setSelectedCategory(null);
+            setSelectedAverageContext(null);
           }
         }}
         dateFrom={dateFrom}
@@ -176,6 +179,7 @@ export function MonthReportSpendingVsAverage({
         category={selectedCategory}
         categories={categories}
         bankAccounts={bankAccounts}
+        spendingAverageContext={selectedAverageContext}
       />
     </>
   );

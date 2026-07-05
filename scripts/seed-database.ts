@@ -1,7 +1,8 @@
-import { config } from 'dotenv';
+import './load-env';
+
 import { and, eq, max } from 'drizzle-orm';
 import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -19,6 +20,7 @@ import {
   transactions,
   users,
 } from '@/db/schema';
+import * as schema from '@/db/schema';
 import { isCategoryColorToken } from '@/lib/categories/category-colors';
 import {
   guessCategoryIcon,
@@ -52,6 +54,8 @@ const DEFAULT_CATEGORIES_PATH = path.join(FIXTURES_DIR, 'categories.csv');
 const DEFAULT_EXTRATO_PATH = path.join(FIXTURES_DIR, 'extrato.csv');
 const SEED_IMPORT_FILENAME = 'extrato.csv';
 
+type SeedDatabase = NeonHttpDatabase<typeof schema>;
+
 const SEED_BUDGETS_BY_CATEGORY: Record<string, string> = {
   Supermercado: '800.00',
   'Convívio / Restaurantes': '400.00',
@@ -75,8 +79,9 @@ type ParsedExtratoRow = {
 
 function loadEnv() {
   if (!process.env.DATABASE_URL) {
-    config({ path: '.env.local' });
-    config({ path: '.env' });
+    throw new Error(
+      'DATABASE_URL is not set. Add it to .env.local or export it before running db:seed.',
+    );
   }
 }
 
@@ -106,7 +111,7 @@ function isUncategorizedLabel(label: string): boolean {
   return trimmed === '' || trimmed === '?';
 }
 
-async function wipeSeedTables(db: ReturnType<typeof drizzle>) {
+async function wipeSeedTables(db: SeedDatabase) {
   await db.delete(transactions);
   await db.delete(importSkippedRows);
   await db.delete(imports);
@@ -121,7 +126,7 @@ async function wipeSeedTables(db: ReturnType<typeof drizzle>) {
 }
 
 async function seedHousehold(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   userId: string,
   userEmail: string | null,
 ): Promise<string> {
@@ -135,7 +140,7 @@ async function seedHousehold(
 
   const householdId = household!.id;
 
-  await seedDefaultBankAccountsForHousehold(householdId);
+  await seedDefaultBankAccountsForHousehold(db, householdId);
 
   await db.insert(householdMembers).values({
     householdId,
@@ -152,7 +157,7 @@ async function seedHousehold(
 }
 
 async function seedCategoriesFromFixture(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   householdId: string,
   fixturePath: string,
 ): Promise<number> {
@@ -202,7 +207,7 @@ async function seedCategoriesFromFixture(
 }
 
 async function seedBudgets(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   householdId: string,
 ): Promise<number> {
   const categoryRecords = await loadCategoryRecords(db, householdId);
@@ -237,7 +242,7 @@ async function seedBudgets(
 }
 
 async function loadCategoryRecords(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   householdId: string,
 ): Promise<CategoryRecord[]> {
   return db
@@ -247,7 +252,7 @@ async function loadCategoryRecords(
 }
 
 async function getNextCategoryPriority(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   householdId: string,
 ): Promise<number> {
   const [result] = await db
@@ -259,7 +264,7 @@ async function getNextCategoryPriority(
 }
 
 async function resolveCategoryId(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   householdId: string,
   label: string,
   categoryByNameKey: Map<string, CategoryRecord>,
@@ -384,7 +389,7 @@ function parseExtratoRows(content: string): {
 }
 
 async function seedTransactions(
-  db: ReturnType<typeof drizzle>,
+  db: SeedDatabase,
   userId: string,
   householdId: string,
   extratoPath: string,
@@ -500,7 +505,7 @@ async function seedDatabase() {
 
   const categoriesPath = process.env.SEED_CATEGORIES_PATH ?? DEFAULT_CATEGORIES_PATH;
   const extratoPath = process.env.SEED_EXTRATO_PATH ?? DEFAULT_EXTRATO_PATH;
-  const db = drizzle(neon(getDatabaseUrl()));
+  const db = drizzle(neon(getDatabaseUrl()), { schema });
 
   const [user] = await db
     .select({ id: users.id, email: users.email })

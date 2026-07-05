@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 
+import { MonthReportCategoryAverageBreakdown } from '@/app/(protected)/report/new/components/month-report-category-average-breakdown';
 import { getMonthReportCategoryTransactionsAction } from '@/app/(protected)/report/new/actions/get-month-report-category-transactions';
 import { getTransactionDetails } from '@/app/(protected)/transactions/actions/get-transaction-details';
 import { updateTransaction } from '@/app/(protected)/transactions/actions/update-transaction';
@@ -31,6 +32,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { formatDisplayDate } from '@/lib/formatters';
+import type { CategorySpendingAverageContext } from '@/lib/reports/build-category-spending-vs-average-rows';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import type { MonthReportCategoryTransactionRow } from '@/lib/reports/month-report-category-transaction-row';
 import { transactionDetailsToRow } from '@/lib/transactions/transaction-details-to-row';
@@ -38,6 +40,7 @@ import type { TransactionRow } from '@/lib/transactions/transaction-row';
 
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import type { CategoryIconName } from '@/lib/categories/category-icons';
+import { isSavingCategoryType } from '@/lib/categories/category-type';
 
 type CategoryOption = {
   id: string;
@@ -48,10 +51,12 @@ type CategoryOption = {
 
 function createColumns({
   includeBalance,
+  invertSign,
   onViewDetails,
   onEdit,
 }: {
   includeBalance: boolean;
+  invertSign: boolean;
   onViewDetails: (row: MonthReportCategoryTransactionRow) => void;
   onEdit: (row: MonthReportCategoryTransactionRow) => void;
 }): ColumnDef<MonthReportCategoryTransactionRow>[] {
@@ -71,7 +76,9 @@ function createColumns({
     {
       accessorKey: 'value',
       header: () => <div className={TABLE_MONEY_HEADER_CLASS}>Amount</div>,
-      cell: ({ row }) => <TableMoneyCell value={row.getValue('value')} />,
+      cell: ({ row }) => (
+        <TableMoneyCell value={row.getValue('value')} invertSign={invertSign} />
+      ),
     },
   ];
 
@@ -113,6 +120,7 @@ type MonthReportCategoryDetailSheetProps = {
   category: MonthReportCategoryTotal | null;
   categories: CategoryOption[];
   bankAccounts: Array<{ id: string; label: string }>;
+  spendingAverageContext?: CategorySpendingAverageContext | null;
 };
 
 function getCategoryTitle(category: MonthReportCategoryTotal): string {
@@ -131,6 +139,7 @@ export function MonthReportCategoryDetailSheet({
   category,
   categories,
   bankAccounts,
+  spendingAverageContext = null,
 }: MonthReportCategoryDetailSheetProps) {
   const router = useRouter();
   const [rows, setRows] = useState<MonthReportCategoryTransactionRow[]>([]);
@@ -226,15 +235,17 @@ export function MonthReportCategoryDetailSheet({
   );
 
   const includeBalance = rows.some((row) => row.balance != null);
+  const invertSign = category ? isSavingCategoryType(category.type) : false;
 
   const tableColumns = useMemo(
     () =>
       createColumns({
         includeBalance,
+        invertSign,
         onViewDetails: handleViewDetails,
         onEdit: handleEdit,
       }),
-    [includeBalance, handleViewDetails, handleEdit],
+    [includeBalance, invertSign, handleViewDetails, handleEdit],
   );
 
   const summaryFooter = useMemo(() => {
@@ -243,9 +254,10 @@ export function MonthReportCategoryDetailSheet({
     }
 
     const total = rows.reduce((sum, row) => sum + Number(row.value), 0);
+    const displayTotal = invertSign ? (-total).toFixed(2) : total.toFixed(2);
 
-    return { label: 'Total', value: total.toFixed(2) };
-  }, [rows]);
+    return { label: 'Total', value: displayTotal };
+  }, [rows, invertSign]);
 
   const title = category ? getCategoryTitle(category) : 'Category';
 
@@ -289,12 +301,19 @@ export function MonthReportCategoryDetailSheet({
           ) : null}
 
           {!isPending && !error ? (
-            <ImportDataTable
-              columns={tableColumns}
-              data={rows}
-              paginate={rows.length > 25}
-              summaryFooter={summaryFooter}
-            />
+            <>
+              <ImportDataTable
+                columns={tableColumns}
+                data={rows}
+                paginate={rows.length > 25}
+                summaryFooter={summaryFooter}
+              />
+              {spendingAverageContext ? (
+                <MonthReportCategoryAverageBreakdown
+                  context={spendingAverageContext}
+                />
+              ) : null}
+            </>
           ) : null}
         </SheetContent>
       </Sheet>

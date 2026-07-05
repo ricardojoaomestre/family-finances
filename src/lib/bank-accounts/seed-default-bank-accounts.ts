@@ -1,13 +1,17 @@
 import { eq } from 'drizzle-orm';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 
-import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { bankAccounts, households } from '@/db/schema';
 import {
   DEFAULT_PRIMARY_BANK_ACCOUNT_SLUG,
   getDefaultBankAccountSeeds,
 } from '@/lib/bank-accounts/default-bank-accounts';
 
+type SeedDb = NeonHttpDatabase<typeof schema>;
+
 export async function seedDefaultBankAccountsForHousehold(
+  db: SeedDb,
   householdId: string,
 ): Promise<string | null> {
   const seeds = getDefaultBankAccountSeeds();
