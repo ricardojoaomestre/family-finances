@@ -20,7 +20,10 @@ import {
 import { CategoryPill } from '@/components/categories/category-pill';
 import type { CategoryColorToken } from '@/lib/categories/category-colors';
 import type { CategoryIconName } from '@/lib/categories/category-icons';
-import { categoryTypeLabels } from '@/lib/categories/category-type';
+import {
+  categoryTypeLabels,
+  isSavingCategoryType,
+} from '@/lib/categories/category-type';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import type { MonthReportCategoryTableType } from '@/lib/reports/group-month-report-category-totals';
 import { sumCategoryTotals } from '@/lib/reports/sum-category-totals';
@@ -60,6 +63,7 @@ export function MonthReportCategoryTotalsTable({
   const [selectedCategory, setSelectedCategory] =
     useState<MonthReportCategoryTotal | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const invertSign = isSavingCategoryType(tableType);
 
   const columns = useMemo<ColumnDef<MonthReportCategoryTotal>[]>(
     () => [
@@ -105,7 +109,9 @@ export function MonthReportCategoryTotalsTable({
           headerClassName: cn(TABLE_MONEY_HEADER_CLASS, 'w-32 sm:w-44'),
           cellClassName: cn(TABLE_MONEY_CELL_CLASS, 'w-32 sm:w-44'),
         },
-        cell: ({ row }) => <TableMoneyCell value={row.original.total} />,
+        cell: ({ row }) => (
+          <TableMoneyCell value={row.original.total} invertSign={invertSign} />
+        ),
       },
       {
         id: 'actions',
@@ -133,7 +139,7 @@ export function MonthReportCategoryTotalsTable({
         ),
       },
     ],
-    [],
+    [invertSign],
   );
 
   const sectionTotal = useMemo(() => sumCategoryTotals(data), [data]);
@@ -149,7 +155,11 @@ export function MonthReportCategoryTotalsTable({
           <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform" />
           {sectionTitles[tableType]}
         </span>
-        <TableMoneyCell value={sectionTotal} className="shrink-0" />
+        <TableMoneyCell
+          value={sectionTotal}
+          invertSign={invertSign}
+          className="shrink-0"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ImportDataTable

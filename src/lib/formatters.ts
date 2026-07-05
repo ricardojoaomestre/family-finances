@@ -35,6 +35,22 @@ export function formatDisplayMoney(value: string | number | null | undefined) {
   return moneyFormatter.format(num);
 }
 
+export function invertMoneySign(
+  value: string | number | null | undefined,
+): string | number | null | undefined {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  const num = typeof value === 'string' ? Number(value) : value;
+
+  if (!Number.isFinite(num)) {
+    return value;
+  }
+
+  return (-num).toFixed(2);
+}
+
 export function formatImportStatus(status: string) {
   switch (status) {
     case 'completed':

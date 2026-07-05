@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDisplayMoney } from '@/lib/formatters';
+import { formatDisplayMoney, invertMoneySign } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
 export const TABLE_MONEY_HEADER_CLASS = 'text-right';
@@ -27,18 +27,25 @@ export function getMoneyValueColorClass(
 type TableMoneyCellProps = {
   value: string | number | null | undefined;
   className?: string;
+  invertSign?: boolean;
 };
 
-export function TableMoneyCell({ value, className }: TableMoneyCellProps) {
+export function TableMoneyCell({
+  value,
+  className,
+  invertSign = false,
+}: TableMoneyCellProps) {
+  const displayValue = invertSign ? invertMoneySign(value) : value;
+
   return (
     <div
       className={cn(
         TABLE_MONEY_CELL_CLASS,
-        getMoneyValueColorClass(value),
+        getMoneyValueColorClass(displayValue),
         className,
       )}
     >
-      {formatDisplayMoney(value)}
+      {formatDisplayMoney(displayValue)}
     </div>
   );
 }
