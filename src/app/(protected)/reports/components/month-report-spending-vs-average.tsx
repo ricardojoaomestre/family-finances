@@ -78,7 +78,7 @@ export function MonthReportSpendingVsAverage({
             Spending vs average
           </div>
           <p className="text-sm text-muted-foreground">
-            Compared to your last 6 months
+            Compared to your average in prior months with spending
           </p>
         </div>
         {rows.length === 0 ? (

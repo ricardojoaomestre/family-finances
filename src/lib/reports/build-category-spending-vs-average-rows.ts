@@ -9,10 +9,6 @@ import {
 } from '@/lib/categories/category-icons';
 import type { CategoryPriorMonthlySpendingRow } from '@/lib/reports/get-category-prior-monthly-spending';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
-import {
-  SPENDING_VS_AVERAGE_PRIOR_MONTHS,
-  type SpendingVsAverageMonthRange,
-} from '@/lib/reports/spending-vs-average-months';
 
 export type CategorySpendingVsAverageUsage = {
   currentAmount: string;
@@ -33,12 +29,9 @@ export type CategorySpendingVsAverageRow = {
 export function buildCategorySpendingVsAverageRows(
   currentSpendingTotals: MonthReportCategoryTotal[],
   priorMonthlySpending: CategoryPriorMonthlySpendingRow[],
-  monthRanges: SpendingVsAverageMonthRange[],
 ): CategorySpendingVsAverageRow[] {
-  const averagesByCategoryId = computeCategoryAverageSpending(
-    priorMonthlySpending,
-    monthRanges.length,
-  );
+  const averagesByCategoryId =
+    computeCategoryAverageSpending(priorMonthlySpending);
 
   return currentSpendingTotals
     .map((row) => {
@@ -69,16 +62,14 @@ export function buildCategorySpendingVsAverageRows(
 
 function computeCategoryAverageSpending(
   priorMonthlySpending: CategoryPriorMonthlySpendingRow[],
-  monthCount: number,
 ): Map<string | null, number> {
-  const divisor =
-    monthCount > 0 ? monthCount : SPENDING_VS_AVERAGE_PRIOR_MONTHS;
   const sumsByCategoryId = new Map<string | null, number>();
+  const monthsWithSpendingByCategoryId = new Map<string | null, number>();
 
   for (const row of priorMonthlySpending) {
     const amount = Math.abs(Number(row.total));
 
-    if (!Number.isFinite(amount)) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       continue;
     }
 
@@ -86,12 +77,20 @@ function computeCategoryAverageSpending(
       row.categoryId,
       (sumsByCategoryId.get(row.categoryId) ?? 0) + amount,
     );
+    monthsWithSpendingByCategoryId.set(
+      row.categoryId,
+      (monthsWithSpendingByCategoryId.get(row.categoryId) ?? 0) + 1,
+    );
   }
 
   const averagesByCategoryId = new Map<string | null, number>();
 
   for (const [categoryId, sum] of sumsByCategoryId) {
-    averagesByCategoryId.set(categoryId, sum / divisor);
+    const monthsWithSpending = monthsWithSpendingByCategoryId.get(categoryId) ?? 0;
+
+    if (monthsWithSpending > 0) {
+      averagesByCategoryId.set(categoryId, sum / monthsWithSpending);
+    }
   }
 
   return averagesByCategoryId;
