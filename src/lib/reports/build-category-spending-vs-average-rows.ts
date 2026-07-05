@@ -23,12 +23,30 @@ export type CategorySpendingAverageContext = {
   hasBaseline: boolean;
 };
 
+export type CategorySpendingComparisonStatus =
+  | 'no-baseline'
+  | 'on-track'
+  | 'over'
+  | 'under';
+
+/** Relative difference (%) below which spending is considered on track. */
+export const SPENDING_VS_AVERAGE_ON_TRACK_THRESHOLD_PERCENT = 5;
+
 export type CategorySpendingVsAverageUsage = {
   currentAmount: string;
   averageAmount: string | null;
+  differenceAmount: string | null;
+  percentOverAverage: number | null;
+  comparisonStatus: CategorySpendingComparisonStatus;
   percentOfAverage: number;
   isOverAverage: boolean;
   hasBaseline: boolean;
+};
+
+export type CategorySpendingVsAverageSummary = {
+  categoriesOverAverage: number;
+  totalCategories: number;
+  totalOverAverage: string;
 };
 
 export type CategorySpendingVsAverageRow = {
@@ -154,20 +172,59 @@ export function computeCategorySpendingVsAverage(
     return {
       currentAmount: current.toFixed(2),
       averageAmount: null,
+      differenceAmount: null,
+      percentOverAverage: null,
+      comparisonStatus: 'no-baseline',
       percentOfAverage: 0,
       isOverAverage: false,
       hasBaseline: false,
     };
   }
 
+  const difference = current - averageAmount;
+  const percentOverAverage = Math.round((difference / averageAmount) * 100);
   const percentOfAverage = Math.round((current / averageAmount) * 100);
+  const comparisonStatus = resolveCategorySpendingComparisonStatus(
+    percentOverAverage,
+  );
 
   return {
     currentAmount: current.toFixed(2),
     averageAmount: averageAmount.toFixed(2),
+    differenceAmount: difference.toFixed(2),
+    percentOverAverage,
+    comparisonStatus,
     percentOfAverage,
-    isOverAverage: current > averageAmount,
+    isOverAverage: comparisonStatus === 'over',
     hasBaseline: true,
+  };
+}
+
+export function resolveCategorySpendingComparisonStatus(
+  percentOverAverage: number,
+): Exclude<CategorySpendingComparisonStatus, 'no-baseline'> {
+  if (
+    Math.abs(percentOverAverage) <= SPENDING_VS_AVERAGE_ON_TRACK_THRESHOLD_PERCENT
+  ) {
+    return 'on-track';
+  }
+
+  return percentOverAverage > 0 ? 'over' : 'under';
+}
+
+export function getCategorySpendingVsAverageSummary(
+  rows: CategorySpendingVsAverageRow[],
+): CategorySpendingVsAverageSummary {
+  const overRows = rows.filter((row) => row.usage.comparisonStatus === 'over');
+  const totalOverAverage = overRows.reduce(
+    (total, row) => total + Number(row.usage.differenceAmount ?? 0),
+    0,
+  );
+
+  return {
+    categoriesOverAverage: overRows.length,
+    totalCategories: rows.length,
+    totalOverAverage: totalOverAverage.toFixed(2),
   };
 }
 
