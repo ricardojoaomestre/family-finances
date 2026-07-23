@@ -1,9 +1,11 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
   bankAccounts,
   imports,
+  importSkippedRows,
+  transactions,
   type ImportSource,
   type ImportStatus,
 } from '@/db/schema';
@@ -17,6 +19,8 @@ export type ImportJobRow = {
   source: ImportSource;
   importedAt: Date;
   rowCount: number;
+  duplicateCount: number;
+  uncategorizedCount: number;
   status: ImportStatus;
   bankAccountId: string;
   bankAccountLabel: string;
@@ -24,7 +28,8 @@ export type ImportJobRow = {
 
 export async function getImports(limit?: number): Promise<ImportJobRow[]> {
   const householdId = await requireActiveHouseholdId();
-  const query = db
+
+  const importsQuery = db
     .select({
       id: imports.id,
       filename: imports.filename,
@@ -42,7 +47,46 @@ export async function getImports(limit?: number): Promise<ImportJobRow[]> {
     .where(eq(imports.householdId, householdId))
     .orderBy(desc(imports.importedAt));
 
-  const rows = limit !== undefined ? await query.limit(limit) : await query;
+  const [rows, duplicateRows, uncategorizedRows] = await Promise.all([
+    limit !== undefined ? importsQuery.limit(limit) : importsQuery,
+    db
+      .select({
+        importId: importSkippedRows.importId,
+        count: count(),
+      })
+      .from(importSkippedRows)
+      .innerJoin(imports, eq(importSkippedRows.importId, imports.id))
+      .where(
+        and(
+          eq(imports.householdId, householdId),
+          inArray(importSkippedRows.reason, [
+            'duplicate_in_file',
+            'duplicate_existing',
+          ]),
+        ),
+      )
+      .groupBy(importSkippedRows.importId),
+    db
+      .select({
+        importId: transactions.importId,
+        count: count(),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.householdId, householdId),
+          isNull(transactions.categoryId),
+        ),
+      )
+      .groupBy(transactions.importId),
+  ]);
+
+  const duplicateCountByImportId = new Map(
+    duplicateRows.map((row) => [row.importId, Number(row.count)]),
+  );
+  const uncategorizedCountByImportId = new Map(
+    uncategorizedRows.map((row) => [row.importId, Number(row.count)]),
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -56,6 +100,8 @@ export async function getImports(limit?: number): Promise<ImportJobRow[]> {
     source: row.source,
     importedAt: row.importedAt,
     rowCount: row.rowCount,
+    duplicateCount: duplicateCountByImportId.get(row.id) ?? 0,
+    uncategorizedCount: uncategorizedCountByImportId.get(row.id) ?? 0,
     status: row.status,
     bankAccountId: row.bankAccountId,
     bankAccountLabel: row.bankAccountLabel,

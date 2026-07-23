@@ -28,11 +28,15 @@ const columns: ColumnDef<ImportJobRow>[] = [
     cell: ({ row }) => (
       <Link
         href={`/imports/${row.original.id}`}
-        className="text-primary underline-offset-4 hover:underline"
+        className="block truncate text-primary underline-offset-4 hover:underline"
       >
         {row.original.bankAccountLabel}
       </Link>
     ),
+    meta: {
+      headerClassName: 'w-full min-w-0',
+      cellClassName: 'w-full min-w-0 max-w-0',
+    },
   },
   {
     accessorKey: 'status',
@@ -55,11 +59,37 @@ const columns: ColumnDef<ImportJobRow>[] = [
     },
   },
   {
+    accessorKey: 'duplicateCount',
+    header: () => <div className="text-right">Duplicates</div>,
+    cell: ({ row }) => (
+      <div className="text-right tabular-nums">
+        {row.original.duplicateCount}
+      </div>
+    ),
+    meta: {
+      headerClassName: 'hidden sm:table-cell',
+      cellClassName: 'hidden sm:table-cell',
+    },
+  },
+  {
+    accessorKey: 'uncategorizedCount',
+    header: () => <div className="text-right">Uncategorized</div>,
+    cell: ({ row }) => (
+      <div className="text-right tabular-nums">
+        {row.original.uncategorizedCount}
+      </div>
+    ),
+    meta: {
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell',
+    },
+  },
+  {
     accessorKey: 'label',
     header: 'Import',
     meta: {
-      headerClassName: 'hidden w-full md:table-cell',
-      cellClassName: 'hidden w-full md:table-cell',
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
     },
     cell: ({ row }) => (
       <span className="block truncate text-muted-foreground">
@@ -111,7 +141,9 @@ export function ImportJobsTable({ data, paginate = true }: ImportJobsTableProps)
               </Link>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {formatDisplayDate(job.importedAt)} · {job.rowCount}{' '}
-                {job.rowCount === 1 ? 'row' : 'rows'}
+                {job.rowCount === 1 ? 'row' : 'rows'} · {job.duplicateCount}{' '}
+                {job.duplicateCount === 1 ? 'duplicate' : 'duplicates'} ·{' '}
+                {job.uncategorizedCount} uncategorized
               </p>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {job.label}
