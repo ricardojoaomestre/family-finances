@@ -4,26 +4,22 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
-import { DashboardBudgetProgress } from '@/app/(protected)/dashboard/components/dashboard-budget-progress';
 import { DashboardMonthPicker } from '@/app/(protected)/dashboard/components/dashboard-month-picker';
 import { DashboardStatsGrid } from '@/app/(protected)/dashboard/components/dashboard-stats-grid';
 import { type DashboardMonthRange } from '@/lib/dashboard/dashboard-date-range';
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
-import type { CategoryBudgetProgressRow } from '@/lib/budgets/get-category-budget-progress';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
 
 type DashboardPageContentProps = {
   welcomeMessage: string;
   monthRange: DashboardMonthRange;
   stats: DashboardMonthStats;
-  budgetProgress: CategoryBudgetProgressRow[];
 };
 
 export function DashboardPageContent({
   welcomeMessage,
   monthRange,
   stats,
-  budgetProgress,
 }: DashboardPageContentProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -55,11 +51,6 @@ export function DashboardPageContent({
           key={`${monthRange.dateFrom}-${monthRange.dateTo}`}
           stats={stats}
           monthDateFrom={monthRange.dateFrom}
-          isLoading={isPending}
-        />
-        <DashboardBudgetProgress
-          key={`${monthRange.dateFrom}-${monthRange.dateTo}-budgets`}
-          rows={budgetProgress}
           isLoading={isPending}
         />
       </div>

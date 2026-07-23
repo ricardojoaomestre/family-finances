@@ -1,6 +1,5 @@
 import { DashboardPageContent } from '@/app/(protected)/dashboard/components/dashboard-page-content';
 import { auth } from '@/auth';
-import { getCategoryBudgetProgressRows } from '@/lib/budgets/get-category-budget-progress';
 import { buildDashboardMonthStats } from '@/lib/dashboard/build-dashboard-month-stats';
 import { getDefaultDashboardMonthRange } from '@/lib/dashboard/dashboard-date-range';
 import { getMonthReportCategoryTotals } from '@/lib/reports/get-month-report-category-totals';
@@ -49,23 +48,17 @@ export default async function DashboardPage({
       : Promise.resolve([]),
   ]);
 
-  const [stats, budgetProgress] = await Promise.all([
-    Promise.resolve(
-      buildDashboardMonthStats(
-        monthRange.dateFrom,
-        currentTotals,
-        previousRange ? previousTotals : null,
-      ),
-    ),
-    getCategoryBudgetProgressRows(currentTotals),
-  ]);
+  const stats = buildDashboardMonthStats(
+    monthRange.dateFrom,
+    currentTotals,
+    previousRange ? previousTotals : null,
+  );
 
   return (
     <DashboardPageContent
       welcomeMessage={`Welcome, ${session?.user?.name ?? session?.user?.email}`}
       monthRange={monthRange}
       stats={stats}
-      budgetProgress={budgetProgress}
     />
   );
 }
