@@ -6,6 +6,7 @@ import { useTransition } from 'react';
 import { SetPageHeader } from '@/app/(protected)/components/protected-page-context';
 import { DashboardMonthPicker } from '@/app/(protected)/dashboard/components/dashboard-month-picker';
 import { DashboardStatsGrid } from '@/app/(protected)/dashboard/components/dashboard-stats-grid';
+import { DashboardTopSpendingCategoriesChart } from '@/app/(protected)/dashboard/components/dashboard-top-spending-categories-chart';
 import { type DashboardMonthRange } from '@/lib/dashboard/dashboard-date-range';
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
 import { buildMonthReportSearchParams } from '@/lib/reports/month-report-search-params';
@@ -51,6 +52,11 @@ export function DashboardPageContent({
           key={`${monthRange.dateFrom}-${monthRange.dateTo}`}
           stats={stats}
           monthDateFrom={monthRange.dateFrom}
+          isLoading={isPending}
+        />
+        <DashboardTopSpendingCategoriesChart
+          key={`spending-${monthRange.dateFrom}-${monthRange.dateTo}`}
+          categories={stats.topSpendingCategories}
           isLoading={isPending}
         />
       </div>

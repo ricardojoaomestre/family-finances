@@ -1,5 +1,6 @@
 import { computeDashboardNetWorth } from '@/lib/dashboard/compute-dashboard-net-worth';
 import type { DashboardMonthStats } from '@/lib/dashboard/dashboard-month-stats';
+import { findTopSpendingCategories } from '@/lib/dashboard/find-top-spending-categories';
 import { groupMonthReportCategoryTotals } from '@/lib/reports/group-month-report-category-totals';
 import type { MonthReportCategoryTotal } from '@/lib/reports/get-month-report-category-totals';
 import { getPreviousCalendarMonthRange } from '@/lib/reports/report-month';
@@ -15,6 +16,9 @@ export function buildDashboardMonthStats(
   const income = sumCategoryTotals(currentGrouped.income);
   const expenses = sumCategoryTotals(currentGrouped.spending);
   const netWorth = computeDashboardNetWorth(income, expenses);
+  const topSpendingCategories = findTopSpendingCategories(
+    currentGrouped.spending,
+  );
   const previousGrouped = previousTotals
     ? groupMonthReportCategoryTotals(previousTotals)
     : null;
@@ -25,6 +29,7 @@ export function buildDashboardMonthStats(
       expenses,
       netWorth,
       previousMonth: null,
+      topSpendingCategories,
     };
   }
 
@@ -40,5 +45,6 @@ export function buildDashboardMonthStats(
       expenses: previousExpenses,
       netWorth: computeDashboardNetWorth(previousIncome, previousExpenses),
     },
+    topSpendingCategories,
   };
 }

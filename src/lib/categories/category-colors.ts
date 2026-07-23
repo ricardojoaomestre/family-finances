@@ -123,3 +123,17 @@ export function getCategoryPillClasses(color: CategoryColorToken): string {
 export function getCategorySwatchClasses(color: CategoryColorToken): string {
   return CATEGORY_COLOR_SWATCH_CLASSES[color];
 }
+
+export function getCategoryChartColorTheme(
+  color: CategoryColorToken,
+): Record<'light' | 'dark', string> {
+  const separatorIndex = color.lastIndexOf('-');
+  const hue = color.slice(0, separatorIndex);
+  const shade = color.slice(separatorIndex + 1);
+  const darkShade = shade === '200' ? '800' : shade === '300' ? '700' : shade;
+
+  return {
+    light: `var(--color-${color})`,
+    dark: `var(--color-${hue}-${darkShade})`,
+  };
+}
