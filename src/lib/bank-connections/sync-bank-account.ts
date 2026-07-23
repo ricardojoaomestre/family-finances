@@ -15,15 +15,11 @@ import {
   updateApiLinkSyncState,
 } from '@/lib/bank-connections/get-api-links';
 import {
-  INITIAL_SYNC_DAYS,
   RATE_LIMIT_RETRY_MS,
-  SYNC_OVERLAP_DAYS,
+  buildSyncDateRange,
   canSyncNow,
   nextSyncCount,
-  subtractCalendarDays,
-  getUtcDateKey,
 } from '@/lib/bank-connections/sync-quota';
-import { formatCalendarDayKey } from '@/lib/dates/calendar-day-key';
 import { persistImportRows } from '@/lib/imports/persist-import-rows';
 import { getBankAccountForActiveHousehold } from '@/lib/bank-accounts/get-bank-account';
 
@@ -51,25 +47,6 @@ function isSessionExpired(accessValidUntil: Date | null): boolean {
     return false;
   }
   return accessValidUntil.getTime() <= Date.now();
-}
-
-function buildSyncDateRange(lastSyncedAt: Date | null): {
-  dateFrom: string;
-  dateTo: string;
-} {
-  const dateTo = getUtcDateKey();
-  if (!lastSyncedAt) {
-    return {
-      dateFrom: subtractCalendarDays(dateTo, INITIAL_SYNC_DAYS),
-      dateTo,
-    };
-  }
-
-  const lastKey = formatCalendarDayKey(lastSyncedAt);
-  return {
-    dateFrom: subtractCalendarDays(lastKey, SYNC_OVERLAP_DAYS),
-    dateTo,
-  };
 }
 
 export async function syncBankAccount(

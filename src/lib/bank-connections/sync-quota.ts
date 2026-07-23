@@ -6,7 +6,6 @@ import {
 export const MAX_SYNCS_PER_DAY = 2;
 export const MIN_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const INITIAL_SYNC_DAYS = 90;
-export const SYNC_OVERLAP_DAYS = 3;
 export const RATE_LIMIT_RETRY_MS = 6 * 60 * 60 * 1000;
 
 export function getUtcDateKey(date = new Date()): string {
@@ -21,6 +20,24 @@ export function subtractCalendarDays(dateKey: string, days: number): string {
 
   date.setDate(date.getDate() - days);
   return formatCalendarDayKey(date);
+}
+
+export function buildSyncDateRange(
+  lastSyncedAt: Date | null,
+  now = new Date(),
+): { dateFrom: string; dateTo: string } {
+  const dateTo = getUtcDateKey(now);
+  if (!lastSyncedAt) {
+    return {
+      dateFrom: subtractCalendarDays(dateTo, INITIAL_SYNC_DAYS),
+      dateTo,
+    };
+  }
+
+  return {
+    dateFrom: getUtcDateKey(lastSyncedAt),
+    dateTo,
+  };
 }
 
 export function canSyncNow(input: {
